@@ -29,7 +29,7 @@ anyhow = "1"
 zip = "2"
 flate2 = "1"
 toml = "0.8"
-dirs = "5"
+dirs = "6"
 
 [dev-dependencies]
 tokio-test = "0.4"
