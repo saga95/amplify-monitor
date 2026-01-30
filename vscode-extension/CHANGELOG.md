@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.1.8] - 2026-01-30
+
+### Added
+- **Smart Auto-Detection**: Extension now automatically detects Amplify projects on startup
+  - Scans workspace for `amplify/` folder
+  - Auto-fetches apps from AWS when credentials are available
+  - Shows connection status in status bar with app count
+- **Connection Status Bar**: New status bar item showing AWS connection state
+  - `$(cloud) Amplify: X apps` - Connected with app count
+  - `$(cloud-offline) Amplify: Not Connected` - No credentials or connection error
+  - Click to refresh app list
+- **Smart Credential Prompts**: If Amplify project detected but no AWS credentials:
+  - Prompts to configure credentials
+  - Option to run local migration analysis without AWS
+- **Workspace Change Detection**: Re-detects when workspace folders change
+
+### Improved
+- Better "just works" experience - extension activates and shows relevant info automatically
+- Contextual notifications based on project state
+
 ## [0.1.7] - 2026-01-30
 
 ### Added

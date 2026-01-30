@@ -1,4 +1,6 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as fs from 'fs';
 import { AmplifyMonitorCli } from './cli';
 import { AppsTreeProvider } from './views/appsTree';
 import { JobsTreeProvider } from './views/jobsTree';
@@ -8,6 +10,7 @@ import { MigrationTreeProvider } from './views/migrationTree';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
+let connectionStatusBarItem: vscode.StatusBarItem;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Amplify Monitor extension is now active');
@@ -53,6 +56,16 @@ export function activate(context: vscode.ExtensionContext) {
     profileStatusBarItem.tooltip = 'Click to switch AWS profile';
     updateProfileStatusBar(cli);
     profileStatusBarItem.show();
+
+    // Create connection status bar item
+    connectionStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
+    connectionStatusBarItem.command = 'amplify-monitor.listApps';
+    connectionStatusBarItem.text = '$(sync~spin) Amplify: Connecting...';
+    connectionStatusBarItem.tooltip = 'Click to refresh Amplify apps';
+    connectionStatusBarItem.show();
+
+    // Auto-detect Amplify project and fetch apps on startup
+    autoDetectAndInitialize(cli, appsProvider, migrationProvider, context);
 
     // Register commands
     context.subscriptions.push(
@@ -379,6 +392,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Add status bar to subscriptions for cleanup
     context.subscriptions.push(profileStatusBarItem);
+    context.subscriptions.push(connectionStatusBarItem);
 }
 
 async function runDiagnosis(cli: AmplifyMonitorCli, provider: DiagnosisTreeProvider) {
@@ -452,6 +466,124 @@ function setupAutoRefresh(appsProvider: AppsTreeProvider, jobsProvider: JobsTree
 function updateProfileStatusBar(cli: AmplifyMonitorCli) {
     const profile = cli.getAwsProfile() || 'default';
     profileStatusBarItem.text = `$(account) AWS: ${profile}`;
+}
+
+function updateConnectionStatus(connected: boolean, appCount?: number) {
+    if (connected && appCount !== undefined) {
+        connectionStatusBarItem.text = `$(cloud) Amplify: ${appCount} app${appCount !== 1 ? 's' : ''}`;
+        connectionStatusBarItem.backgroundColor = undefined;
+        connectionStatusBarItem.tooltip = `Connected - ${appCount} Amplify app${appCount !== 1 ? 's' : ''} found. Click to refresh.`;
+    } else if (connected) {
+        connectionStatusBarItem.text = '$(cloud) Amplify: Connected';
+        connectionStatusBarItem.backgroundColor = undefined;
+        connectionStatusBarItem.tooltip = 'Connected to AWS. Click to refresh apps.';
+    } else {
+        connectionStatusBarItem.text = '$(cloud-offline) Amplify: Not Connected';
+        connectionStatusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
+        connectionStatusBarItem.tooltip = 'Could not connect to AWS. Click to retry or configure credentials.';
+    }
+}
+
+async function autoDetectAndInitialize(
+    cli: AmplifyMonitorCli, 
+    appsProvider: AppsTreeProvider, 
+    migrationProvider: MigrationTreeProvider,
+    context: vscode.ExtensionContext
+) {
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    
+    // Check for Amplify project in workspace
+    let hasAmplifyProject = false;
+    let amplifyProjectPath: string | undefined;
+    
+    if (workspaceFolders) {
+        for (const folder of workspaceFolders) {
+            const amplifyPath = path.join(folder.uri.fsPath, 'amplify');
+            if (fs.existsSync(amplifyPath)) {
+                hasAmplifyProject = true;
+                amplifyProjectPath = folder.uri.fsPath;
+                break;
+            }
+        }
+    }
+
+    // Try to fetch apps to check AWS connection
+    try {
+        const apps = await cli.listApps(true);
+        updateConnectionStatus(true, apps.length);
+        
+        // Show notification if Amplify project found
+        if (hasAmplifyProject) {
+            const action = await vscode.window.showInformationMessage(
+                `🚀 Amplify project detected! Found ${apps.length} app${apps.length !== 1 ? 's' : ''} in your AWS account.`,
+                'Analyze Migration',
+                'View Apps'
+            );
+            
+            if (action === 'Analyze Migration' && amplifyProjectPath) {
+                // Run migration analysis
+                try {
+                    const analysis = await cli.analyzeMigration(amplifyProjectPath);
+                    migrationProvider.setAnalysis(analysis);
+                    
+                    if (analysis.generation === 'Gen1') {
+                        vscode.window.showInformationMessage(
+                            `Migration Analysis: ${analysis.summary.fullySupported}/${analysis.summary.totalFeatures} features ready for Gen2`
+                        );
+                    }
+                } catch {
+                    // Silently fail migration analysis
+                }
+            } else if (action === 'View Apps') {
+                vscode.commands.executeCommand('amplifyApps.focus');
+            }
+        } else if (apps.length > 0) {
+            // No local project but apps found in AWS
+            vscode.window.showInformationMessage(
+                `Found ${apps.length} Amplify app${apps.length !== 1 ? 's' : ''} in your AWS account.`,
+                'View Apps'
+            ).then(action => {
+                if (action === 'View Apps') {
+                    vscode.commands.executeCommand('amplifyApps.focus');
+                }
+            });
+        }
+        
+        // Refresh apps view
+        appsProvider.refresh();
+        
+    } catch (error) {
+        updateConnectionStatus(false);
+        
+        if (hasAmplifyProject) {
+            // Amplify project found but no AWS credentials
+            const action = await vscode.window.showWarningMessage(
+                '🔐 Amplify project detected but AWS credentials not configured.',
+                'Configure Credentials',
+                'Analyze Locally'
+            );
+            
+            if (action === 'Configure Credentials') {
+                vscode.commands.executeCommand('amplify-monitor.openSettings');
+            } else if (action === 'Analyze Locally' && amplifyProjectPath) {
+                // Run local migration analysis (doesn't need AWS)
+                try {
+                    const analysis = await cli.analyzeMigration(amplifyProjectPath);
+                    migrationProvider.setAnalysis(analysis);
+                } catch {
+                    // Silently fail
+                }
+            }
+        }
+    }
+    
+    // Watch for workspace changes to detect new Amplify projects
+    context.subscriptions.push(
+        vscode.workspace.onDidChangeWorkspaceFolders(async () => {
+            // Re-run detection when workspace folders change
+            autoDetectAndInitialize(cli, appsProvider, migrationProvider, context);
+        })
+    );
 }
 
 export function deactivate() {
