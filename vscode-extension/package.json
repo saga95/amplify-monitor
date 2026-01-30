@@ -1,0 +1,221 @@
+{
+  "name": "amplify-monitor",
+  "displayName": "Amplify Monitor",
+  "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
+  "version": "0.1.0",
+  "publisher": "SagaraHarasgama",
+  "author": {
+    "name": "saga95"
+  },
+  "license": "MIT",
+  "icon": "resources/icon.png",
+  "galleryBanner": {
+    "color": "#232F3E",
+    "theme": "dark"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/saga95/amplify-monitor"
+  },
+  "bugs": {
+    "url": "https://github.com/saga95/amplify-monitor/issues"
+  },
+  "homepage": "https://github.com/saga95/amplify-monitor#readme",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": [
+    "Other",
+    "Debuggers",
+    "Visualization"
+  ],
+  "keywords": [
+    "aws",
+    "amplify",
+    "devops",
+    "build",
+    "deploy",
+    "ci/cd",
+    "diagnostics",
+    "debugging",
+    "cloud",
+    "serverless"
+  ],
+  "badges": [
+    {
+      "url": "https://img.shields.io/github/v/release/saga95/amplify-monitor",
+      "href": "https://github.com/saga95/amplify-monitor/releases",
+      "description": "GitHub Release"
+    },
+    {
+      "url": "https://img.shields.io/github/license/saga95/amplify-monitor",
+      "href": "https://github.com/saga95/amplify-monitor/blob/main/LICENSE",
+      "description": "License"
+    }
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "amplify-monitor.listApps",
+        "title": "List Apps",
+        "category": "Amplify Monitor",
+        "icon": "$(cloud)"
+      },
+      {
+        "command": "amplify-monitor.diagnose",
+        "title": "Diagnose Latest Failed Build",
+        "category": "Amplify Monitor",
+        "icon": "$(search-fuzzy)"
+      },
+      {
+        "command": "amplify-monitor.selectApp",
+        "title": "Select App",
+        "category": "Amplify Monitor"
+      },
+      {
+        "command": "amplify-monitor.selectBranch",
+        "title": "Select Branch",
+        "category": "Amplify Monitor"
+      },
+      {
+        "command": "amplify-monitor.refresh",
+        "title": "Refresh",
+        "category": "Amplify Monitor",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "amplify-monitor.openSettings",
+        "title": "Open Settings",
+        "category": "Amplify Monitor",
+        "icon": "$(gear)"
+      },
+      {
+        "command": "amplify-monitor.copyIssue",
+        "title": "Copy Issue Details",
+        "category": "Amplify Monitor",
+        "icon": "$(copy)"
+      }
+    ],
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "amplify-monitor",
+          "title": "Amplify Monitor",
+          "icon": "resources/amplify.svg"
+        }
+      ]
+    },
+    "views": {
+      "amplify-monitor": [
+        {
+          "id": "amplifyApps",
+          "name": "Apps",
+          "icon": "$(cloud)",
+          "contextualTitle": "Amplify Apps"
+        },
+        {
+          "id": "amplifyJobs",
+          "name": "Recent Jobs",
+          "icon": "$(history)",
+          "contextualTitle": "Build Jobs"
+        },
+        {
+          "id": "amplifyDiagnosis",
+          "name": "Diagnosis",
+          "icon": "$(lightbulb)",
+          "contextualTitle": "Build Diagnosis"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "amplifyApps",
+        "contents": "No Amplify apps found.\n\nMake sure you have:\n1. AWS credentials configured\n2. amplify-monitor CLI installed\n\n[Configure Settings](command:amplify-monitor.openSettings)\n[Refresh Apps](command:amplify-monitor.listApps)"
+      },
+      {
+        "view": "amplifyJobs",
+        "contents": "Select an app and branch to view jobs.\n\n[Select App](command:amplify-monitor.selectApp)"
+      },
+      {
+        "view": "amplifyDiagnosis",
+        "contents": "Run diagnosis on a failed build to see issues.\n\n[Diagnose Latest Failure](command:amplify-monitor.diagnose)"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "amplify-monitor.refresh",
+          "when": "view == amplifyApps || view == amplifyJobs",
+          "group": "navigation"
+        },
+        {
+          "command": "amplify-monitor.openSettings",
+          "when": "view == amplifyApps",
+          "group": "navigation"
+        },
+        {
+          "command": "amplify-monitor.diagnose",
+          "when": "view == amplifyDiagnosis",
+          "group": "navigation"
+        }
+      ],
+      "view/item/context": [
+        {
+          "command": "amplify-monitor.copyIssue",
+          "when": "viewItem == diagnosis-issue",
+          "group": "inline"
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Amplify Monitor",
+      "properties": {
+        "amplifyMonitor.cliPath": {
+          "type": "string",
+          "default": "amplify-monitor",
+          "description": "Path to the amplify-monitor CLI executable"
+        },
+        "amplifyMonitor.defaultAppId": {
+          "type": "string",
+          "default": "",
+          "description": "Default Amplify app ID"
+        },
+        "amplifyMonitor.defaultBranch": {
+          "type": "string",
+          "default": "main",
+          "description": "Default branch name"
+        },
+        "amplifyMonitor.autoRefresh": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically refresh job status"
+        },
+        "amplifyMonitor.autoRefreshInterval": {
+          "type": "number",
+          "default": 60,
+          "description": "Auto-refresh interval in seconds"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "npm run compile && npm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "node ./out/test/runTest.js",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.0",
+    "@types/vscode": "^1.85.0",
+    "@typescript-eslint/eslint-plugin": "^6.13.0",
+    "@typescript-eslint/parser": "^6.13.0",
+    "eslint": "^8.54.0",
+    "typescript": "^5.3.0",
+    "@vscode/vsce": "^2.22.0"
+  }
+}

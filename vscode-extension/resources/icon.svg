@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" fill="none">
+  <rect width="128" height="128" rx="16" fill="#232F3E"/>
+  <path d="M64 24L24 48v32l40 24 40-24V48L64 24z" fill="#FF9900" stroke="#FF9900" stroke-width="2"/>
+  <path d="M64 40L40 54v20l24 14 24-14V54L64 40z" fill="#232F3E"/>
+  <path d="M64 52L52 59v10l12 7 12-7V59L64 52z" fill="#FF9900"/>
+  <text x="64" y="118" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" font-weight="bold" fill="#FFFFFF">MONITOR</text>
+</svg>
