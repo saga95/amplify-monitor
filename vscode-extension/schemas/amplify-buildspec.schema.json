@@ -1,0 +1,261 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://docs.aws.amazon.com/amplify/latest/userguide/build-settings.html",
+  "title": "AWS Amplify Build Specification",
+  "description": "Schema for AWS Amplify amplify.yml build configuration file",
+  "type": "object",
+  "properties": {
+    "version": {
+      "type": "number",
+      "description": "The Amplify build specification version. Currently supports version 1.",
+      "enum": [1],
+      "default": 1
+    },
+    "applications": {
+      "type": "array",
+      "description": "List of applications in a monorepo setup",
+      "items": {
+        "$ref": "#/definitions/application"
+      }
+    },
+    "appRoot": {
+      "type": "string",
+      "description": "The path within the repository that this application resides in. Useful for monorepos.",
+      "examples": ["packages/app", "apps/frontend"]
+    },
+    "env": {
+      "$ref": "#/definitions/envVariables",
+      "description": "Global environment variables available to all build phases"
+    },
+    "backend": {
+      "$ref": "#/definitions/buildPhases",
+      "description": "Build commands for the backend (Amplify Gen 1 only)"
+    },
+    "frontend": {
+      "$ref": "#/definitions/buildPhases",
+      "description": "Build commands for the frontend application"
+    },
+    "test": {
+      "$ref": "#/definitions/testPhases",
+      "description": "Test configuration and commands"
+    },
+    "cache": {
+      "$ref": "#/definitions/cacheConfig",
+      "description": "Cache configuration for build optimization"
+    }
+  },
+  "definitions": {
+    "application": {
+      "type": "object",
+      "description": "Application configuration for monorepo setups",
+      "properties": {
+        "appRoot": {
+          "type": "string",
+          "description": "The path within the repository that this application resides in"
+        },
+        "env": {
+          "$ref": "#/definitions/envVariables"
+        },
+        "backend": {
+          "$ref": "#/definitions/buildPhases"
+        },
+        "frontend": {
+          "$ref": "#/definitions/buildPhases"
+        },
+        "test": {
+          "$ref": "#/definitions/testPhases"
+        },
+        "cache": {
+          "$ref": "#/definitions/cacheConfig"
+        }
+      },
+      "required": ["appRoot"]
+    },
+    "envVariables": {
+      "type": "object",
+      "description": "Environment variables as key-value pairs",
+      "additionalProperties": {
+        "type": "string"
+      },
+      "examples": [
+        {
+          "NODE_ENV": "production",
+          "NEXT_PUBLIC_API_URL": "https://api.example.com"
+        }
+      ]
+    },
+    "buildPhases": {
+      "type": "object",
+      "description": "Build phase configuration",
+      "properties": {
+        "phases": {
+          "type": "object",
+          "properties": {
+            "preBuild": {
+              "$ref": "#/definitions/phase",
+              "description": "Commands to run before the build starts. Typically used for installing dependencies."
+            },
+            "build": {
+              "$ref": "#/definitions/phase",
+              "description": "Commands to build your application"
+            },
+            "postBuild": {
+              "$ref": "#/definitions/phase",
+              "description": "Commands to run after the build completes"
+            }
+          }
+        },
+        "artifacts": {
+          "$ref": "#/definitions/artifacts",
+          "description": "Configuration for build output artifacts"
+        },
+        "cache": {
+          "$ref": "#/definitions/cacheConfig",
+          "description": "Cache configuration specific to this build target"
+        },
+        "buildPath": {
+          "type": "string",
+          "description": "The path to change to before running build commands",
+          "examples": ["/", "packages/web"]
+        }
+      }
+    },
+    "phase": {
+      "type": "object",
+      "description": "A build phase with commands",
+      "properties": {
+        "commands": {
+          "type": "array",
+          "description": "List of commands to execute in this phase",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            ["npm ci", "npm run build"],
+            ["pnpm install --frozen-lockfile", "pnpm build"]
+          ]
+        }
+      },
+      "required": ["commands"]
+    },
+    "artifacts": {
+      "type": "object",
+      "description": "Build artifacts configuration",
+      "properties": {
+        "baseDirectory": {
+          "type": "string",
+          "description": "The directory containing the build output. Relative to the repository root or appRoot.",
+          "examples": ["build", "dist", "out", ".next", "public"]
+        },
+        "files": {
+          "type": "array",
+          "description": "Glob patterns for files to include in the deployment",
+          "items": {
+            "type": "string"
+          },
+          "default": ["**/*"],
+          "examples": [
+            ["**/*"],
+            ["index.html", "static/**/*", "assets/**/*"]
+          ]
+        },
+        "discard-paths": {
+          "type": "string",
+          "description": "Whether to discard the directory structure and flatten all files",
+          "enum": ["yes", "no"],
+          "default": "no"
+        }
+      },
+      "required": ["baseDirectory"]
+    },
+    "testPhases": {
+      "type": "object",
+      "description": "Test phase configuration",
+      "properties": {
+        "phases": {
+          "type": "object",
+          "properties": {
+            "preTest": {
+              "$ref": "#/definitions/phase",
+              "description": "Commands to run before tests start"
+            },
+            "test": {
+              "$ref": "#/definitions/phase",
+              "description": "Commands to run your tests"
+            },
+            "postTest": {
+              "$ref": "#/definitions/phase",
+              "description": "Commands to run after tests complete"
+            }
+          }
+        },
+        "artifacts": {
+          "$ref": "#/definitions/testArtifacts",
+          "description": "Test artifact configuration (reports, coverage, etc.)"
+        }
+      }
+    },
+    "testArtifacts": {
+      "type": "object",
+      "description": "Test artifacts configuration",
+      "properties": {
+        "baseDirectory": {
+          "type": "string",
+          "description": "The directory containing test artifacts"
+        },
+        "configFilePath": {
+          "type": "string",
+          "description": "Path to the test configuration file"
+        },
+        "files": {
+          "type": "array",
+          "description": "Glob patterns for test artifact files",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "cacheConfig": {
+      "type": "object",
+      "description": "Cache configuration for faster builds",
+      "properties": {
+        "paths": {
+          "type": "array",
+          "description": "Directories to cache between builds",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            ["node_modules/**/*"],
+            [".npm/**/*", ".pnpm-store/**/*"],
+            [".next/cache/**/*"]
+          ]
+        }
+      },
+      "required": ["paths"]
+    }
+  },
+  "examples": [
+    {
+      "version": 1,
+      "frontend": {
+        "phases": {
+          "preBuild": {
+            "commands": ["npm ci"]
+          },
+          "build": {
+            "commands": ["npm run build"]
+          }
+        },
+        "artifacts": {
+          "baseDirectory": "build",
+          "files": ["**/*"]
+        },
+        "cache": {
+          "paths": ["node_modules/**/*"]
+        }
+      }
+    }
+  ]
+}

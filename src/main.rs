@@ -102,6 +102,77 @@ enum Commands {
         job_id: Option<String>,
     },
 
+    /// List environment variables for a branch
+    EnvVars {
+        /// The Amplify app ID (uses config default if not specified)
+        #[arg(long)]
+        app_id: Option<String>,
+
+        /// The branch name (uses config default if not specified)
+        #[arg(long)]
+        branch: Option<String>,
+    },
+
+    /// Set an environment variable for a branch
+    SetEnv {
+        /// The Amplify app ID (uses config default if not specified)
+        #[arg(long)]
+        app_id: Option<String>,
+
+        /// The branch name (uses config default if not specified)
+        #[arg(long)]
+        branch: Option<String>,
+
+        /// Environment variable name
+        #[arg(long)]
+        name: String,
+
+        /// Environment variable value
+        #[arg(long)]
+        value: String,
+    },
+
+    /// Delete an environment variable from a branch
+    DeleteEnv {
+        /// The Amplify app ID (uses config default if not specified)
+        #[arg(long)]
+        app_id: Option<String>,
+
+        /// The branch name (uses config default if not specified)
+        #[arg(long)]
+        branch: Option<String>,
+
+        /// Environment variable name to delete
+        #[arg(long)]
+        name: String,
+    },
+
+    /// Start a new build for a branch
+    StartBuild {
+        /// The Amplify app ID (uses config default if not specified)
+        #[arg(long)]
+        app_id: Option<String>,
+
+        /// The branch name (uses config default if not specified)
+        #[arg(long)]
+        branch: Option<String>,
+    },
+
+    /// Stop a running build
+    StopBuild {
+        /// The Amplify app ID (uses config default if not specified)
+        #[arg(long)]
+        app_id: Option<String>,
+
+        /// The branch name (uses config default if not specified)
+        #[arg(long)]
+        branch: Option<String>,
+
+        /// The job ID to stop
+        #[arg(long)]
+        job_id: String,
+    },
+
     /// Initialize a config file with sample settings
     Init,
 }
@@ -225,6 +296,86 @@ async fn main() -> Result<()> {
             output(&diagnosis, format)?;
         }
 
+        Commands::EnvVars { app_id, branch } => {
+            let app_id = resolve_app_id(app_id, &config)?;
+            let branch = resolve_branch(branch, &config)?;
+            let env_vars = amplify::get_env_variables(&client, &app_id, &branch).await?;
+            output(&env_vars, format)?;
+        }
+
+        Commands::SetEnv {
+            app_id,
+            branch,
+            name,
+            value,
+        } => {
+            let app_id = resolve_app_id(app_id, &config)?;
+            let branch = resolve_branch(branch, &config)?;
+
+            // Get existing env vars and add/update the new one
+            let existing = amplify::get_env_variables(&client, &app_id, &branch).await?;
+            let mut env_map: std::collections::HashMap<String, String> = existing
+                .into_iter()
+                .map(|e| (e.name, e.value))
+                .collect();
+            env_map.insert(name.clone(), value);
+
+            amplify::update_env_variables(&client, &app_id, &branch, env_map).await?;
+
+            let result = SetEnvResult {
+                app_id,
+                branch,
+                name,
+                success: true,
+            };
+            output(&result, format)?;
+        }
+
+        Commands::DeleteEnv {
+            app_id,
+            branch,
+            name,
+        } => {
+            let app_id = resolve_app_id(app_id, &config)?;
+            let branch = resolve_branch(branch, &config)?;
+
+            // Get existing env vars and remove the specified one
+            let existing = amplify::get_env_variables(&client, &app_id, &branch).await?;
+            let env_map: std::collections::HashMap<String, String> = existing
+                .into_iter()
+                .filter(|e| e.name != name)
+                .map(|e| (e.name, e.value))
+                .collect();
+
+            amplify::update_env_variables(&client, &app_id, &branch, env_map).await?;
+
+            let result = DeleteEnvResult {
+                app_id,
+                branch,
+                name,
+                success: true,
+            };
+            output(&result, format)?;
+        }
+
+        Commands::StartBuild { app_id, branch } => {
+            let app_id = resolve_app_id(app_id, &config)?;
+            let branch = resolve_branch(branch, &config)?;
+            let result = amplify::start_job(&client, &app_id, &branch).await?;
+            output(&result, format)?;
+        }
+
+        Commands::StopBuild {
+            app_id,
+            branch,
+            job_id,
+        } => {
+            let app_id = resolve_app_id(app_id, &config)?;
+            let branch = resolve_branch(branch, &config)?;
+            let result = amplify::stop_job(&client, &app_id, &branch, &job_id).await?;
+            output(&result, format)?;
+        }
+
         Commands::Init => unreachable!(), // Handled above
     }
 
@@ -261,6 +412,24 @@ struct DiagnosisResult {
     job_id: String,
     status: String,
     issues: Vec<parser::Issue>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SetEnvResult {
+    app_id: String,
+    branch: String,
+    name: String,
+    success: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DeleteEnvResult {
+    app_id: String,
+    branch: String,
+    name: String,
+    success: bool,
 }
 
 /// Output data in the requested format
@@ -390,5 +559,65 @@ impl TextOutput for DiagnosisResult {
             }
         }
         out
+    }
+}
+
+impl TextOutput for Vec<amplify::EnvVariable> {
+    fn to_text(&self) -> String {
+        if self.is_empty() {
+            return "No environment variables found.".to_string();
+        }
+        let mut out = String::from("ENVIRONMENT VARIABLES\n");
+        out.push_str(&"─".repeat(60));
+        out.push('\n');
+        for env in self {
+            out.push_str(&format!("• {} = {}\n", env.name, mask_value(&env.value)));
+        }
+        out
+    }
+}
+
+impl TextOutput for SetEnvResult {
+    fn to_text(&self) -> String {
+        format!(
+            "✓ Set {} on {}/{}\n",
+            self.name, self.app_id, self.branch
+        )
+    }
+}
+
+impl TextOutput for DeleteEnvResult {
+    fn to_text(&self) -> String {
+        format!(
+            "✓ Deleted {} from {}/{}\n",
+            self.name, self.app_id, self.branch
+        )
+    }
+}
+
+impl TextOutput for amplify::StartJobResult {
+    fn to_text(&self) -> String {
+        format!(
+            "✓ Started build job {}\n  Status: {}\n",
+            self.job_id, self.status
+        )
+    }
+}
+
+impl TextOutput for amplify::StopJobResult {
+    fn to_text(&self) -> String {
+        format!(
+            "✓ Stopped build job {}\n  Status: {}\n",
+            self.job_id, self.status
+        )
+    }
+}
+
+/// Mask sensitive values for display
+fn mask_value(value: &str) -> String {
+    if value.len() <= 4 {
+        "****".to_string()
+    } else {
+        format!("{}****", &value[..4])
     }
 }

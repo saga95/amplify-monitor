@@ -1,0 +1,236 @@
+{
+  "Amplify Basic Build Config": {
+    "prefix": ["amplify", "amplify-basic"],
+    "description": "Basic AWS Amplify build configuration",
+    "body": [
+      "version: 1",
+      "frontend:",
+      "  phases:",
+      "    preBuild:",
+      "      commands:",
+      "        - ${1:npm ci}",
+      "    build:",
+      "      commands:",
+      "        - ${2:npm run build}",
+      "  artifacts:",
+      "    baseDirectory: ${3:build}",
+      "    files:",
+      "      - '**/*'",
+      "  cache:",
+      "    paths:",
+      "      - node_modules/**/*"
+    ]
+  },
+  "Amplify Next.js Config": {
+    "prefix": ["amplify-nextjs", "next"],
+    "description": "AWS Amplify configuration for Next.js",
+    "body": [
+      "version: 1",
+      "frontend:",
+      "  phases:",
+      "    preBuild:",
+      "      commands:",
+      "        - npm ci",
+      "    build:",
+      "      commands:",
+      "        - npm run build",
+      "  artifacts:",
+      "    baseDirectory: .next",
+      "    files:",
+      "      - '**/*'",
+      "  cache:",
+      "    paths:",
+      "      - node_modules/**/*",
+      "      - .next/cache/**/*"
+    ]
+  },
+  "Amplify React/Vite Config": {
+    "prefix": ["amplify-vite", "vite"],
+    "description": "AWS Amplify configuration for Vite/React projects",
+    "body": [
+      "version: 1",
+      "frontend:",
+      "  phases:",
+      "    preBuild:",
+      "      commands:",
+      "        - npm ci",
+      "    build:",
+      "      commands:",
+      "        - npm run build",
+      "  artifacts:",
+      "    baseDirectory: dist",
+      "    files:",
+      "      - '**/*'",
+      "  cache:",
+      "    paths:",
+      "      - node_modules/**/*"
+    ]
+  },
+  "Amplify pnpm Config": {
+    "prefix": ["amplify-pnpm", "pnpm"],
+    "description": "AWS Amplify configuration using pnpm",
+    "body": [
+      "version: 1",
+      "frontend:",
+      "  phases:",
+      "    preBuild:",
+      "      commands:",
+      "        - corepack enable",
+      "        - corepack prepare pnpm@latest --activate",
+      "        - pnpm install --frozen-lockfile",
+      "    build:",
+      "      commands:",
+      "        - pnpm run build",
+      "  artifacts:",
+      "    baseDirectory: ${1:dist}",
+      "    files:",
+      "      - '**/*'",
+      "  cache:",
+      "    paths:",
+      "      - node_modules/**/*",
+      "      - .pnpm-store/**/*"
+    ]
+  },
+  "Amplify Monorepo Config": {
+    "prefix": ["amplify-monorepo", "monorepo"],
+    "description": "AWS Amplify configuration for monorepo projects",
+    "body": [
+      "version: 1",
+      "applications:",
+      "  - appRoot: ${1:packages/web}",
+      "    frontend:",
+      "      phases:",
+      "        preBuild:",
+      "          commands:",
+      "            - npm ci",
+      "        build:",
+      "          commands:",
+      "            - npm run build",
+      "      artifacts:",
+      "        baseDirectory: ${2:dist}",
+      "        files:",
+      "          - '**/*'",
+      "      cache:",
+      "        paths:",
+      "          - node_modules/**/*"
+    ]
+  },
+  "Amplify with Backend (Gen 1)": {
+    "prefix": ["amplify-backend", "amplify-gen1"],
+    "description": "AWS Amplify Gen 1 configuration with backend",
+    "body": [
+      "version: 1",
+      "backend:",
+      "  phases:",
+      "    build:",
+      "      commands:",
+      "        - '# Execute Amplify CLI with the helper script'",
+      "        - amplifyPush --simple",
+      "frontend:",
+      "  phases:",
+      "    preBuild:",
+      "      commands:",
+      "        - npm ci",
+      "    build:",
+      "      commands:",
+      "        - npm run build",
+      "  artifacts:",
+      "    baseDirectory: ${1:build}",
+      "    files:",
+      "      - '**/*'",
+      "  cache:",
+      "    paths:",
+      "      - node_modules/**/*"
+    ]
+  },
+  "Amplify with Tests": {
+    "prefix": ["amplify-test", "amplify-with-tests"],
+    "description": "AWS Amplify configuration with test phase",
+    "body": [
+      "version: 1",
+      "frontend:",
+      "  phases:",
+      "    preBuild:",
+      "      commands:",
+      "        - npm ci",
+      "    build:",
+      "      commands:",
+      "        - npm run build",
+      "  artifacts:",
+      "    baseDirectory: ${1:build}",
+      "    files:",
+      "      - '**/*'",
+      "  cache:",
+      "    paths:",
+      "      - node_modules/**/*",
+      "test:",
+      "  phases:",
+      "    preTest:",
+      "      commands:",
+      "        - npm ci",
+      "    test:",
+      "      commands:",
+      "        - npm run test -- --coverage",
+      "  artifacts:",
+      "    baseDirectory: coverage",
+      "    files:",
+      "      - '**/*'"
+    ]
+  },
+  "Amplify Environment Variables": {
+    "prefix": ["amplify-env", "env"],
+    "description": "Environment variables section for amplify.yml",
+    "body": [
+      "env:",
+      "  variables:",
+      "    ${1:NODE_ENV}: ${2:production}",
+      "    ${3:NEXT_PUBLIC_API_URL}: ${4:https://api.example.com}"
+    ]
+  },
+  "Amplify Cache Config": {
+    "prefix": ["amplify-cache", "cache"],
+    "description": "Cache configuration for amplify.yml",
+    "body": [
+      "cache:",
+      "  paths:",
+      "    - node_modules/**/*",
+      "    - ${1:.next/cache/**/*}"
+    ]
+  },
+  "Amplify preBuild Phase": {
+    "prefix": ["prebuild", "pre-build"],
+    "description": "preBuild phase commands",
+    "body": [
+      "preBuild:",
+      "  commands:",
+      "    - ${1:npm ci}"
+    ]
+  },
+  "Amplify Build Phase": {
+    "prefix": ["build-phase"],
+    "description": "build phase commands",
+    "body": [
+      "build:",
+      "  commands:",
+      "    - ${1:npm run build}"
+    ]
+  },
+  "Amplify Artifacts": {
+    "prefix": ["artifacts"],
+    "description": "Artifacts configuration",
+    "body": [
+      "artifacts:",
+      "  baseDirectory: ${1:build}",
+      "  files:",
+      "    - '**/*'"
+    ]
+  },
+  "Node.js Version": {
+    "prefix": ["node-version", "nvm"],
+    "description": "Set Node.js version in preBuild",
+    "body": [
+      "- nvm install ${1:18}",
+      "- nvm use ${1:18}"
+    ]
+  }
+}

@@ -44,6 +44,35 @@ const LatestFailedSchema = BaseSchema.extend({
     branch: z.string().min(1, 'branch is required'),
 });
 
+const EnvVarsSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+});
+
+const SetEnvVarSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+    name: z.string().min(1, 'name is required'),
+    value: z.string().min(1, 'value is required'),
+});
+
+const DeleteEnvVarSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+    name: z.string().min(1, 'name is required'),
+});
+
+const StartBuildSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+});
+
+const StopBuildSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+    jobId: z.string().min(1, 'jobId is required'),
+});
+
 // ============================================================================
 // Tool Definitions
 // ============================================================================
@@ -171,6 +200,152 @@ const tools: Tool[] = [
             },
             required: ['appId', 'branch']
         }
+    },
+    {
+        name: 'amplify_get_env_vars',
+        description: 'Get all environment variables for an Amplify branch. Returns variable names and values.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                appId: {
+                    type: 'string',
+                    description: 'The Amplify application ID'
+                },
+                branch: {
+                    type: 'string',
+                    description: 'The branch name'
+                },
+                region: {
+                    type: 'string',
+                    description: 'AWS region where the app is located (optional)'
+                },
+                profile: {
+                    type: 'string',
+                    description: 'AWS profile name for cross-account access (optional)'
+                }
+            },
+            required: ['appId', 'branch']
+        }
+    },
+    {
+        name: 'amplify_set_env_var',
+        description: 'Set or update an environment variable for an Amplify branch.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                appId: {
+                    type: 'string',
+                    description: 'The Amplify application ID'
+                },
+                branch: {
+                    type: 'string',
+                    description: 'The branch name'
+                },
+                name: {
+                    type: 'string',
+                    description: 'The environment variable name'
+                },
+                value: {
+                    type: 'string',
+                    description: 'The environment variable value'
+                },
+                region: {
+                    type: 'string',
+                    description: 'AWS region where the app is located (optional)'
+                },
+                profile: {
+                    type: 'string',
+                    description: 'AWS profile name for cross-account access (optional)'
+                }
+            },
+            required: ['appId', 'branch', 'name', 'value']
+        }
+    },
+    {
+        name: 'amplify_delete_env_var',
+        description: 'Delete an environment variable from an Amplify branch.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                appId: {
+                    type: 'string',
+                    description: 'The Amplify application ID'
+                },
+                branch: {
+                    type: 'string',
+                    description: 'The branch name'
+                },
+                name: {
+                    type: 'string',
+                    description: 'The environment variable name to delete'
+                },
+                region: {
+                    type: 'string',
+                    description: 'AWS region where the app is located (optional)'
+                },
+                profile: {
+                    type: 'string',
+                    description: 'AWS profile name for cross-account access (optional)'
+                }
+            },
+            required: ['appId', 'branch', 'name']
+        }
+    },
+    {
+        name: 'amplify_start_build',
+        description: 'Start a new build/deploy job for an Amplify branch.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                appId: {
+                    type: 'string',
+                    description: 'The Amplify application ID'
+                },
+                branch: {
+                    type: 'string',
+                    description: 'The branch name'
+                },
+                region: {
+                    type: 'string',
+                    description: 'AWS region where the app is located (optional)'
+                },
+                profile: {
+                    type: 'string',
+                    description: 'AWS profile name for cross-account access (optional)'
+                }
+            },
+            required: ['appId', 'branch']
+        }
+    },
+    {
+        name: 'amplify_stop_build',
+        description: 'Stop a running build/deploy job for an Amplify branch.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                appId: {
+                    type: 'string',
+                    description: 'The Amplify application ID'
+                },
+                branch: {
+                    type: 'string',
+                    description: 'The branch name'
+                },
+                jobId: {
+                    type: 'string',
+                    description: 'The job ID to stop'
+                },
+                region: {
+                    type: 'string',
+                    description: 'AWS region where the app is located (optional)'
+                },
+                profile: {
+                    type: 'string',
+                    description: 'AWS profile name for cross-account access (optional)'
+                }
+            },
+            required: ['appId', 'branch', 'jobId']
+        }
     }
 ];
 
@@ -291,6 +466,93 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: 'text',
                             text: `❌ Latest failed job:\n${JSON.stringify(job, null, 2)}`
+                        }
+                    ]
+                };
+            }
+
+            case 'amplify_get_env_vars': {
+                const validated = EnvVarsSchema.parse(args);
+                const envVars = await cli.getEnvVariables(validated.appId, validated.branch, validated.region, validated.profile);
+                
+                if (envVars.length === 0) {
+                    return {
+                        content: [
+                            {
+                                type: 'text',
+                                text: `No environment variables found for ${validated.appId} / ${validated.branch}`
+                            }
+                        ]
+                    };
+                }
+                
+                let output = `## Environment Variables for ${validated.appId} / ${validated.branch}\n\n`;
+                envVars.forEach(v => {
+                    const masked = v.value.length > 4 ? v.value.substring(0, 4) + '****' : '****';
+                    output += `- **${v.name}**: ${masked}\n`;
+                });
+                
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: output
+                        }
+                    ]
+                };
+            }
+
+            case 'amplify_set_env_var': {
+                const validated = SetEnvVarSchema.parse(args);
+                await cli.setEnvVariable(validated.appId, validated.branch, validated.name, validated.value, validated.region, validated.profile);
+                
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `✅ Environment variable "${validated.name}" has been set for ${validated.appId} / ${validated.branch}`
+                        }
+                    ]
+                };
+            }
+
+            case 'amplify_delete_env_var': {
+                const validated = DeleteEnvVarSchema.parse(args);
+                await cli.deleteEnvVariable(validated.appId, validated.branch, validated.name, validated.region, validated.profile);
+                
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `✅ Environment variable "${validated.name}" has been deleted from ${validated.appId} / ${validated.branch}`
+                        }
+                    ]
+                };
+            }
+
+            case 'amplify_start_build': {
+                const validated = StartBuildSchema.parse(args);
+                const result = await cli.startBuild(validated.appId, validated.branch, validated.region, validated.profile);
+                
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `🚀 Build started!\n\n**Job ID:** ${result.jobId}\n**Status:** ${result.status}`
+                        }
+                    ]
+                };
+            }
+
+            case 'amplify_stop_build': {
+                const validated = StopBuildSchema.parse(args);
+                const result = await cli.stopBuild(validated.appId, validated.branch, validated.jobId, validated.region, validated.profile);
+                
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: `🛑 Build stopped!\n\n**Job ID:** ${result.jobId}\n**Status:** ${result.status}`
                         }
                     ]
                 };

@@ -24,6 +24,21 @@ export interface AmplifyJob {
     endTime?: string;
 }
 
+export interface EnvVariable {
+    name: string;
+    value: string;
+}
+
+export interface StartJobResult {
+    jobId: string;
+    status: string;
+}
+
+export interface StopJobResult {
+    jobId: string;
+    status: string;
+}
+
 export interface DiagnosisIssue {
     pattern: string;
     rootCause: string;
@@ -112,5 +127,25 @@ export class AmplifyMonitorCli {
         } catch {
             return null;
         }
+    }
+
+    async getEnvVariables(appId: string, branch: string, region?: string, profile?: string): Promise<EnvVariable[]> {
+        return this.runCommand<EnvVariable[]>(['env-vars', '--app-id', appId, '--branch', branch], region, profile);
+    }
+
+    async setEnvVariable(appId: string, branch: string, name: string, value: string, region?: string, profile?: string): Promise<void> {
+        await this.runCommand<{ success: boolean }>(['set-env', '--app-id', appId, '--branch', branch, '--name', name, '--value', value], region, profile);
+    }
+
+    async deleteEnvVariable(appId: string, branch: string, name: string, region?: string, profile?: string): Promise<void> {
+        await this.runCommand<{ success: boolean }>(['delete-env', '--app-id', appId, '--branch', branch, '--name', name], region, profile);
+    }
+
+    async startBuild(appId: string, branch: string, region?: string, profile?: string): Promise<StartJobResult> {
+        return this.runCommand<StartJobResult>(['start-build', '--app-id', appId, '--branch', branch], region, profile);
+    }
+
+    async stopBuild(appId: string, branch: string, jobId: string, region?: string, profile?: string): Promise<StopJobResult> {
+        return this.runCommand<StopJobResult>(['stop-build', '--app-id', appId, '--branch', branch, '--job-id', jobId], region, profile);
     }
 }

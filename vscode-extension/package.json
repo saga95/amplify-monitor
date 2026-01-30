@@ -2,7 +2,7 @@
   "name": "amplify-monitor",
   "displayName": "Amplify Monitor",
   "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "publisher": "SagaraHarasgama",
   "author": {
     "name": "saga95"
@@ -39,7 +39,9 @@
     "diagnostics",
     "debugging",
     "cloud",
-    "serverless"
+    "serverless",
+    "environment variables",
+    "amplify.yml"
   ],
   "badges": [
     {
@@ -53,9 +55,28 @@
       "description": "License"
     }
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:yaml",
+    "workspaceContains:**/amplify.yml"
+  ],
   "main": "./out/extension.js",
   "contributes": {
+    "snippets": [
+      {
+        "language": "yaml",
+        "path": "./snippets/amplify.json"
+      }
+    ],
+    "yamlValidation": [
+      {
+        "fileMatch": "amplify.yml",
+        "url": "./schemas/amplify-buildspec.schema.json"
+      },
+      {
+        "fileMatch": "amplify.yaml",
+        "url": "./schemas/amplify-buildspec.schema.json"
+      }
+    ],
     "commands": [
       {
         "command": "amplify-monitor.listApps",
@@ -102,6 +123,54 @@
         "title": "Copy Issue Details",
         "category": "Amplify Monitor",
         "icon": "$(copy)"
+      },
+      {
+        "command": "amplify-monitor.refreshEnvVars",
+        "title": "Refresh Environment Variables",
+        "category": "Amplify Monitor",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "amplify-monitor.addEnvVar",
+        "title": "Add Environment Variable",
+        "category": "Amplify Monitor",
+        "icon": "$(add)"
+      },
+      {
+        "command": "amplify-monitor.editEnvVar",
+        "title": "Edit Environment Variable",
+        "category": "Amplify Monitor",
+        "icon": "$(edit)"
+      },
+      {
+        "command": "amplify-monitor.deleteEnvVar",
+        "title": "Delete Environment Variable",
+        "category": "Amplify Monitor",
+        "icon": "$(trash)"
+      },
+      {
+        "command": "amplify-monitor.revealEnvVar",
+        "title": "Reveal Value",
+        "category": "Amplify Monitor",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "amplify-monitor.startBuild",
+        "title": "Start Build",
+        "category": "Amplify Monitor",
+        "icon": "$(play)"
+      },
+      {
+        "command": "amplify-monitor.stopBuild",
+        "title": "Stop Build",
+        "category": "Amplify Monitor",
+        "icon": "$(debug-stop)"
+      },
+      {
+        "command": "amplify-monitor.openInConsole",
+        "title": "Open in AWS Console",
+        "category": "Amplify Monitor",
+        "icon": "$(link-external)"
       }
     ],
     "viewsContainers": {
@@ -120,6 +189,12 @@
           "name": "Apps",
           "icon": "$(cloud)",
           "contextualTitle": "Amplify Apps"
+        },
+        {
+          "id": "amplifyEnvVars",
+          "name": "Environment Variables",
+          "icon": "$(key)",
+          "contextualTitle": "Environment Variables"
         },
         {
           "id": "amplifyJobs",
@@ -147,6 +222,10 @@
       {
         "view": "amplifyDiagnosis",
         "contents": "Run diagnosis on a failed build to see issues.\n\n[Diagnose Latest Failure](command:amplify-monitor.diagnose)"
+      },
+      {
+        "view": "amplifyEnvVars",
+        "contents": "Select an app and branch to view environment variables.\n\n[Select App](command:amplify-monitor.selectApp)"
       }
     ],
     "menus": {
@@ -165,12 +244,52 @@
           "command": "amplify-monitor.diagnose",
           "when": "view == amplifyDiagnosis",
           "group": "navigation"
+        },
+        {
+          "command": "amplify-monitor.refreshEnvVars",
+          "when": "view == amplifyEnvVars",
+          "group": "navigation"
+        },
+        {
+          "command": "amplify-monitor.addEnvVar",
+          "when": "view == amplifyEnvVars",
+          "group": "navigation"
+        },
+        {
+          "command": "amplify-monitor.startBuild",
+          "when": "view == amplifyJobs",
+          "group": "navigation@1"
+        },
+        {
+          "command": "amplify-monitor.openInConsole",
+          "when": "view == amplifyApps",
+          "group": "navigation"
         }
       ],
       "view/item/context": [
         {
           "command": "amplify-monitor.copyIssue",
           "when": "viewItem == diagnosis-issue",
+          "group": "inline"
+        },
+        {
+          "command": "amplify-monitor.revealEnvVar",
+          "when": "viewItem == env-var",
+          "group": "inline@1"
+        },
+        {
+          "command": "amplify-monitor.editEnvVar",
+          "when": "viewItem == env-var",
+          "group": "inline@2"
+        },
+        {
+          "command": "amplify-monitor.deleteEnvVar",
+          "when": "viewItem == env-var",
+          "group": "inline@3"
+        },
+        {
+          "command": "amplify-monitor.stopBuild",
+          "when": "viewItem == job-running",
           "group": "inline"
         }
       ]

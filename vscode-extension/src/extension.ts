@@ -3,6 +3,7 @@ import { AmplifyMonitorCli } from './cli';
 import { AppsTreeProvider } from './views/appsTree';
 import { JobsTreeProvider } from './views/jobsTree';
 import { DiagnosisTreeProvider } from './views/diagnosisTree';
+import { EnvVarsTreeProvider } from './views/envVarsTree';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -16,6 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     const appsProvider = new AppsTreeProvider(cli);
     const jobsProvider = new JobsTreeProvider(cli);
     const diagnosisProvider = new DiagnosisTreeProvider(cli);
+    const envVarsProvider = new EnvVarsTreeProvider(cli);
 
     // Register tree views
     const appsView = vscode.window.createTreeView('amplifyApps', {
@@ -30,6 +32,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     const diagnosisView = vscode.window.createTreeView('amplifyDiagnosis', {
         treeDataProvider: diagnosisProvider,
+        showCollapseAll: true
+    });
+
+    const envVarsView = vscode.window.createTreeView('amplifyEnvVars', {
+        treeDataProvider: envVarsProvider,
         showCollapseAll: true
     });
 
@@ -69,20 +76,21 @@ export function activate(context: vscode.ExtensionContext) {
                 console.warn(`Failed to auto-select branch for ${appId}:`, error);
             }
             
-            await jobsProvider.refresh();
+            await Promise.all([jobsProvider.refresh(), envVarsProvider.refresh()]);
             const regionInfo = region ? ` (${region})` : '';
             vscode.window.showInformationMessage(`Selected app: ${appId}${regionInfo}`);
         }),
 
         vscode.commands.registerCommand('amplify-monitor.selectBranch', async (branch: string) => {
             cli.setSelectedBranch(branch);
-            await jobsProvider.refresh();
+            await Promise.all([jobsProvider.refresh(), envVarsProvider.refresh()]);
         }),
 
         vscode.commands.registerCommand('amplify-monitor.refresh', async () => {
             await Promise.all([
                 appsProvider.refresh(),
-                jobsProvider.refresh()
+                jobsProvider.refresh(),
+                envVarsProvider.refresh()
             ]);
         }),
 
@@ -128,9 +136,167 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }),
 
+        // Environment Variables commands
+        vscode.commands.registerCommand('amplify-monitor.refreshEnvVars', async () => {
+            envVarsProvider.refresh();
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.addEnvVar', async () => {
+            const appId = cli.getSelectedApp();
+            const branch = cli.getSelectedBranch();
+            const region = cli.getSelectedRegion();
+
+            if (!appId || !branch) {
+                vscode.window.showWarningMessage('Please select an app and branch first');
+                return;
+            }
+
+            const name = await vscode.window.showInputBox({
+                prompt: 'Environment variable name',
+                placeHolder: 'e.g., API_KEY'
+            });
+            if (!name) { return; }
+
+            const value = await vscode.window.showInputBox({
+                prompt: `Value for ${name}`,
+                password: true
+            });
+            if (value === undefined) { return; }
+
+            try {
+                await cli.setEnvVariable(appId, branch, name, value, region);
+                envVarsProvider.refresh();
+                vscode.window.showInformationMessage(`Added ${name} to ${branch}`);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to add env var: ${error}`);
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.editEnvVar', async (item: { envVar?: { name: string; value: string } }) => {
+            const appId = cli.getSelectedApp();
+            const branch = cli.getSelectedBranch();
+            const region = cli.getSelectedRegion();
+
+            if (!appId || !branch || !item?.envVar) { return; }
+
+            const value = await vscode.window.showInputBox({
+                prompt: `New value for ${item.envVar.name}`,
+                password: true
+            });
+            if (value === undefined) { return; }
+
+            try {
+                await cli.setEnvVariable(appId, branch, item.envVar.name, value, region);
+                envVarsProvider.refresh();
+                vscode.window.showInformationMessage(`Updated ${item.envVar.name}`);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to update env var: ${error}`);
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.deleteEnvVar', async (item: { envVar?: { name: string } }) => {
+            const appId = cli.getSelectedApp();
+            const branch = cli.getSelectedBranch();
+            const region = cli.getSelectedRegion();
+
+            if (!appId || !branch || !item?.envVar) { return; }
+
+            const confirm = await vscode.window.showWarningMessage(
+                `Delete ${item.envVar.name}?`,
+                { modal: true },
+                'Delete'
+            );
+
+            if (confirm === 'Delete') {
+                try {
+                    await cli.deleteEnvVariable(appId, branch, item.envVar.name, region);
+                    envVarsProvider.refresh();
+                    vscode.window.showInformationMessage(`Deleted ${item.envVar.name}`);
+                } catch (error) {
+                    vscode.window.showErrorMessage(`Failed to delete env var: ${error}`);
+                }
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.revealEnvVar', async (item: { envVar?: { name: string; value: string } }) => {
+            if (item?.envVar) {
+                const action = await vscode.window.showInformationMessage(
+                    `${item.envVar.name}`,
+                    { modal: true, detail: item.envVar.value },
+                    'Copy Value'
+                );
+                if (action === 'Copy Value') {
+                    await vscode.env.clipboard.writeText(item.envVar.value);
+                    vscode.window.showInformationMessage('Value copied to clipboard');
+                }
+            }
+        }),
+
+        // Build actions commands
+        vscode.commands.registerCommand('amplify-monitor.startBuild', async () => {
+            const appId = cli.getSelectedApp();
+            const branch = cli.getSelectedBranch();
+            const region = cli.getSelectedRegion();
+
+            if (!appId || !branch) {
+                vscode.window.showWarningMessage('Please select an app and branch first');
+                return;
+            }
+
+            try {
+                const result = await cli.startBuild(appId, branch, region);
+                jobsProvider.refresh();
+                vscode.window.showInformationMessage(`Build started: Job ${result.jobId}`);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to start build: ${error}`);
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.stopBuild', async (jobId?: string) => {
+            const appId = cli.getSelectedApp();
+            const branch = cli.getSelectedBranch();
+            const region = cli.getSelectedRegion();
+
+            if (!appId || !branch) {
+                vscode.window.showWarningMessage('Please select an app and branch first');
+                return;
+            }
+
+            if (!jobId) {
+                jobId = await vscode.window.showInputBox({
+                    prompt: 'Enter job ID to stop',
+                    placeHolder: 'e.g., 1'
+                });
+            }
+
+            if (!jobId) { return; }
+
+            try {
+                await cli.stopBuild(appId, branch, jobId, region);
+                jobsProvider.refresh();
+                vscode.window.showInformationMessage(`Build stopped: Job ${jobId}`);
+            } catch (error) {
+                vscode.window.showErrorMessage(`Failed to stop build: ${error}`);
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.openInConsole', async () => {
+            const appId = cli.getSelectedApp();
+            const region = cli.getSelectedRegion() || 'us-east-1';
+
+            if (!appId) {
+                vscode.window.showWarningMessage('Please select an app first');
+                return;
+            }
+
+            const url = `https://${region}.console.aws.amazon.com/amplify/home?region=${region}#/${appId}`;
+            vscode.env.openExternal(vscode.Uri.parse(url));
+        }),
+
         appsView,
         jobsView,
-        diagnosisView
+        diagnosisView,
+        envVarsView
     );
 
     // Setup auto-refresh if enabled

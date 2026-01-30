@@ -1,11 +1,13 @@
 //! AWS Amplify API interactions
 //!
-//! Provides functions to list apps, branches, jobs, and retrieve job details.
+//! Provides functions to list apps, branches, jobs, environment variables,
+//! and perform actions like starting/stopping builds.
 
 use anyhow::{anyhow, Context, Result};
 use aws_config::BehaviorVersion;
 use aws_sdk_amplify::Client;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 /// Summary of an Amplify app
 #[derive(Debug, Serialize)]
@@ -35,6 +37,30 @@ pub struct JobSummary {
     pub status: String,
     pub start_time: Option<String>,
     pub end_time: Option<String>,
+}
+
+/// Environment variable for a branch
+#[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct EnvVariable {
+    pub name: String,
+    pub value: String,
+}
+
+/// Result of starting a job
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StartJobResult {
+    pub job_id: String,
+    pub status: String,
+}
+
+/// Result of stopping a job
+#[derive(Debug, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct StopJobResult {
+    pub job_id: String,
+    pub status: String,
 }
 
 /// Create an AWS Amplify client using environment credentials
@@ -219,4 +245,106 @@ pub async fn get_all_log_urls(
     }
 
     Ok(urls)
+}
+
+/// Get environment variables for a branch
+pub async fn get_env_variables(
+    client: &Client,
+    app_id: &str,
+    branch_name: &str,
+) -> Result<Vec<EnvVariable>> {
+    let response = client
+        .get_branch()
+        .app_id(app_id)
+        .branch_name(branch_name)
+        .send()
+        .await
+        .with_context(|| format!("Failed to get branch {} for app {}", branch_name, app_id))?;
+
+    let branch = response.branch.ok_or_else(|| anyhow!("Branch not found"))?;
+
+    let env_vars: Vec<EnvVariable> = branch
+        .environment_variables
+        .into_iter()
+        .map(|(name, value)| EnvVariable { name, value })
+        .collect();
+
+    Ok(env_vars)
+}
+
+/// Update environment variables for a branch
+pub async fn update_env_variables(
+    client: &Client,
+    app_id: &str,
+    branch_name: &str,
+    env_vars: HashMap<String, String>,
+) -> Result<()> {
+    client
+        .update_branch()
+        .app_id(app_id)
+        .branch_name(branch_name)
+        .set_environment_variables(Some(env_vars))
+        .send()
+        .await
+        .with_context(|| {
+            format!(
+                "Failed to update environment variables for {}/{}",
+                app_id, branch_name
+            )
+        })?;
+
+    Ok(())
+}
+
+/// Start a new build job for a branch
+pub async fn start_job(
+    client: &Client,
+    app_id: &str,
+    branch_name: &str,
+) -> Result<StartJobResult> {
+    use aws_sdk_amplify::types::JobType;
+
+    let response = client
+        .start_job()
+        .app_id(app_id)
+        .branch_name(branch_name)
+        .job_type(JobType::Release)
+        .send()
+        .await
+        .with_context(|| format!("Failed to start job for {}/{}", app_id, branch_name))?;
+
+    let summary = response
+        .job_summary
+        .ok_or_else(|| anyhow!("Job summary not found in response"))?;
+
+    Ok(StartJobResult {
+        job_id: summary.job_id,
+        status: summary.status.as_str().to_string(),
+    })
+}
+
+/// Stop a running job
+pub async fn stop_job(
+    client: &Client,
+    app_id: &str,
+    branch_name: &str,
+    job_id: &str,
+) -> Result<StopJobResult> {
+    let response = client
+        .stop_job()
+        .app_id(app_id)
+        .branch_name(branch_name)
+        .job_id(job_id)
+        .send()
+        .await
+        .with_context(|| format!("Failed to stop job {} for {}/{}", job_id, app_id, branch_name))?;
+
+    let summary = response
+        .job_summary
+        .ok_or_else(|| anyhow!("Job summary not found in response"))?;
+
+    Ok(StopJobResult {
+        job_id: summary.job_id,
+        status: summary.status.as_str().to_string(),
+    })
 }

@@ -44,7 +44,30 @@ Perfect for consultants and developers working on client projects:
 
 ![Profile Switch](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/profile-switch.png)
 
-### 💡 **Actionable Fixes**
+### � **Environment Variables Manager**
+Manage branch environment variables without leaving VS Code:
+- View all environment variables (securely masked)
+- Add, edit, and delete variables with one click
+- Reveal values with copy-to-clipboard support
+- Changes apply immediately to your Amplify branch
+
+### ⚡ **Quick Actions**
+Take control of your deployments:
+- **Start Build** - Trigger a new deployment instantly
+- **Stop Build** - Cancel a running deployment
+- **Open in Console** - Jump to AWS Console with one click
+
+### 📝 **amplify.yml IntelliSense**
+Write build configurations faster:
+- JSON schema validation with error highlighting
+- 14+ code snippets for common frameworks:
+  - Next.js, Vite, React
+  - pnpm, yarn, npm
+  - Monorepo configurations
+  - Build with tests
+- Auto-completion for all amplify.yml properties
+
+### �💡 **Actionable Fixes**
 Each detected issue comes with:
 - Clear root cause explanation
 - Step-by-step suggested fixes
@@ -125,6 +148,13 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 | **Switch AWS Profile** | Change AWS profile for cross-account access |
 | **Select App** | Choose an app to monitor |
 | **Select Branch** | Choose a branch to monitor |
+| **Start Build** | Trigger a new deployment for selected branch |
+| **Stop Build** | Cancel a running deployment |
+| **Add Environment Variable** | Add new env var to selected branch |
+| **Edit Environment Variable** | Update an existing env var |
+| **Delete Environment Variable** | Remove an env var (with confirmation) |
+| **Reveal Value** | Show masked env var value |
+| **Open in AWS Console** | Open app in browser |
 | **Refresh** | Refresh all panels |
 | **Open Settings** | Open extension settings |
 
@@ -133,7 +163,7 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 ## 🔒 Security
 
 - **No credentials stored** - Uses AWS CLI/environment configuration
-- **Read-only access** - Never modifies your Amplify resources
+- **Secure value masking** - Environment variables hidden by default
 - **Open source** - Full code available on [GitHub](https://github.com/saga95/amplify-monitor)
 
 ---
