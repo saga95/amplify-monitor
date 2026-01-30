@@ -2,7 +2,7 @@
   "name": "amplify-monitor",
   "displayName": "Amplify Monitor",
   "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
-  "version": "0.1.6",
+  "version": "0.1.7",
   "publisher": "SagaraHarasgama",
   "author": {
     "name": "saga95"
@@ -171,6 +171,24 @@
         "title": "Open in AWS Console",
         "category": "Amplify Monitor",
         "icon": "$(link-external)"
+      },
+      {
+        "command": "amplify-monitor.analyzeMigration",
+        "title": "Analyze Gen1 → Gen2 Migration",
+        "category": "Amplify Monitor",
+        "icon": "$(rocket)"
+      },
+      {
+        "command": "amplify-monitor.refreshMigration",
+        "title": "Refresh Migration Analysis",
+        "category": "Amplify Monitor",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "amplify-monitor.openMigrationDocs",
+        "title": "Open Migration Documentation",
+        "category": "Amplify Monitor",
+        "icon": "$(book)"
       }
     ],
     "viewsContainers": {
@@ -207,6 +225,12 @@
           "name": "Diagnosis",
           "icon": "$(lightbulb)",
           "contextualTitle": "Build Diagnosis"
+        },
+        {
+          "id": "amplifyMigration",
+          "name": "Gen2 Migration",
+          "icon": "$(rocket)",
+          "contextualTitle": "Gen2 Migration Analysis"
         }
       ]
     },
@@ -226,6 +250,10 @@
       {
         "view": "amplifyEnvVars",
         "contents": "Select an app and branch to view environment variables.\n\n[Select App](command:amplify-monitor.selectApp)"
+      },
+      {
+        "view": "amplifyMigration",
+        "contents": "Analyze your Amplify Gen1 project for migration readiness.\n\n[Analyze Migration](command:amplify-monitor.analyzeMigration)\n\n---\n\n**Learn more:**\n[Migration Documentation](command:amplify-monitor.openMigrationDocs)"
       }
     ],
     "menus": {
@@ -264,6 +292,16 @@
           "command": "amplify-monitor.openInConsole",
           "when": "view == amplifyApps",
           "group": "navigation"
+        },
+        {
+          "command": "amplify-monitor.analyzeMigration",
+          "when": "view == amplifyMigration",
+          "group": "navigation@1"
+        },
+        {
+          "command": "amplify-monitor.openMigrationDocs",
+          "when": "view == amplifyMigration",
+          "group": "navigation@2"
         }
       ],
       "view/item/context": [

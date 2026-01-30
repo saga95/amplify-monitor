@@ -54,6 +54,40 @@ export interface StopJobResult {
     status: string;
 }
 
+export interface MigrationFeature {
+    category: string;
+    feature: string;
+    filePath?: string;
+    lineNumber?: number;
+    compatibility: MigrationCompatibility;
+    migrationHint: string;
+}
+
+export type MigrationCompatibility = 
+    | { type: 'Supported' }
+    | { type: 'SupportedWithCdk' }
+    | { type: 'NotSupported'; alternative: string }
+    | { type: 'ManualMigration'; reason: string };
+
+export interface MigrationSummary {
+    totalFeatures: number;
+    fullySupported: number;
+    supportedWithCdk: number;
+    notSupported: number;
+    manualMigration: number;
+}
+
+export interface MigrationAnalysis {
+    generation: 'Gen1' | 'Gen2' | 'Unknown';
+    projectPath: string;
+    categoriesDetected: string[];
+    features: MigrationFeature[];
+    readyForMigration: boolean;
+    blockingIssues: string[];
+    warnings: string[];
+    summary: MigrationSummary;
+}
+
 export class AmplifyMonitorCli {
     private selectedApp: string | undefined;
     private selectedBranch: string | undefined;
@@ -185,5 +219,9 @@ export class AmplifyMonitorCli {
 
     async stopBuild(appId: string, branch: string, jobId: string, region?: string): Promise<StopJobResult> {
         return this.runCommand<StopJobResult>(['stop-build', '--app-id', appId, '--branch', branch, '--job-id', jobId], region);
+    }
+
+    async analyzeMigration(projectPath: string): Promise<MigrationAnalysis> {
+        return this.runCommand<MigrationAnalysis>(['migration-analysis', '--path', projectPath]);
     }
 }

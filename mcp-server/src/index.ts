@@ -73,6 +73,10 @@ const StopBuildSchema = BaseSchema.extend({
     jobId: z.string().min(1, 'jobId is required'),
 });
 
+const MigrationAnalysisSchema = z.object({
+    projectPath: z.string().min(1, 'projectPath is required'),
+});
+
 // ============================================================================
 // Tool Definitions
 // ============================================================================
@@ -346,6 +350,20 @@ const tools: Tool[] = [
             },
             required: ['appId', 'branch', 'jobId']
         }
+    },
+    {
+        name: 'amplify_migration_analysis',
+        description: 'Analyze an Amplify Gen1 project for migration readiness to Gen2. Returns detailed information about feature compatibility, blocking issues, and migration hints.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                projectPath: {
+                    type: 'string',
+                    description: 'The absolute path to the project directory containing the amplify/ folder'
+                }
+            },
+            required: ['projectPath']
+        }
     }
 ];
 
@@ -553,6 +571,65 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                         {
                             type: 'text',
                             text: `🛑 Build stopped!\n\n**Job ID:** ${result.jobId}\n**Status:** ${result.status}`
+                        }
+                    ]
+                };
+            }
+
+            case 'amplify_migration_analysis': {
+                const validated = MigrationAnalysisSchema.parse(args);
+                const analysis = await cli.analyzeMigration(validated.projectPath);
+                
+                let output = `## Amplify Gen1 → Gen2 Migration Analysis\n\n`;
+                output += `**Project:** ${analysis.projectPath}\n`;
+                output += `**Generation:** ${analysis.generation}\n\n`;
+                
+                if (analysis.generation === 'Gen2') {
+                    output += '✅ This project is already using Amplify Gen2!\n';
+                } else if (analysis.generation === 'Unknown') {
+                    output += '⚠️ Could not detect an Amplify project in this directory.\n';
+                } else {
+                    // Gen1 project
+                    output += `### Summary\n\n`;
+                    output += `| Metric | Count |\n|--------|-------|\n`;
+                    output += `| Total Features | ${analysis.summary.totalFeatures} |\n`;
+                    output += `| ✅ Fully Supported | ${analysis.summary.fullySupported} |\n`;
+                    output += `| 🔧 Supported with CDK | ${analysis.summary.supportedWithCdk} |\n`;
+                    output += `| ❌ Not Supported | ${analysis.summary.notSupported} |\n`;
+                    output += `| ⚠️ Manual Migration | ${analysis.summary.manualMigration} |\n\n`;
+                    
+                    if (analysis.readyForMigration) {
+                        output += '### ✅ Ready for Migration\n\nYour project can be migrated to Gen2.\n\n';
+                    } else {
+                        output += '### ❌ Blocking Issues\n\n';
+                        analysis.blockingIssues.forEach(issue => {
+                            output += `- ${issue}\n`;
+                        });
+                        output += '\n';
+                    }
+                    
+                    if (analysis.warnings.length > 0) {
+                        output += '### ⚠️ Warnings\n\n';
+                        analysis.warnings.forEach(warning => {
+                            output += `- ${warning}\n`;
+                        });
+                        output += '\n';
+                    }
+                    
+                    output += `### Detected Categories\n\n`;
+                    analysis.categoriesDetected.forEach(cat => {
+                        output += `- ${cat}\n`;
+                    });
+                    output += '\n';
+                    
+                    output += `**Documentation:** https://docs.amplify.aws/react/start/migrate-to-gen2/\n`;
+                }
+                
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: output
                         }
                     ]
                 };

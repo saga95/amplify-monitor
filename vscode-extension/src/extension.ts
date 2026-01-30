@@ -4,6 +4,7 @@ import { AppsTreeProvider } from './views/appsTree';
 import { JobsTreeProvider } from './views/jobsTree';
 import { DiagnosisTreeProvider } from './views/diagnosisTree';
 import { EnvVarsTreeProvider } from './views/envVarsTree';
+import { MigrationTreeProvider } from './views/migrationTree';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -18,6 +19,7 @@ export function activate(context: vscode.ExtensionContext) {
     const jobsProvider = new JobsTreeProvider(cli);
     const diagnosisProvider = new DiagnosisTreeProvider(cli);
     const envVarsProvider = new EnvVarsTreeProvider(cli);
+    const migrationProvider = new MigrationTreeProvider();
 
     // Register tree views
     const appsView = vscode.window.createTreeView('amplifyApps', {
@@ -37,6 +39,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     const envVarsView = vscode.window.createTreeView('amplifyEnvVars', {
         treeDataProvider: envVarsProvider,
+        showCollapseAll: true
+    });
+
+    const migrationView = vscode.window.createTreeView('amplifyMigration', {
+        treeDataProvider: migrationProvider,
         showCollapseAll: true
     });
 
@@ -293,10 +300,60 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.env.openExternal(vscode.Uri.parse(url));
         }),
 
+        // Migration analysis commands
+        vscode.commands.registerCommand('amplify-monitor.analyzeMigration', async () => {
+            const workspaceFolders = vscode.workspace.workspaceFolders;
+            if (!workspaceFolders || workspaceFolders.length === 0) {
+                vscode.window.showWarningMessage('No workspace folder open');
+                return;
+            }
+
+            const projectPath = workspaceFolders[0].uri.fsPath;
+            
+            await vscode.window.withProgress({
+                location: vscode.ProgressLocation.Notification,
+                title: 'Analyzing project for Gen1 → Gen2 migration...',
+                cancellable: false
+            }, async () => {
+                try {
+                    const analysis = await cli.analyzeMigration(projectPath);
+                    migrationProvider.setAnalysis(analysis);
+                    
+                    // Show summary notification
+                    if (analysis.generation === 'Gen1') {
+                        if (analysis.readyForMigration) {
+                            vscode.window.showInformationMessage(
+                                `✅ Project is ready for Gen2 migration! ${analysis.summary.fullySupported}/${analysis.summary.totalFeatures} features fully supported.`
+                            );
+                        } else {
+                            vscode.window.showWarningMessage(
+                                `⚠️ ${analysis.blockingIssues.length} blocking issues found. Check the Migration panel for details.`
+                            );
+                        }
+                    } else if (analysis.generation === 'Gen2') {
+                        vscode.window.showInformationMessage('This project is already using Amplify Gen2!');
+                    } else {
+                        vscode.window.showWarningMessage('Could not detect an Amplify project. Make sure amplify/ folder exists.');
+                    }
+                } catch (error) {
+                    vscode.window.showErrorMessage(`Migration analysis failed: ${error}`);
+                }
+            });
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.refreshMigration', () => {
+            vscode.commands.executeCommand('amplify-monitor.analyzeMigration');
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.openMigrationDocs', () => {
+            vscode.env.openExternal(vscode.Uri.parse('https://docs.amplify.aws/react/start/migrate-to-gen2/'));
+        }),
+
         appsView,
         jobsView,
         diagnosisView,
-        envVarsView
+        envVarsView,
+        migrationView
     );
 
     // Setup auto-refresh if enabled

@@ -1,5 +1,26 @@
 # Changelog
 
+## [0.1.7] - 2026-01-30
+
+### Added
+- **Gen2 Migration Assistant**: Analyze your Amplify Gen1 project for migration readiness
+  - Detects all Gen1 features and their Gen2 compatibility
+  - Identifies blocking issues that prevent migration
+  - Provides migration hints and documentation links
+  - Shows summary with fully supported vs. requiring CDK vs. not supported features
+- New commands:
+  - `Analyze Gen1 → Gen2 Migration` - Run migration analysis on workspace
+  - `Open Migration Documentation` - Link to official AWS migration docs
+- New "Gen2 Migration" panel in the sidebar
+
+### Supported Migration Patterns
+- GraphQL directives: @model, @auth, @function, @http
+- Blocking patterns: @searchable, @predictions, @manyToMany, DataStore
+- Auth features: MFA, OAuth, triggers, admin queries
+- Storage: S3 buckets, Lambda triggers
+- Functions: Node.js, Python (CDK), Lambda layers detection
+- Other categories: Geo, Analytics, Interactions (CDK required)
+
 ## [0.1.6] - 2026-01-30
 
 ### Added

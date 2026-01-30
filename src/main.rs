@@ -1,6 +1,7 @@
 mod amplify;
 mod config;
 mod logs;
+mod migration;
 mod parser;
 
 use anyhow::{anyhow, Result};
@@ -171,6 +172,13 @@ enum Commands {
         /// The job ID to stop
         #[arg(long)]
         job_id: String,
+    },
+
+    /// Analyze a project for Gen1 → Gen2 migration readiness
+    MigrationAnalysis {
+        /// Path to the project directory (defaults to current directory)
+        #[arg(long, short)]
+        path: Option<String>,
     },
 
     /// Initialize a config file with sample settings
@@ -374,6 +382,12 @@ async fn main() -> Result<()> {
             let branch = resolve_branch(branch, &config)?;
             let result = amplify::stop_job(&client, &app_id, &branch, &job_id).await?;
             output(&result, format)?;
+        }
+
+        Commands::MigrationAnalysis { path } => {
+            let project_path = path.unwrap_or_else(|| ".".to_string());
+            let analysis = migration::analyze_project(&project_path)?;
+            output(&analysis, format)?;
         }
 
         Commands::Init => unreachable!(), // Handled above
@@ -610,6 +624,12 @@ impl TextOutput for amplify::StopJobResult {
             "✓ Stopped build job {}\n  Status: {}\n",
             self.job_id, self.status
         )
+    }
+}
+
+impl TextOutput for migration::MigrationAnalysis {
+    fn to_text(&self) -> String {
+        migration::generate_report(self)
     }
 }
 

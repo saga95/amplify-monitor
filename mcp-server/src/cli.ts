@@ -39,6 +39,34 @@ export interface StopJobResult {
     status: string;
 }
 
+export interface MigrationFeature {
+    category: string;
+    feature: string;
+    filePath?: string;
+    lineNumber?: number;
+    compatibility: unknown;
+    migrationHint: string;
+}
+
+export interface MigrationSummary {
+    totalFeatures: number;
+    fullySupported: number;
+    supportedWithCdk: number;
+    notSupported: number;
+    manualMigration: number;
+}
+
+export interface MigrationAnalysis {
+    generation: string;
+    projectPath: string;
+    categoriesDetected: string[];
+    features: MigrationFeature[];
+    readyForMigration: boolean;
+    blockingIssues: string[];
+    warnings: string[];
+    summary: MigrationSummary;
+}
+
 export interface DiagnosisIssue {
     pattern: string;
     rootCause: string;
@@ -147,5 +175,9 @@ export class AmplifyMonitorCli {
 
     async stopBuild(appId: string, branch: string, jobId: string, region?: string, profile?: string): Promise<StopJobResult> {
         return this.runCommand<StopJobResult>(['stop-build', '--app-id', appId, '--branch', branch, '--job-id', jobId], region, profile);
+    }
+
+    async analyzeMigration(projectPath: string): Promise<MigrationAnalysis> {
+        return this.runCommand<MigrationAnalysis>(['migration-analysis', '--path', projectPath]);
     }
 }
