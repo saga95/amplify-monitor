@@ -1,8 +1,8 @@
 # Amplify Monitor
 
-[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/saga95.amplify-monitor)](https://marketplace.visualstudio.com/items?itemName=saga95.amplify-monitor)
-[![Downloads](https://img.shields.io/visual-studio-marketplace/d/saga95.amplify-monitor)](https://marketplace.visualstudio.com/items?itemName=saga95.amplify-monitor)
-[![Rating](https://img.shields.io/visual-studio-marketplace/r/saga95.amplify-monitor)](https://marketplace.visualstudio.com/items?itemName=saga95.amplify-monitor)
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/SagaraHarasgama.amplify-monitor)](https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor)
+[![Downloads](https://img.shields.io/visual-studio-marketplace/d/SagaraHarasgama.amplify-monitor)](https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor)
+[![Rating](https://img.shields.io/visual-studio-marketplace/r/SagaraHarasgama.amplify-monitor)](https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor)
 [![GitHub](https://img.shields.io/github/license/saga95/amplify-monitor)](https://github.com/saga95/amplify-monitor/blob/main/LICENSE)
 
 **Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis directly in VS Code.**

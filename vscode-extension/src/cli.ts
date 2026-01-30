@@ -67,7 +67,7 @@ export class AmplifyMonitorCli {
         const cliPath = this.getCliPath();
         
         try {
-            const { stdout } = await execFileAsync(cliPath, [...args, '--format', 'json'], {
+            const { stdout } = await execFileAsync(cliPath, ['--format', 'json', ...args], {
                 timeout: 60000,
                 maxBuffer: 10 * 1024 * 1024 // 10MB
             });
