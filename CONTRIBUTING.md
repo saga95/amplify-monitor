@@ -51,7 +51,7 @@ The `main` branch is protected with the following ruleset:
 | **Required approvals** | 1 reviewer minimum |
 | **Require status checks** | `build`, `test`, `clippy` must pass |
 | **Require conversation resolution** | All comments must be resolved |
-| **Require linear history** | Squash or rebase merges only |
+| **Require linear history** | Squash, rebase, or merge commits allowed |
 | **Block force pushes** | Enabled |
 | **Block deletions** | Enabled |
 
