@@ -53,6 +53,21 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.commands.registerCommand('amplify-monitor.selectApp', async (appId: string, region?: string) => {
             cli.setSelectedApp(appId, region);
+            
+            // Auto-select the first branch for this app
+            try {
+                const branches = await cli.listBranches(appId, region);
+                if (branches.length > 0) {
+                    // Prefer 'main' or 'master', otherwise use first branch
+                    const preferredBranch = branches.find(b => b.branchName === 'main') 
+                        || branches.find(b => b.branchName === 'master')
+                        || branches[0];
+                    cli.setSelectedBranch(preferredBranch.branchName);
+                }
+            } catch {
+                // Ignore errors fetching branches
+            }
+            
             await jobsProvider.refresh();
             const regionInfo = region ? ` (${region})` : '';
             vscode.window.showInformationMessage(`Selected app: ${appId}${regionInfo}`);
