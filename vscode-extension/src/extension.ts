@@ -64,8 +64,9 @@ export function activate(context: vscode.ExtensionContext) {
                         || branches[0];
                     cli.setSelectedBranch(preferredBranch.branchName);
                 }
-            } catch {
-                // Ignore errors fetching branches
+            } catch (error) {
+                // Log but don't block - user can manually select branch
+                console.warn(`Failed to auto-select branch for ${appId}:`, error);
             }
             
             await jobsProvider.refresh();
@@ -230,3 +231,12 @@ function updateProfileStatusBar(cli: AmplifyMonitorCli) {
     profileStatusBarItem.text = `$(account) AWS: ${profile}`;
 }
 
+export function deactivate() {
+    if (refreshInterval) {
+        clearInterval(refreshInterval);
+        refreshInterval = undefined;
+    }
+    if (profileStatusBarItem) {
+        profileStatusBarItem.dispose();
+    }
+}

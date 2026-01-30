@@ -7,10 +7,46 @@ import {
     ListToolsRequestSchema,
     Tool,
 } from '@modelcontextprotocol/sdk/types.js';
+import { z } from 'zod';
 import { AmplifyMonitorCli } from './cli.js';
 
 // Initialize CLI wrapper
 const cli = new AmplifyMonitorCli(process.env.AMPLIFY_MONITOR_CLI_PATH || 'amplify-monitor');
+
+// ============================================================================
+// Input Validation Schemas
+// ============================================================================
+
+const BaseSchema = z.object({
+    region: z.string().optional(),
+    profile: z.string().optional(),
+});
+
+const ListAppsSchema = BaseSchema;
+
+const ListBranchesSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+});
+
+const ListJobsSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+});
+
+const DiagnoseSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+    jobId: z.string().optional(),
+});
+
+const LatestFailedSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+});
+
+// ============================================================================
+// Tool Definitions
+// ============================================================================
 
 // Define available tools
 const tools: Tool[] = [
@@ -163,8 +199,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
     try {
         switch (name) {
             case 'amplify_list_apps': {
-                const { region, profile } = args as { region?: string; profile?: string };
-                const apps = await cli.listApps(!region, region, profile);
+                const validated = ListAppsSchema.parse(args);
+                const apps = await cli.listApps(!validated.region, validated.region, validated.profile);
                 return {
                     content: [
                         {
@@ -176,8 +212,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
 
             case 'amplify_list_branches': {
-                const { appId, region, profile } = args as { appId: string; region?: string; profile?: string };
-                const branches = await cli.listBranches(appId, region, profile);
+                const validated = ListBranchesSchema.parse(args);
+                const branches = await cli.listBranches(validated.appId, validated.region, validated.profile);
                 return {
                     content: [
                         {
@@ -189,8 +225,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
 
             case 'amplify_list_jobs': {
-                const { appId, branch, region, profile } = args as { appId: string; branch: string; region?: string; profile?: string };
-                const jobs = await cli.listJobs(appId, branch, region, profile);
+                const validated = ListJobsSchema.parse(args);
+                const jobs = await cli.listJobs(validated.appId, validated.branch, validated.region, validated.profile);
                 return {
                     content: [
                         {
@@ -202,17 +238,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
 
             case 'amplify_diagnose': {
-                const { appId, branch, jobId, region, profile } = args as { 
-                    appId: string; 
-                    branch: string; 
-                    jobId?: string; 
-                    region?: string; 
-                    profile?: string 
-                };
-                const diagnosis = await cli.diagnose(appId, branch, jobId, region, profile);
+                const validated = DiagnoseSchema.parse(args);
+                const diagnosis = await cli.diagnose(validated.appId, validated.branch, validated.jobId, validated.region, validated.profile);
                 
                 // Format the diagnosis for better readability
-                let formattedOutput = `## Diagnosis for ${appId} / ${branch}\n\n`;
+                let formattedOutput = `## Diagnosis for ${validated.appId} / ${validated.branch}\n\n`;
                 formattedOutput += `**Job ID:** ${diagnosis.jobId}\n`;
                 formattedOutput += `**Status:** ${diagnosis.status}\n\n`;
                 
@@ -242,15 +272,15 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
             }
 
             case 'amplify_get_latest_failed': {
-                const { appId, branch, region, profile } = args as { appId: string; branch: string; region?: string; profile?: string };
-                const job = await cli.getLatestFailedJob(appId, branch, region, profile);
+                const validated = LatestFailedSchema.parse(args);
+                const job = await cli.getLatestFailedJob(validated.appId, validated.branch, validated.region, validated.profile);
                 
                 if (!job) {
                     return {
                         content: [
                             {
                                 type: 'text',
-                                text: `✅ No failed jobs found for ${appId} / ${branch}`
+                                text: `✅ No failed jobs found for ${validated.appId} / ${validated.branch}`
                             }
                         ]
                     };
