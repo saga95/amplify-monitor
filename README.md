@@ -1,6 +1,9 @@
 # amplify-monitor
 
-A Rust CLI tool for monitoring AWS Amplify builds and diagnosing failures.
+A Rust CLI tool for monitoring AWS Amplify builds and diagnosing failures. Includes a **VS Code extension** and **MCP server** for AI assistant integration.
+
+[![VS Code Marketplace](https://img.shields.io/visual-studio-marketplace/v/SagaraHarasgama.amplify-monitor)](https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor)
+[![License](https://img.shields.io/github/license/saga95/amplify-monitor)](LICENSE)
 
 ## Features
 
@@ -8,7 +11,17 @@ A Rust CLI tool for monitoring AWS Amplify builds and diagnosing failures.
 - 🔍 Detect the latest failed build
 - 📥 Download and analyze build/deploy logs
 - 🩺 Diagnose **20+ common failure patterns**
+- 🌍 **Multi-region support** - scan all AWS regions
+- 🔄 **Cross-account support** - AWS profiles for different accounts
 - 📤 Output as JSON or human-readable text
+
+## Ecosystem
+
+| Component | Description |
+|-----------|-------------|
+| **CLI** | Core Rust binary for terminal usage |
+| **[VS Code Extension](https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor)** | Visual interface with tree views |
+| **[MCP Server](./mcp-server/)** | Let Claude/AI assistants diagnose your builds |
 
 ## Installation
 
@@ -16,7 +29,7 @@ A Rust CLI tool for monitoring AWS Amplify builds and diagnosing failures.
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/amplify-monitor.git
+git clone https://github.com/saga95/amplify-monitor.git
 cd amplify-monitor
 
 # Build release binary
@@ -274,14 +287,58 @@ git tag v0.1.0
 git push origin v0.1.0
 ```
 
+## MCP Server (AI Integration)
+
+Let Claude and other AI assistants diagnose your Amplify builds directly!
+
+### Quick Setup
+
+```bash
+cd mcp-server
+npm install
+npm run build
+```
+
+### Claude Desktop Config
+
+Add to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "amplify-monitor": {
+      "command": "node",
+      "args": ["C:\\path\\to\\amplify-monitor\\mcp-server\\dist\\index.js"]
+    }
+  }
+}
+```
+
+### Example Conversation
+
+```
+You: Why did my friday.lk main branch fail?
+
+Claude: I'll diagnose the latest failed build for you.
+[Uses amplify_diagnose tool]
+
+I found 2 issues:
+
+1. **Lock File Mismatch**
+   Both package-lock.json and pnpm-lock.yaml exist.
+   Fix: Remove one and use a consistent package manager.
+
+2. **Node.js Version Conflict**
+   Build uses Node 16 but dependencies require 18+.
+   Fix: Update amplify.yml to specify Node 18.
+```
+
+See [mcp-server/README.md](./mcp-server/README.md) for full documentation.
+
 ## Roadmap
 
 - [x] Config file support (`~/.amplify-monitor.toml`)
 - [x] GitHub Actions CI
+- [x] VS Code extension ✅
+- [x] MCP server for AI agent integration ✅
 - [ ] `watch` command for polling build status
-- [ ] VS Code extension
-- [ ] MCP server for AI agent integration
-
-## License
-
-MIT
