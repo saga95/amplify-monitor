@@ -24,10 +24,25 @@ Automatically analyze failed builds and identify root causes:
 - TypeScript/ESLint errors
 - And 15+ more patterns!
 
+![Diagnosis View](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/diagnosis.png)
+
 ### 📊 **Real-time Job Monitoring**
 - View all your Amplify apps and branches
 - Track build/deploy job status with color-coded indicators
 - Auto-refresh support for continuous monitoring
+
+### 🌍 **Multi-Region Support**
+- Automatically discovers apps across **all AWS regions**
+- Region displayed next to each app name
+- No manual region switching required
+
+### 🔄 **Cross-Account Access**
+Perfect for consultants and developers working on client projects:
+- Switch AWS profiles with one click from the status bar
+- Configure profiles in settings for different accounts
+- Views auto-refresh when switching profiles
+
+![Profile Switch](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/profile-switch.png)
 
 ### 💡 **Actionable Fixes**
 Each detected issue comes with:
@@ -91,6 +106,7 @@ Access settings via **Amplify Monitor: Open Settings** or `Ctrl+,` → search "a
 | Setting | Default | Description |
 |---------|---------|-------------|
 | `amplifyMonitor.cliPath` | `amplify-monitor` | Path to CLI executable |
+| `amplifyMonitor.awsProfile` | - | AWS profile for cross-account access |
 | `amplifyMonitor.defaultAppId` | - | Default app ID for commands |
 | `amplifyMonitor.defaultBranch` | `main` | Default branch to monitor |
 | `amplifyMonitor.autoRefresh` | `false` | Enable auto-refresh |
@@ -106,6 +122,7 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 |---------|-------------|
 | **Diagnose Latest Failed Build** | Analyze the most recent failed job |
 | **List Apps** | Refresh the apps list |
+| **Switch AWS Profile** | Change AWS profile for cross-account access |
 | **Select App** | Choose an app to monitor |
 | **Select Branch** | Choose a branch to monitor |
 | **Refresh** | Refresh all panels |
