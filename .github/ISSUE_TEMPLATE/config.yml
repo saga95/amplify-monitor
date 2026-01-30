@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: AWS Amplify Documentation
+    url: https://docs.amplify.aws/
+    about: Official AWS Amplify documentation
+  - name: VS Code Marketplace
+    url: https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor
+    about: Rate and review the VS Code extension
