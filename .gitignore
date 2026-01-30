@@ -14,3 +14,12 @@ Thumbs.db
 
 # Local config (contains personal defaults)
 # .amplify-monitor.toml
+
+# Root level generated files
+icon.png
+
+# VS Code Extension
+vscode-extension/node_modules/
+vscode-extension/out/
+vscode-extension/*.vsix
+vscode-extension/.vscode-test/
