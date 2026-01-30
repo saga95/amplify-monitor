@@ -5,6 +5,7 @@ import { JobsTreeProvider } from './views/jobsTree';
 import { DiagnosisTreeProvider } from './views/diagnosisTree';
 
 let refreshInterval: NodeJS.Timeout | undefined;
+let profileStatusBarItem: vscode.StatusBarItem;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Amplify Monitor extension is now active');
@@ -31,6 +32,13 @@ export function activate(context: vscode.ExtensionContext) {
         treeDataProvider: diagnosisProvider,
         showCollapseAll: true
     });
+
+    // Create status bar item for AWS profile
+    profileStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
+    profileStatusBarItem.command = 'amplify-monitor.switchProfile';
+    profileStatusBarItem.tooltip = 'Click to switch AWS profile';
+    updateProfileStatusBar(cli);
+    profileStatusBarItem.show();
 
     // Register commands
     context.subscriptions.push(
@@ -78,6 +86,32 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }),
 
+        vscode.commands.registerCommand('amplify-monitor.switchProfile', async () => {
+            const currentProfile = cli.getAwsProfile() || 'default';
+            const profile = await vscode.window.showInputBox({
+                prompt: 'Enter AWS profile name (leave empty for default credentials)',
+                placeHolder: 'e.g., client-production',
+                value: currentProfile === 'default' ? '' : currentProfile
+            });
+            
+            if (profile !== undefined) {
+                const config = vscode.workspace.getConfiguration('amplifyMonitor');
+                await config.update('awsProfile', profile, vscode.ConfigurationTarget.Global);
+                
+                // Update status bar immediately
+                updateProfileStatusBar(cli);
+                
+                // Refresh all views with new credentials
+                await Promise.all([
+                    appsProvider.refresh(),
+                    jobsProvider.refresh()
+                ]);
+                
+                const displayProfile = profile || 'default';
+                vscode.window.showInformationMessage(`Switched to AWS profile: ${displayProfile}`);
+            }
+        }),
+
         appsView,
         jobsView,
         diagnosisView
@@ -88,12 +122,24 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Watch for config changes
     context.subscriptions.push(
-        vscode.workspace.onDidChangeConfiguration(e => {
-            if (e.affectsConfiguration('amplifyMonitor')) {
+        vscode.workspace.onDidChangeConfiguration(async e => {
+            if (e.affectsConfiguration('amplifyMonitor.autoRefresh') || 
+                e.affectsConfiguration('amplifyMonitor.autoRefreshInterval')) {
                 setupAutoRefresh(appsProvider, jobsProvider);
+            }
+            // Refresh views when AWS profile changes
+            if (e.affectsConfiguration('amplifyMonitor.awsProfile')) {
+                updateProfileStatusBar(cli);
+                await Promise.all([
+                    appsProvider.refresh(),
+                    jobsProvider.refresh()
+                ]);
             }
         })
     );
+
+    // Add status bar to subscriptions for cleanup
+    context.subscriptions.push(profileStatusBarItem);
 }
 
 async function runDiagnosis(cli: AmplifyMonitorCli, provider: DiagnosisTreeProvider) {
@@ -164,8 +210,8 @@ function setupAutoRefresh(appsProvider: AppsTreeProvider, jobsProvider: JobsTree
     }
 }
 
-export function deactivate() {
-    if (refreshInterval) {
-        clearInterval(refreshInterval);
-    }
+function updateProfileStatusBar(cli: AmplifyMonitorCli) {
+    const profile = cli.getAwsProfile() || 'default';
+    profileStatusBarItem.text = `$(account) AWS: ${profile}`;
 }
+

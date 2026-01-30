@@ -70,9 +70,21 @@ export class AmplifyMonitorCli {
         return this.selectedBranch;
     }
 
+    getAwsProfile(): string | undefined {
+        const config = vscode.workspace.getConfiguration('amplifyMonitor');
+        const profile = config.get<string>('awsProfile');
+        return profile && profile.trim() !== '' ? profile.trim() : undefined;
+    }
+
     private async runCommand<T>(args: string[], region?: string): Promise<T> {
         const cliPath = this.getCliPath();
         const fullArgs = ['--format', 'json'];
+        
+        // Add AWS profile if configured
+        const profile = this.getAwsProfile();
+        if (profile) {
+            fullArgs.push('--profile', profile);
+        }
         
         if (region) {
             fullArgs.push('--region', region);
