@@ -12,6 +12,7 @@ export class JobsTreeProvider implements vscode.TreeDataProvider<JobTreeItem> {
     async refresh(): Promise<void> {
         const appId = this.cli.getSelectedApp();
         const branch = this.cli.getSelectedBranch();
+        const region = this.cli.getSelectedRegion();
 
         if (!appId || !branch) {
             this.jobs = [];
@@ -20,7 +21,7 @@ export class JobsTreeProvider implements vscode.TreeDataProvider<JobTreeItem> {
         }
 
         try {
-            this.jobs = await this.cli.listJobs(appId, branch);
+            this.jobs = await this.cli.listJobs(appId, branch, region);
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to load jobs: ${error}`);
             this.jobs = [];

@@ -43,10 +43,11 @@ export function activate(context: vscode.ExtensionContext) {
             await runDiagnosis(cli, diagnosisProvider);
         }),
 
-        vscode.commands.registerCommand('amplify-monitor.selectApp', async (appId: string) => {
-            cli.setSelectedApp(appId);
+        vscode.commands.registerCommand('amplify-monitor.selectApp', async (appId: string, region?: string) => {
+            cli.setSelectedApp(appId, region);
             await jobsProvider.refresh();
-            vscode.window.showInformationMessage(`Selected app: ${appId}`);
+            const regionInfo = region ? ` (${region})` : '';
+            vscode.window.showInformationMessage(`Selected app: ${appId}${regionInfo}`);
         }),
 
         vscode.commands.registerCommand('amplify-monitor.selectBranch', async (branch: string) => {

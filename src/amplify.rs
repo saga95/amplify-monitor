@@ -15,6 +15,7 @@ pub struct AppSummary {
     pub name: String,
     pub repository: Option<String>,
     pub default_domain: String,
+    pub region: Option<String>,
 }
 
 /// Summary of a branch
@@ -37,13 +38,41 @@ pub struct JobSummary {
 }
 
 /// Create an AWS Amplify client using environment credentials
-pub async fn create_client() -> Client {
-    let config = aws_config::load_defaults(BehaviorVersion::latest()).await;
+pub async fn create_client(region: Option<&str>, profile: Option<&str>) -> Client {
+    let mut config_loader = aws_config::defaults(BehaviorVersion::latest());
+    
+    // Apply profile if specified
+    if let Some(profile_name) = profile {
+        config_loader = config_loader.profile_name(profile_name);
+    }
+    
+    // Apply region if specified
+    if let Some(region_name) = region {
+        config_loader = config_loader.region(aws_config::Region::new(region_name.to_string()));
+    }
+    
+    let config = config_loader.load().await;
     Client::new(&config)
 }
 
+/// Get the current region from config
+pub async fn get_current_region(region: Option<&str>, profile: Option<&str>) -> Option<String> {
+    let mut config_loader = aws_config::defaults(BehaviorVersion::latest());
+    
+    if let Some(profile_name) = profile {
+        config_loader = config_loader.profile_name(profile_name);
+    }
+    
+    if let Some(region_name) = region {
+        return Some(region_name.to_string());
+    }
+    
+    let config = config_loader.load().await;
+    config.region().map(|r| r.to_string())
+}
+
 /// List all Amplify apps in the account
-pub async fn list_apps(client: &Client) -> Result<Vec<AppSummary>> {
+pub async fn list_apps(client: &Client, region: Option<&str>) -> Result<Vec<AppSummary>> {
     let response = client
         .list_apps()
         .send()
@@ -58,6 +87,7 @@ pub async fn list_apps(client: &Client) -> Result<Vec<AppSummary>> {
             name: app.name,
             repository: Some(app.repository),
             default_domain: app.default_domain,
+            region: region.map(|r| r.to_string()),
         })
         .collect();
 

@@ -16,6 +16,14 @@ struct Cli {
     #[arg(long, short, value_enum)]
     format: Option<OutputFormat>,
 
+    /// AWS region (overrides config and environment)
+    #[arg(long, short)]
+    region: Option<String>,
+
+    /// AWS profile name (for multi-account access)
+    #[arg(long, short)]
+    profile: Option<String>,
+
     #[command(subcommand)]
     command: Commands,
 }
@@ -43,8 +51,12 @@ impl OutputFormat {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// List all Amplify apps
-    Apps,
+    /// List all Amplify apps (in current region, use --region to change)
+    Apps {
+        /// Scan all common AWS regions for apps
+        #[arg(long)]
+        all_regions: bool,
+    },
 
     /// List branches for an app
     Branches {
@@ -120,13 +132,35 @@ async fn main() -> Result<()> {
         return Ok(());
     }
 
-    // Initialize AWS client
-    let client = amplify::create_client().await;
+    // Initialize AWS client with region and profile
+    let region_str = cli.region.as_deref().or(config.aws_region.as_deref());
+    let profile_str = cli.profile.as_deref();
+    let client = amplify::create_client(region_str, profile_str).await;
+    let current_region = amplify::get_current_region(region_str, profile_str).await;
 
     match cli.command {
-        Commands::Apps => {
-            let apps = amplify::list_apps(&client).await?;
-            output(&apps, format)?;
+        Commands::Apps { all_regions } => {
+            if all_regions {
+                // Scan common AWS regions for Amplify apps
+                let regions = vec![
+                    "us-east-1", "us-east-2", "us-west-1", "us-west-2",
+                    "eu-west-1", "eu-west-2", "eu-central-1",
+                    "ap-south-1", "ap-southeast-1", "ap-southeast-2", "ap-northeast-1",
+                    "sa-east-1", "ca-central-1",
+                ];
+                
+                let mut all_apps = Vec::new();
+                for region in regions {
+                    let client = amplify::create_client(Some(region), profile_str).await;
+                    if let Ok(apps) = amplify::list_apps(&client, Some(region)).await {
+                        all_apps.extend(apps);
+                    }
+                }
+                output(&all_apps, format)?;
+            } else {
+                let apps = amplify::list_apps(&client, current_region.as_deref()).await?;
+                output(&apps, format)?;
+            }
         }
 
         Commands::Branches { app_id } => {

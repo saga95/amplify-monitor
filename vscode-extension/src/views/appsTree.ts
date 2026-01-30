@@ -11,7 +11,8 @@ export class AppsTreeProvider implements vscode.TreeDataProvider<AppTreeItem> {
 
     async refresh(): Promise<void> {
         try {
-            this.apps = await this.cli.listApps();
+            // Load apps from all regions
+            this.apps = await this.cli.listApps(true);
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to load apps: ${error}`);
             this.apps = [];
@@ -33,20 +34,23 @@ export class AppsTreeProvider implements vscode.TreeDataProvider<AppTreeItem> {
                 app.name,
                 app.appId,
                 'app',
-                vscode.TreeItemCollapsibleState.Collapsed
+                vscode.TreeItemCollapsibleState.Collapsed,
+                undefined,
+                app.region
             ));
         }
 
         if (element.type === 'app') {
             // App level - show branches
             try {
-                const branches = await this.cli.listBranches(element.appId);
+                const branches = await this.cli.listBranches(element.appId, element.region);
                 return branches.map(branch => new AppTreeItem(
                     branch.branchName,
                     element.appId,
                     'branch',
                     vscode.TreeItemCollapsibleState.None,
-                    branch.branchName
+                    branch.branchName,
+                    element.region
                 ));
             } catch (error) {
                 vscode.window.showErrorMessage(`Failed to load branches: ${error}`);
@@ -64,18 +68,20 @@ export class AppTreeItem extends vscode.TreeItem {
         public readonly appId: string,
         public readonly type: 'app' | 'branch',
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
-        public readonly branchName?: string
+        public readonly branchName?: string,
+        public readonly region?: string
     ) {
         super(label, collapsibleState);
 
         if (type === 'app') {
             this.contextValue = 'amplifyApp';
             this.iconPath = new vscode.ThemeIcon('cloud');
-            this.tooltip = `App ID: ${appId}`;
+            this.description = region || '';
+            this.tooltip = `App ID: ${appId}\nRegion: ${region || 'unknown'}`;
             this.command = {
                 command: 'amplify-monitor.selectApp',
                 title: 'Select App',
-                arguments: [appId]
+                arguments: [appId, region]
             };
         } else {
             this.contextValue = 'amplifyBranch';

@@ -9,6 +9,7 @@ export interface AmplifyApp {
     name: string;
     repository?: string;
     defaultDomain: string;
+    region?: string;
 }
 
 export interface AmplifyBranch {
@@ -41,18 +42,24 @@ export interface DiagnosisResult {
 export class AmplifyMonitorCli {
     private selectedApp: string | undefined;
     private selectedBranch: string | undefined;
+    private selectedRegion: string | undefined;
 
     getCliPath(): string {
         const config = vscode.workspace.getConfiguration('amplifyMonitor');
         return config.get<string>('cliPath') || 'amplify-monitor';
     }
 
-    setSelectedApp(appId: string) {
+    setSelectedApp(appId: string, region?: string) {
         this.selectedApp = appId;
+        this.selectedRegion = region;
     }
 
     getSelectedApp(): string | undefined {
         return this.selectedApp;
+    }
+
+    getSelectedRegion(): string | undefined {
+        return this.selectedRegion;
     }
 
     setSelectedBranch(branch: string) {
@@ -63,12 +70,19 @@ export class AmplifyMonitorCli {
         return this.selectedBranch;
     }
 
-    private async runCommand<T>(args: string[]): Promise<T> {
+    private async runCommand<T>(args: string[], region?: string): Promise<T> {
         const cliPath = this.getCliPath();
+        const fullArgs = ['--format', 'json'];
+        
+        if (region) {
+            fullArgs.push('--region', region);
+        }
+        
+        fullArgs.push(...args);
         
         try {
-            const { stdout } = await execFileAsync(cliPath, ['--format', 'json', ...args], {
-                timeout: 60000,
+            const { stdout } = await execFileAsync(cliPath, fullArgs, {
+                timeout: 120000, // 2 minutes for multi-region scans
                 maxBuffer: 10 * 1024 * 1024 // 10MB
             });
             return JSON.parse(stdout) as T;
@@ -90,29 +104,37 @@ export class AmplifyMonitorCli {
         }
     }
 
-    async listApps(): Promise<AmplifyApp[]> {
-        return this.runCommand<AmplifyApp[]>(['apps']);
+    async listApps(allRegions: boolean = false): Promise<AmplifyApp[]> {
+        const args = ['apps'];
+        if (allRegions) {
+            args.push('--all-regions');
+        }
+        return this.runCommand<AmplifyApp[]>(args);
     }
 
-    async listBranches(appId: string): Promise<AmplifyBranch[]> {
-        return this.runCommand<AmplifyBranch[]>(['branches', '--app-id', appId]);
+    async listAppsInRegion(region: string): Promise<AmplifyApp[]> {
+        return this.runCommand<AmplifyApp[]>(['apps'], region);
     }
 
-    async listJobs(appId: string, branch: string): Promise<AmplifyJob[]> {
-        return this.runCommand<AmplifyJob[]>(['jobs', '--app-id', appId, '--branch', branch]);
+    async listBranches(appId: string, region?: string): Promise<AmplifyBranch[]> {
+        return this.runCommand<AmplifyBranch[]>(['branches', '--app-id', appId], region);
     }
 
-    async diagnose(appId: string, branch: string, jobId?: string): Promise<DiagnosisResult> {
+    async listJobs(appId: string, branch: string, region?: string): Promise<AmplifyJob[]> {
+        return this.runCommand<AmplifyJob[]>(['jobs', '--app-id', appId, '--branch', branch], region);
+    }
+
+    async diagnose(appId: string, branch: string, jobId?: string, region?: string): Promise<DiagnosisResult> {
         const args = ['diagnose', '--app-id', appId, '--branch', branch];
         if (jobId) {
             args.push('--job-id', jobId);
         }
-        return this.runCommand<DiagnosisResult>(args);
+        return this.runCommand<DiagnosisResult>(args, region);
     }
 
-    async getLatestFailedJob(appId: string, branch: string): Promise<AmplifyJob | null> {
+    async getLatestFailedJob(appId: string, branch: string, region?: string): Promise<AmplifyJob | null> {
         try {
-            return await this.runCommand<AmplifyJob>(['latest-failed', '--app-id', appId, '--branch', branch]);
+            return await this.runCommand<AmplifyJob>(['latest-failed', '--app-id', appId, '--branch', branch], region);
         } catch {
             return null;
         }

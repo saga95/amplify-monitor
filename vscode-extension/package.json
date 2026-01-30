@@ -132,7 +132,7 @@
     "viewsWelcome": [
       {
         "view": "amplifyApps",
-        "contents": "No Amplify apps found.\n\nMake sure you have:\n1. AWS credentials configured\n2. amplify-monitor CLI installed\n\n[Configure Settings](command:amplify-monitor.openSettings)\n[Refresh Apps](command:amplify-monitor.listApps)"
+        "contents": "No Amplify apps found.\n\nMake sure you have:\n1. AWS credentials configured (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)\n2. amplify-monitor CLI installed\n\n[Configure Settings](command:amplify-monitor.openSettings)\n[Refresh Apps](command:amplify-monitor.listApps)\n\n---\n\n**Need to create an app?**\n[Open AWS Amplify Console](https://console.aws.amazon.com/amplify/)"
       },
       {
         "view": "amplifyJobs",
