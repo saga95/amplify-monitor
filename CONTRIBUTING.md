@@ -41,6 +41,22 @@ test: add tests for config loading
 3. Add integration test in `tests/integration_tests.rs`
 4. Update README.md pattern table
 
+## Branch Protection Rules
+
+The `main` branch is protected with the following ruleset:
+
+| Rule | Setting |
+|------|---------|
+| **Require pull request** | Yes – no direct pushes to `main` |
+| **Required approvals** | 1 reviewer minimum |
+| **Require status checks** | `build`, `test`, `clippy` must pass |
+| **Require conversation resolution** | All comments must be resolved |
+| **Require linear history** | Squash or rebase merges only |
+| **Block force pushes** | Enabled |
+| **Block deletions** | Enabled |
+
+Maintainers may bypass these rules for critical hotfixes.
+
 ## Release Process
 
 1. Update version in `Cargo.toml`
