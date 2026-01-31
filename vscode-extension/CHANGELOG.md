@@ -1,5 +1,36 @@
 # Changelog
 
+## [0.1.12] - 2026-01-31
+
+### Added
+- **Bundle Size Analyzer**: Visualize what's taking space in your build output
+  - Auto-detects build directories (.next, dist, build, out)
+  - Shows total size vs Amplify's 230MB limit with progress bar
+  - Lists largest directories and files with size breakdown
+  - Smart recommendations for reducing bundle size:
+    - Source map detection and removal suggestions
+    - Image optimization recommendations
+    - node_modules bloat detection
+    - Large file code-splitting suggestions
+- **Build Performance Tracker**: Track build times and identify regressions
+  - Records build duration, status, and branch
+  - Shows success rate, average/min/max duration
+  - Visual trend chart for recent builds
+  - Per-branch statistics
+  - Detects improving/degrading/stable trends
+- **Monorepo Detector**: Automatic detection of monorepo structure
+  - Supports TurboRepo, Nx, Lerna, pnpm/yarn/npm workspaces
+  - Detects package manager and lock files
+  - Lists all workspaces with framework detection
+  - Generates optimized amplify.yml suggestions
+  - One-click copy or create amplify.yml file
+  - Recommendations for common monorepo issues
+
+### New Commands
+- `Analyze Bundle Size` - Open bundle analyzer panel
+- `Show Build Performance` - View build performance history
+- `Detect Monorepo Structure` - Analyze project structure
+
 ## [0.1.11] - 2026-01-31
 
 ### Added

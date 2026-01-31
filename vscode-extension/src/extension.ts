@@ -9,15 +9,20 @@ import { EnvVarsTreeProvider } from './views/envVarsTree';
 import { MigrationTreeProvider } from './views/migrationTree';
 import { DashboardPanel } from './views/dashboardPanel';
 import { QuickFixService, QUICK_FIXES } from './quickFixes';
+import { BundleAnalyzerPanel } from './views/bundleAnalyzerPanel';
+import { BuildPerformanceTracker, BuildPerformancePanel } from './views/buildPerformancePanel';
+import { MonorepoPanel } from './views/monorepoDetector';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
 let connectionStatusBarItem: vscode.StatusBarItem;
+let buildPerformanceTracker: BuildPerformanceTracker;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Amplify Monitor extension is now active');
 
     const cli = new AmplifyMonitorCli();
+    buildPerformanceTracker = new BuildPerformanceTracker(context);
     
     // Create tree data providers
     const appsProvider = new AppsTreeProvider(cli);
@@ -440,6 +445,31 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.commands.registerCommand('amplify-monitor.openMigrationDocs', () => {
             vscode.env.openExternal(vscode.Uri.parse('https://docs.amplify.aws/react/start/migrate-to-gen2/'));
+        }),
+
+        // Bundle Analyzer
+        vscode.commands.registerCommand('amplify-monitor.analyzeBundle', async () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder open');
+                return;
+            }
+            BundleAnalyzerPanel.createOrShow(workspaceFolder.uri.fsPath);
+        }),
+
+        // Build Performance
+        vscode.commands.registerCommand('amplify-monitor.showBuildPerformance', () => {
+            BuildPerformancePanel.createOrShow(buildPerformanceTracker);
+        }),
+
+        // Monorepo Detector
+        vscode.commands.registerCommand('amplify-monitor.detectMonorepo', async () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder open');
+                return;
+            }
+            await MonorepoPanel.createOrShow(workspaceFolder.uri.fsPath);
         }),
 
         appsView,
