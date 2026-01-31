@@ -11,12 +11,13 @@
 
 ---
 
-## 🚀 What's New in v0.1.10
+## 🚀 What's New in v0.1.13
 
-- ⚡ **One-Click Quick Fixes** - Automatically fix common build issues
-- 📊 **Portfolio Dashboard** - Visual overview of all apps and branches
-- 🔄 **Smart Auto-Detection** - Extension detects Amplify projects on startup
-- 🔀 **Gen2 Migration Assistant** - Analyze Gen1 projects for migration readiness
+- 🧙 **Build Optimization Wizard** - Guided recommendations to speed up builds by 30-60%
+- 📦 **Bundle Size Analyzer** - Visualize build output against Amplify's 230MB limit
+- 📈 **Build Performance Tracker** - Track build times and detect regressions
+- 🏗️ **Monorepo Detector** - Auto-detect TurboRepo/Nx/Lerna and generate amplify.yml
+- ⚡ **21 Quick Fix Patterns** - One-click fixes for common build failures
 
 ---
 
@@ -67,6 +68,35 @@ Planning to migrate from Amplify Gen1 to Gen2? Get a full compatibility report:
   - ❌ **Not Supported** - Manual migration needed
   - ⚠️ **Blocking** - Must be resolved before migration
 - Links to official AWS migration documentation
+
+### 🧙 **Build Optimization Wizard** (NEW)
+Speed up your Amplify builds with guided optimization:
+- **Caching Analysis** - Enable Amplify build cache, Next.js cache, node_modules caching
+- **Dependency Checks** - Use npm ci, detect duplicate packages, optimize lock files
+- **Build Config** - Enable skipLibCheck, upgrade Node.js version, parallel builds
+- **Asset Optimization** - Find large images, font optimization suggestions
+- **One-Click Fixes** - Apply optimizations with a single button
+- **Estimated Savings** - See potential build time reduction
+
+### 📦 **Bundle Size Analyzer** (NEW)
+Prevent "build output exceeds max size" errors:
+- Visualize build output size vs Amplify's 230MB limit
+- See largest files and directories with percentage breakdown
+- Auto-detects .next, dist, build, out directories
+- Get actionable recommendations to reduce bundle size
+
+### 📈 **Build Performance Tracker** (NEW)
+Track and optimize build times over time:
+- Historical build duration tracking per branch
+- Success rate metrics and trend analysis
+- Detect build time regressions
+- Compare performance across branches
+
+### 🏗️ **Monorepo Support** (NEW)
+First-class support for monorepo architectures:
+- Auto-detects TurboRepo, Nx, Lerna, npm/pnpm/yarn workspaces
+- One-click amplify.yml generation with proper baseDirectory
+- Package dependency visualization
 
 ### 🎯 **Smart Auto-Detection**
 The extension "just works" when you open an Amplify project:
@@ -172,6 +202,10 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 | **Open Dashboard** | Visual overview of all apps |
 | **Diagnose Latest Failed Build** | Analyze the most recent failed job |
 | **Apply Quick Fix** | Fix common issues with one click |
+| **Build Optimization Wizard** | Guided build speed improvements |
+| **Analyze Bundle Size** | Check build output against 230MB limit |
+| **Show Build Performance** | View build time trends |
+| **Detect Monorepo Structure** | Auto-detect and configure monorepos |
 | **Analyze Gen1 → Gen2 Migration** | Check migration readiness |
 | **List Apps** | Refresh the apps list |
 | **Switch AWS Profile** | Change AWS profile |
@@ -179,7 +213,6 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 | **Stop Build** | Cancel a running deployment |
 | **Add Environment Variable** | Add new env var to branch |
 | **Open in AWS Console** | Open app in browser |
-| **Open Migration Documentation** | AWS Gen2 migration docs |
 
 ---
 

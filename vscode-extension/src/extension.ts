@@ -12,6 +12,7 @@ import { QuickFixService, QUICK_FIXES } from './quickFixes';
 import { BundleAnalyzerPanel } from './views/bundleAnalyzerPanel';
 import { BuildPerformanceTracker, BuildPerformancePanel } from './views/buildPerformancePanel';
 import { MonorepoPanel } from './views/monorepoDetector';
+import { BuildOptimizationWizard } from './views/buildOptimizationWizard';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -470,6 +471,16 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             await MonorepoPanel.createOrShow(workspaceFolder.uri.fsPath);
+        }),
+
+        // Build Optimization Wizard
+        vscode.commands.registerCommand('amplify-monitor.optimizeBuild', async () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder open');
+                return;
+            }
+            BuildOptimizationWizard.createOrShow(workspaceFolder.uri.fsPath);
         }),
 
         appsView,
