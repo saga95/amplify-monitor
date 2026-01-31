@@ -8,6 +8,7 @@ import { DiagnosisTreeProvider } from './views/diagnosisTree';
 import { EnvVarsTreeProvider } from './views/envVarsTree';
 import { MigrationTreeProvider } from './views/migrationTree';
 import { DashboardPanel } from './views/dashboardPanel';
+import { QuickFixService, QUICK_FIXES } from './quickFixes';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -133,6 +134,79 @@ export function activate(context: vscode.ExtensionContext) {
                 const text = `Issue: ${item.issue.pattern}\nRoot Cause: ${item.issue.rootCause}\nSuggested Fixes:\n${item.issue.suggestedFixes.map((f, i) => `${i + 1}. ${f}`).join('\n')}`;
                 await vscode.env.clipboard.writeText(text);
                 vscode.window.showInformationMessage('Issue details copied to clipboard');
+            }
+        }),
+
+        // Quick Fix command
+        vscode.commands.registerCommand('amplify-monitor.applyQuickFix', async (pattern?: string, fixId?: string) => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder open');
+                return;
+            }
+
+            const quickFixService = new QuickFixService(workspaceFolder.uri.fsPath);
+
+            // If no pattern provided, show all available fixes
+            if (!pattern) {
+                const allFixes: { label: string; description: string; pattern: string; fixId: string }[] = [];
+                for (const [p, fixes] of Object.entries(QUICK_FIXES)) {
+                    for (const fix of fixes) {
+                        allFixes.push({
+                            label: fix.title,
+                            description: `${p}: ${fix.description}`,
+                            pattern: p,
+                            fixId: fix.id
+                        });
+                    }
+                }
+                const selected = await vscode.window.showQuickPick(allFixes, {
+                    placeHolder: 'Select a quick fix to apply'
+                });
+                if (selected) {
+                    pattern = selected.pattern;
+                    fixId = selected.fixId;
+                } else {
+                    return;
+                }
+            }
+
+            // Get fixes for the pattern
+            const fixes = QUICK_FIXES[pattern];
+            if (!fixes || fixes.length === 0) {
+                vscode.window.showInformationMessage(`No quick fixes available for ${pattern}`);
+                return;
+            }
+
+            // Find specific fix or show picker
+            let fix = fixId ? fixes.find(f => f.id === fixId) : undefined;
+            if (!fix) {
+                const items = fixes.map(f => ({
+                    label: f.title,
+                    description: f.description,
+                    fix: f
+                }));
+                const selected = await vscode.window.showQuickPick(items, {
+                    placeHolder: `Select fix for ${pattern.replace(/_/g, ' ')}`
+                });
+                if (!selected) return;
+                fix = selected.fix;
+            }
+
+            // Apply the fix
+            const success = await quickFixService.applyFix(fix);
+            if (success) {
+                vscode.window.showInformationMessage(`✅ Applied: ${fix.title}`);
+                diagnosisProvider.refresh();
+            }
+        }),
+
+        // Show all quick fixes command
+        vscode.commands.registerCommand('amplify-monitor.showQuickFixes', async (item?: { issue?: { pattern: string } }) => {
+            if (item?.issue?.pattern) {
+                vscode.commands.executeCommand('amplify-monitor.applyQuickFix', item.issue.pattern);
+            } else {
+                vscode.commands.executeCommand('amplify-monitor.applyQuickFix');
             }
         }),
 

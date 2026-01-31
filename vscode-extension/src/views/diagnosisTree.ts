@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { AmplifyMonitorCli, DiagnosisResult, DiagnosisIssue } from '../cli';
+import { QUICK_FIXES } from '../quickFixes';
 
 export class DiagnosisTreeProvider implements vscode.TreeDataProvider<DiagnosisTreeItem> {
     private _onDidChangeTreeData = new vscode.EventEmitter<DiagnosisTreeItem | undefined | null | void>();
@@ -79,51 +80,98 @@ export class DiagnosisTreeProvider implements vscode.TreeDataProvider<DiagnosisT
             return items;
         }
 
-        // Issue children - show root cause and fixes
-        if (element.issue) {
-            const items: DiagnosisTreeItem[] = [];
+        // Handle based on element type
+        switch (element.type) {
+            case 'issue': {
+                // Issue children - show root cause and fixes
+                if (!element.issue) return [];
+                const issue = element.issue;
+                const items: DiagnosisTreeItem[] = [];
 
-            items.push(new DiagnosisTreeItem(
-                `Cause: ${element.issue.rootCause}`,
-                'cause',
-                vscode.TreeItemCollapsibleState.None
-            ));
-
-            if (element.issue.suggestedFixes.length > 0) {
                 items.push(new DiagnosisTreeItem(
-                    'Suggested Fixes',
-                    'fixes-header',
-                    vscode.TreeItemCollapsibleState.Expanded,
-                    undefined,
-                    undefined,
-                    element.issue.suggestedFixes
+                    `Cause: ${issue.rootCause}`,
+                    'cause',
+                    vscode.TreeItemCollapsibleState.None
                 ));
+
+                // Add quick fixes if available
+                const quickFixes = QUICK_FIXES[issue.pattern];
+                if (quickFixes && quickFixes.length > 0) {
+                    items.push(new DiagnosisTreeItem(
+                        '⚡ Quick Fixes (click to apply)',
+                        'fixes-header',
+                        vscode.TreeItemCollapsibleState.Expanded,
+                        issue,
+                        undefined,
+                        undefined
+                    ));
+                }
+
+                if (issue.suggestedFixes.length > 0) {
+                    items.push(new DiagnosisTreeItem(
+                        'Manual Steps',
+                        'fixes-header',
+                        vscode.TreeItemCollapsibleState.Collapsed,
+                        undefined,
+                        undefined,
+                        issue.suggestedFixes
+                    ));
+                }
+
+                return items;
             }
 
-            return items;
-        }
+            case 'fixes-header': {
+                // Quick fixes list (when fixes-header has an associated issue)
+                if (element.issue) {
+                    const issue = element.issue;
+                    const pattern = issue.pattern;
+                    const quickFixes = QUICK_FIXES[pattern] || [];
+                    return quickFixes.map(fix => {
+                        const item = new DiagnosisTreeItem(
+                            fix.title,
+                            'quick-fix',
+                            vscode.TreeItemCollapsibleState.None,
+                            issue,
+                            fix.description,
+                            undefined,
+                            fix.id
+                        );
+                        item.command = {
+                            command: 'amplify-monitor.applyQuickFix',
+                            title: 'Apply Quick Fix',
+                            arguments: [pattern, fix.id]
+                        };
+                        return item;
+                    });
+                }
 
-        // Fixes list
-        if (element.fixes) {
-            return element.fixes.map((fix, index) => new DiagnosisTreeItem(
-                `${index + 1}. ${fix}`,
-                'fix',
-                vscode.TreeItemCollapsibleState.None
-            ));
-        }
+                // Fixes list (manual steps)
+                if (element.fixes) {
+                    return element.fixes.map((fix, index) => new DiagnosisTreeItem(
+                        `${index + 1}. ${fix}`,
+                        'fix',
+                        vscode.TreeItemCollapsibleState.None
+                    ));
+                }
+                return [];
+            }
 
-        return [];
+            default:
+                return [];
+        }
     }
 }
 
 export class DiagnosisTreeItem extends vscode.TreeItem {
     constructor(
         public readonly label: string,
-        public readonly type: 'header' | 'issue' | 'cause' | 'fixes-header' | 'fix' | 'success' | 'info',
+        public readonly type: 'header' | 'issue' | 'cause' | 'fixes-header' | 'fix' | 'success' | 'info' | 'quick-fix',
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly issue?: DiagnosisIssue,
         public readonly description?: string,
-        public readonly fixes?: string[]
+        public readonly fixes?: string[],
+        public readonly quickFixId?: string
     ) {
         super(label, collapsibleState);
 
@@ -136,6 +184,10 @@ export class DiagnosisTreeItem extends vscode.TreeItem {
             case 'issue':
                 this.iconPath = new vscode.ThemeIcon('warning', new vscode.ThemeColor('list.warningForeground'));
                 this.tooltip = issue?.rootCause;
+                // Add quick fix button if available
+                if (issue && QUICK_FIXES[issue.pattern]) {
+                    this.contextValue = 'diagnosis-issue-fixable';
+                }
                 break;
             case 'cause':
                 this.iconPath = new vscode.ThemeIcon('lightbulb');
@@ -145,6 +197,10 @@ export class DiagnosisTreeItem extends vscode.TreeItem {
                 break;
             case 'fix':
                 this.iconPath = new vscode.ThemeIcon('arrow-right');
+                break;
+            case 'quick-fix':
+                this.iconPath = new vscode.ThemeIcon('wand', new vscode.ThemeColor('charts.green'));
+                this.contextValue = 'diagnosis-quick-fix';
                 break;
             case 'success':
                 this.iconPath = new vscode.ThemeIcon('check', new vscode.ThemeColor('testing.iconPassed'));

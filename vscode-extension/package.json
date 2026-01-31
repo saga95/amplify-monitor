@@ -2,7 +2,7 @@
   "name": "amplify-monitor",
   "displayName": "Amplify Monitor",
   "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
-  "version": "0.1.9",
+  "version": "0.1.10",
   "publisher": "SagaraHarasgama",
   "author": {
     "name": "saga95"
@@ -129,6 +129,18 @@
         "title": "Copy Issue Details",
         "category": "Amplify Monitor",
         "icon": "$(copy)"
+      },
+      {
+        "command": "amplify-monitor.applyQuickFix",
+        "title": "Apply Quick Fix",
+        "category": "Amplify Monitor",
+        "icon": "$(wand)"
+      },
+      {
+        "command": "amplify-monitor.showQuickFixes",
+        "title": "Show Quick Fixes",
+        "category": "Amplify Monitor",
+        "icon": "$(lightbulb)"
       },
       {
         "command": "amplify-monitor.refreshEnvVars",
@@ -318,8 +330,13 @@
       "view/item/context": [
         {
           "command": "amplify-monitor.copyIssue",
-          "when": "viewItem == diagnosis-issue",
-          "group": "inline"
+          "when": "viewItem == diagnosis-issue || viewItem == diagnosis-issue-fixable",
+          "group": "inline@2"
+        },
+        {
+          "command": "amplify-monitor.showQuickFixes",
+          "when": "viewItem == diagnosis-issue-fixable",
+          "group": "inline@1"
         },
         {
           "command": "amplify-monitor.revealEnvVar",

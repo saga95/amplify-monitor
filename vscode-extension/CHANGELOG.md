@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.10] - 2026-01-31
+
+### Added
+- **Quick Fixes**: One-click automated fixes for common build issues
+  - Click the ⚡ wand icon on any fixable issue to apply fix instantly
+  - Supported fix patterns:
+    - **Lock file mismatch**: Switch to npm/pnpm, delete conflicting lock files
+    - **Node version mismatch**: Create .nvmrc, add nvm use to amplify.yml
+    - **Missing env vars**: Open console, create .env.example template
+    - **npm install failures**: Clear cache, use legacy peer deps
+    - **Build failures**: Add CI=false, open package.json
+    - **Out of memory**: Increase Node heap size
+    - **amplify.yml errors**: Create template, validate syntax
+    - **pnpm failures**: Enable corepack, pin pnpm version
+- New commands:
+  - `Apply Quick Fix` - Apply a specific fix to resolve build issues
+  - `Show Quick Fixes` - Browse all available quick fixes
+- Quick fix button appears inline on fixable issues in diagnosis panel
+
+### Improved
+- Diagnosis tree reorganized to show Quick Fixes prominently
+- Better categorization of automated vs manual fix steps
+
 ## [0.1.9] - 2026-01-30
 
 ### Added
