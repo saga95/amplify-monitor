@@ -13,6 +13,7 @@ import { BundleAnalyzerPanel } from './views/bundleAnalyzerPanel';
 import { BuildPerformanceTracker, BuildPerformancePanel } from './views/buildPerformancePanel';
 import { MonorepoPanel } from './views/monorepoDetector';
 import { BuildOptimizationWizard } from './views/buildOptimizationWizard';
+import { PreDeployValidationPanel } from './views/preDeployValidation';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -481,6 +482,16 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             BuildOptimizationWizard.createOrShow(workspaceFolder.uri.fsPath);
+        }),
+
+        // Pre-Deploy Validation
+        vscode.commands.registerCommand('amplify-monitor.validateDeploy', async () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder open');
+                return;
+            }
+            PreDeployValidationPanel.createOrShow(workspaceFolder.uri.fsPath);
         }),
 
         appsView,
