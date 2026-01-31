@@ -1,5 +1,28 @@
 # Changelog
 
+## [0.1.11] - 2026-01-31
+
+### Added
+- **Expanded Quick Fixes**: Now covering 20 issue patterns with 50+ one-click fixes
+  - **TypeScript errors**: Open tsconfig, skip lib check, run tsc check
+  - **ESLint errors**: Disable CI warnings, run auto-fix, open config
+  - **Module not found**: Install deps, clean install, open package.json
+  - **Next.js errors**: Set artifacts, open config, create env template
+  - **Vite errors**: Set dist artifacts, open config, create env template
+  - **Yarn failures**: Switch to npm, install yarn, delete lock file
+  - **Timeout**: Enable caching, parallel builds
+  - **Artifact path errors**: Multiple artifact directory options (dist/build/out/.next)
+  - **Network errors**: Retry build, npm registry mirror
+  - **Permission denied**: Use /tmp, fix npm permissions
+  - **npm ci failure**: Regenerate lock file, use npm install
+  - **Package manager conflict**: Standardize on npm, remove extra locks
+  - **Lock file mismatch**: Full coverage for npm/pnpm/yarn switching
+
+### Improved
+- Updated README with comprehensive feature documentation
+- Better architecture diagram showing extension components
+- More detailed quick fix descriptions
+
 ## [0.1.10] - 2026-01-31
 
 ### Added

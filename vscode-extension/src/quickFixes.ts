@@ -276,6 +276,485 @@ frontend:
                 }
             }
         }
+    ],
+    'TYPESCRIPT_ERROR': [
+        {
+            id: 'open-tsconfig',
+            title: '📋 Open tsconfig.json',
+            description: 'Review TypeScript configuration',
+            pattern: 'TYPESCRIPT_ERROR',
+            command: 'vscode.open',
+            args: ['tsconfig.json']
+        },
+        {
+            id: 'add-skip-lib-check',
+            title: '⚡ Skip library type checking',
+            description: 'Add skipLibCheck to tsconfig for faster builds',
+            pattern: 'TYPESCRIPT_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'tsconfig.json',
+                action: 'modify',
+                content: (existing) => {
+                    if (existing.includes('"skipLibCheck"')) {
+                        return existing.replace(/"skipLibCheck"\s*:\s*false/, '"skipLibCheck": true');
+                    }
+                    return existing.replace(
+                        /"compilerOptions"\s*:\s*\{/,
+                        '"compilerOptions": {\n    "skipLibCheck": true,'
+                    );
+                }
+            }
+        },
+        {
+            id: 'run-tsc-check',
+            title: '🔍 Run TypeScript check',
+            description: 'Run npx tsc --noEmit to see all errors',
+            pattern: 'TYPESCRIPT_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            terminalCommand: 'npx tsc --noEmit'
+        }
+    ],
+    'ESLINT_ERROR': [
+        {
+            id: 'add-ci-false',
+            title: '🔧 Disable CI lint warnings',
+            description: 'Set CI=false to treat warnings as warnings, not errors',
+            pattern: 'ESLINT_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => {
+                    if (existing.includes('CI=false') || existing.includes('CI=true')) {
+                        return existing.replace(/CI=true/g, 'CI=false');
+                    }
+                    return existing.replace(
+                        /(build:\s*commands:\s*\n\s*-\s*)/,
+                        '$1CI=false '
+                    );
+                }
+            }
+        },
+        {
+            id: 'run-lint-fix',
+            title: '🔧 Run ESLint auto-fix',
+            description: 'Automatically fix linting errors where possible',
+            pattern: 'ESLINT_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            terminalCommand: 'npx eslint . --fix'
+        },
+        {
+            id: 'open-eslint-config',
+            title: '📋 Open ESLint config',
+            description: 'Review ESLint rules and configuration',
+            pattern: 'ESLINT_ERROR',
+            command: 'vscode.open',
+            args: ['.eslintrc.js']
+        }
+    ],
+    'MODULE_NOT_FOUND': [
+        {
+            id: 'install-deps',
+            title: '📦 Install dependencies',
+            description: 'Run npm install to install all dependencies',
+            pattern: 'MODULE_NOT_FOUND',
+            command: 'amplify-monitor.applyQuickFix',
+            terminalCommand: 'npm install'
+        },
+        {
+            id: 'clear-node-modules',
+            title: '🧹 Clean install',
+            description: 'Delete node_modules and reinstall',
+            pattern: 'MODULE_NOT_FOUND',
+            command: 'amplify-monitor.applyQuickFix',
+            requiresConfirmation: true,
+            terminalCommand: 'rm -rf node_modules && npm install'
+        },
+        {
+            id: 'open-package-json',
+            title: '📋 Open package.json',
+            description: 'Check if missing module is listed in dependencies',
+            pattern: 'MODULE_NOT_FOUND',
+            command: 'vscode.open',
+            args: ['package.json']
+        }
+    ],
+    'NEXTJS_ERROR': [
+        {
+            id: 'set-next-artifacts',
+            title: '📁 Set .next as artifact dir',
+            description: 'Configure amplify.yml to use .next as baseDirectory',
+            pattern: 'NEXTJS_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => {
+                    return existing.replace(
+                        /baseDirectory:\s*\S+/,
+                        'baseDirectory: .next'
+                    );
+                }
+            }
+        },
+        {
+            id: 'open-next-config',
+            title: '📋 Open next.config.js',
+            description: 'Review Next.js configuration',
+            pattern: 'NEXTJS_ERROR',
+            command: 'vscode.open',
+            args: ['next.config.js']
+        },
+        {
+            id: 'add-next-env-vars',
+            title: '🔐 Add NEXT_PUBLIC_ env vars',
+            description: 'Create .env.local template for Next.js environment variables',
+            pattern: 'NEXTJS_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: '.env.local.example',
+                action: 'create',
+                content: `# Next.js Environment Variables
+# Copy this to .env.local for local development
+# Add these to Amplify Console for production
+
+# Public variables (exposed to browser)
+NEXT_PUBLIC_API_URL=
+NEXT_PUBLIC_APP_NAME=
+
+# Server-side only variables
+DATABASE_URL=
+API_SECRET_KEY=
+`
+            }
+        }
+    ],
+    'VITE_ERROR': [
+        {
+            id: 'set-vite-artifacts',
+            title: '📁 Set dist as artifact dir',
+            description: 'Configure amplify.yml to use dist as baseDirectory',
+            pattern: 'VITE_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => {
+                    return existing.replace(
+                        /baseDirectory:\s*\S+/,
+                        'baseDirectory: dist'
+                    );
+                }
+            }
+        },
+        {
+            id: 'open-vite-config',
+            title: '📋 Open vite.config.ts',
+            description: 'Review Vite configuration',
+            pattern: 'VITE_ERROR',
+            command: 'vscode.open',
+            args: ['vite.config.ts']
+        },
+        {
+            id: 'add-vite-env-vars',
+            title: '🔐 Add VITE_ env vars',
+            description: 'Create .env template for Vite environment variables',
+            pattern: 'VITE_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: '.env.example',
+                action: 'create',
+                content: `# Vite Environment Variables
+# Copy this to .env.local for local development
+# Add these to Amplify Console for production (with VITE_ prefix)
+
+VITE_API_URL=
+VITE_APP_TITLE=
+VITE_PUBLIC_KEY=
+`
+            }
+        }
+    ],
+    'YARN_INSTALL_FAILURE': [
+        {
+            id: 'switch-to-npm-from-yarn',
+            title: '🔧 Switch to npm',
+            description: 'Update amplify.yml to use npm instead of yarn',
+            pattern: 'YARN_INSTALL_FAILURE',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => existing.replace(/yarn install/g, 'npm ci').replace(/yarn build/g, 'npm run build')
+            }
+        },
+        {
+            id: 'install-yarn',
+            title: '📦 Install Yarn in preBuild',
+            description: 'Add yarn installation to preBuild phase',
+            pattern: 'YARN_INSTALL_FAILURE',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => {
+                    if (existing.includes('npm install -g yarn')) {
+                        return existing;
+                    }
+                    return existing.replace(
+                        /(preBuild:\s*commands:\s*\n)/,
+                        '$1        - npm install -g yarn\n'
+                    );
+                }
+            }
+        },
+        {
+            id: 'delete-yarn-lock',
+            title: '🗑️ Delete yarn.lock',
+            description: 'Remove yarn.lock and switch to npm',
+            pattern: 'YARN_INSTALL_FAILURE',
+            command: 'amplify-monitor.applyQuickFix',
+            requiresConfirmation: true,
+            fileModification: {
+                relativePath: 'yarn.lock',
+                action: 'delete'
+            }
+        }
+    ],
+    'TIMEOUT': [
+        {
+            id: 'add-cache',
+            title: '⚡ Enable node_modules caching',
+            description: 'Add cache configuration to amplify.yml',
+            pattern: 'TIMEOUT',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => {
+                    if (existing.includes('cache:')) {
+                        return existing;
+                    }
+                    return existing + `
+  cache:
+    paths:
+      - node_modules/**/*
+`;
+                }
+            }
+        },
+        {
+            id: 'parallel-builds',
+            title: '🚀 Enable parallel builds',
+            description: 'Add parallelism flags to build commands',
+            pattern: 'TIMEOUT',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => {
+                    return existing.replace(
+                        /npm run build/g,
+                        'npm run build -- --parallel'
+                    );
+                }
+            }
+        }
+    ],
+    'ARTIFACT_PATH_ERROR': [
+        {
+            id: 'check-build-output',
+            title: '🔍 Check build output directory',
+            description: 'Run build locally to see actual output path',
+            pattern: 'ARTIFACT_PATH_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            terminalCommand: 'npm run build && ls -la'
+        },
+        {
+            id: 'set-dist-artifacts',
+            title: '📁 Set dist as artifact dir',
+            description: 'Change baseDirectory to dist (Vite default)',
+            pattern: 'ARTIFACT_PATH_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => existing.replace(/baseDirectory:\s*\S+/, 'baseDirectory: dist')
+            }
+        },
+        {
+            id: 'set-build-artifacts',
+            title: '📁 Set build as artifact dir',
+            description: 'Change baseDirectory to build (CRA default)',
+            pattern: 'ARTIFACT_PATH_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => existing.replace(/baseDirectory:\s*\S+/, 'baseDirectory: build')
+            }
+        },
+        {
+            id: 'set-out-artifacts',
+            title: '📁 Set out as artifact dir',
+            description: 'Change baseDirectory to out (Next.js export)',
+            pattern: 'ARTIFACT_PATH_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => existing.replace(/baseDirectory:\s*\S+/, 'baseDirectory: out')
+            }
+        }
+    ],
+    'NETWORK_ERROR': [
+        {
+            id: 'retry-build',
+            title: '🔄 Retry Build',
+            description: 'Transient network error - try rebuilding',
+            pattern: 'NETWORK_ERROR',
+            command: 'amplify-monitor.startBuild'
+        },
+        {
+            id: 'use-npm-registry-mirror',
+            title: '🌐 Use npm registry mirror',
+            description: 'Add registry configuration for reliability',
+            pattern: 'NETWORK_ERROR',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: '.npmrc',
+                action: 'create',
+                content: `registry=https://registry.npmjs.org/
+fetch-retries=5
+fetch-retry-mintimeout=20000
+fetch-retry-maxtimeout=120000
+`
+            }
+        }
+    ],
+    'PERMISSION_DENIED': [
+        {
+            id: 'use-tmp-dir',
+            title: '📁 Use /tmp for temp files',
+            description: 'Add TMPDIR export to use writable directory',
+            pattern: 'PERMISSION_DENIED',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => {
+                    if (existing.includes('TMPDIR=/tmp')) {
+                        return existing;
+                    }
+                    return existing.replace(
+                        /(preBuild:\s*commands:\s*\n)/,
+                        '$1        - export TMPDIR=/tmp\n'
+                    );
+                }
+            }
+        },
+        {
+            id: 'fix-npm-permissions',
+            title: '🔧 Fix npm permissions',
+            description: 'Configure npm to use user directory',
+            pattern: 'PERMISSION_DENIED',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: '.npmrc',
+                action: 'create',
+                content: `prefix=~/.npm-global
+cache=~/.npm-cache
+`
+            }
+        }
+    ],
+    'NPM_CI_FAILURE': [
+        {
+            id: 'regenerate-lock',
+            title: '🔄 Regenerate package-lock.json',
+            description: 'Delete and recreate package-lock.json',
+            pattern: 'NPM_CI_FAILURE',
+            command: 'amplify-monitor.applyQuickFix',
+            terminalCommand: 'rm package-lock.json && npm install'
+        },
+        {
+            id: 'use-npm-install',
+            title: '🔧 Use npm install instead of npm ci',
+            description: 'Change to npm install for more flexibility',
+            pattern: 'NPM_CI_FAILURE',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => existing.replace(/npm ci/g, 'npm install')
+            }
+        }
+    ],
+    'PACKAGE_MANAGER_CONFLICT': [
+        {
+            id: 'standardize-npm',
+            title: '🔧 Standardize on npm',
+            description: 'Update amplify.yml to use only npm',
+            pattern: 'PACKAGE_MANAGER_CONFLICT',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => existing
+                    .replace(/pnpm install/g, 'npm ci')
+                    .replace(/yarn install/g, 'npm ci')
+                    .replace(/pnpm run build/g, 'npm run build')
+                    .replace(/yarn build/g, 'npm run build')
+            }
+        },
+        {
+            id: 'remove-extra-locks',
+            title: '🗑️ Remove extra lock files',
+            description: 'Keep only package-lock.json',
+            pattern: 'PACKAGE_MANAGER_CONFLICT',
+            command: 'amplify-monitor.applyQuickFix',
+            requiresConfirmation: true,
+            terminalCommand: 'rm -f pnpm-lock.yaml yarn.lock'
+        }
+    ],
+    'LOCKFILE_MISMATCH': [
+        {
+            id: 'switch-to-npm-lock',
+            title: '🔧 Switch to npm',
+            description: 'Update amplify.yml to use npm install',
+            pattern: 'LOCKFILE_MISMATCH',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => existing.replace(/pnpm install|yarn install/g, 'npm ci')
+            }
+        },
+        {
+            id: 'switch-to-pnpm-lock',
+            title: '🔧 Switch to pnpm',
+            description: 'Update amplify.yml to use pnpm install',
+            pattern: 'LOCKFILE_MISMATCH',
+            command: 'amplify-monitor.applyQuickFix',
+            fileModification: {
+                relativePath: 'amplify.yml',
+                action: 'modify',
+                content: (existing) => existing.replace(/npm ci|npm install|yarn install/g, 'pnpm install')
+            }
+        },
+        {
+            id: 'delete-package-lock-mismatch',
+            title: '🗑️ Delete package-lock.json',
+            description: 'Remove package-lock.json (use with pnpm)',
+            pattern: 'LOCKFILE_MISMATCH',
+            command: 'amplify-monitor.applyQuickFix',
+            requiresConfirmation: true,
+            fileModification: {
+                relativePath: 'package-lock.json',
+                action: 'delete'
+            }
+        }
     ]
 };
 

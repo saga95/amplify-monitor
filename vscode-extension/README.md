@@ -5,73 +5,98 @@
 [![Rating](https://img.shields.io/visual-studio-marketplace/r/SagaraHarasgama.amplify-monitor)](https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor)
 [![GitHub](https://img.shields.io/github/license/saga95/amplify-monitor)](https://github.com/saga95/amplify-monitor/blob/main/LICENSE)
 
-**Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis directly in VS Code.**
+**The ultimate AWS Amplify development toolkit for VS Code.** Monitor builds, diagnose failures with AI-powered analysis, migrate to Gen2, and manage your entire Amplify portfolio — all without leaving your editor.
 
-Stop wasting time scrolling through build logs! Amplify Monitor automatically detects 20+ common build failure patterns and provides actionable fixes.
+![Amplify Monitor Dashboard](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/dashboard.png)
 
-![Amplify Monitor Screenshot](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/screenshot.png)
+---
+
+## 🚀 What's New in v0.1.10
+
+- ⚡ **One-Click Quick Fixes** - Automatically fix common build issues
+- 📊 **Portfolio Dashboard** - Visual overview of all apps and branches
+- 🔄 **Smart Auto-Detection** - Extension detects Amplify projects on startup
+- 🔀 **Gen2 Migration Assistant** - Analyze Gen1 projects for migration readiness
 
 ---
 
 ## ✨ Features
 
+### 📊 **Portfolio Dashboard**
+Get a bird's-eye view of your entire Amplify infrastructure:
+- Visual grid showing all apps, branches, and build statuses
+- Summary bar with total apps, succeeded, failed, and running builds
+- Quick action buttons: Start Build, Stop Build, View Logs, Open Console
+- Relative timestamps ("5m ago", "2h ago") for last build time
+- Responsive design adapts to your VS Code window
+
+![Dashboard](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/dashboard-view.png)
+
+### ⚡ **Quick Fixes (One-Click Resolution)**
+Stop manually fixing the same issues over and over! When you diagnose a failed build, Amplify Monitor offers **automated fixes**:
+
+| Issue | Available Fixes |
+|-------|----------------|
+| **Lock file mismatch** | Switch to npm/pnpm, delete conflicting lock files |
+| **Node version mismatch** | Create .nvmrc, add `nvm use` to amplify.yml |
+| **Missing env vars** | Open AWS Console, create .env.example template |
+| **npm install failed** | Clear cache, use legacy peer deps |
+| **Build command failed** | Add CI=false, open package.json |
+| **Out of memory** | Increase Node heap size to 8GB |
+| **amplify.yml errors** | Create template, validate syntax |
+| **pnpm install failed** | Enable corepack, pin pnpm version |
+
+Click the ⚡ wand icon on any fixable issue to apply instantly!
+
 ### 🔍 **Smart Build Diagnosis**
 Automatically analyze failed builds and identify root causes:
+- 20+ detection patterns for common issues
 - Lock file mismatches (npm vs pnpm vs yarn)
 - Node.js version conflicts
 - Missing environment variables
 - Package installation failures
 - TypeScript/ESLint errors
-- And 15+ more patterns!
+- Amplify buildspec configuration errors
 
-![Diagnosis View](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/diagnosis.png)
+### 🔀 **Gen2 Migration Assistant**
+Planning to migrate from Amplify Gen1 to Gen2? Get a full compatibility report:
+- Detects all Gen1 features in your project
+- Shows migration compatibility for each feature:
+  - ✅ **Fully Supported** - Works out of the box
+  - 🔧 **Supported with CDK** - Requires CDK configuration
+  - ❌ **Not Supported** - Manual migration needed
+  - ⚠️ **Blocking** - Must be resolved before migration
+- Links to official AWS migration documentation
 
-### 📊 **Real-time Job Monitoring**
-- View all your Amplify apps and branches
-- Track build/deploy job status with color-coded indicators
-- Auto-refresh support for continuous monitoring
+### 🎯 **Smart Auto-Detection**
+The extension "just works" when you open an Amplify project:
+- Automatically detects `amplify/` folder in workspace
+- Fetches apps when AWS credentials are available
+- Shows connection status in status bar
+- Prompts for credential configuration if needed
+- Re-detects when workspace folders change
 
-### 🌍 **Multi-Region Support**
-- Automatically discovers apps across **all AWS regions**
-- Region displayed next to each app name
-- No manual region switching required
-
-### 🔄 **Cross-Account Access**
-Perfect for consultants and developers working on client projects:
+### 🌍 **Multi-Region & Cross-Account Support**
+- Discovers apps across **all AWS regions** automatically
 - Switch AWS profiles with one click from the status bar
-- Configure profiles in settings for different accounts
-- Views auto-refresh when switching profiles
+- Perfect for consultants managing multiple client accounts
 
-![Profile Switch](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/profile-switch.png)
-
-### � **Environment Variables Manager**
+### 🔐 **Environment Variables Manager**
 Manage branch environment variables without leaving VS Code:
-- View all environment variables (securely masked)
-- Add, edit, and delete variables with one click
-- Reveal values with copy-to-clipboard support
-- Changes apply immediately to your Amplify branch
+- View all variables (securely masked by default)
+- Add, edit, and delete with one click
+- Reveal values with copy-to-clipboard
+- Changes apply immediately
 
 ### ⚡ **Quick Actions**
-Take control of your deployments:
-- **Start Build** - Trigger a new deployment instantly
-- **Stop Build** - Cancel a running deployment
-- **Open in Console** - Jump to AWS Console with one click
+- **Start Build** - Trigger deployments instantly
+- **Stop Build** - Cancel running builds
+- **Open in Console** - Jump to AWS Console
 
 ### 📝 **amplify.yml IntelliSense**
-Write build configurations faster:
 - JSON schema validation with error highlighting
-- 14+ code snippets for common frameworks:
-  - Next.js, Vite, React
-  - pnpm, yarn, npm
-  - Monorepo configurations
-  - Build with tests
-- Auto-completion for all amplify.yml properties
-
-### �💡 **Actionable Fixes**
-Each detected issue comes with:
-- Clear root cause explanation
-- Step-by-step suggested fixes
-- Copy-to-clipboard for easy sharing
+- 14+ code snippets for Next.js, Vite, pnpm, monorepos
+- Auto-completion for all buildspec properties
 
 ---
 
@@ -101,11 +126,11 @@ Each detected issue comes with:
 
 ### Quick Start
 
-1. Open the **Amplify Monitor** panel from the Activity Bar (left sidebar)
-2. Select an app from the **Apps** panel
-3. Choose a branch to view recent jobs
-4. Click on any **FAILED** job to diagnose it
-5. Review detected issues with root causes and fixes!
+1. Install the extension from VS Code Marketplace
+2. Open any project — the extension auto-detects Amplify configurations
+3. Check the status bar for connection status
+4. Open the **Amplify Monitor** panel from the Activity Bar
+5. Click the 📊 dashboard icon to see all your apps at a glance!
 
 ---
 
@@ -113,12 +138,13 @@ Each detected issue comes with:
 
 | Category | Patterns Detected |
 |----------|-------------------|
-| **Package Manager** | Lock file mismatch, npm/pnpm/yarn conflicts |
-| **Node.js** | Version mismatch, incompatible dependencies |
-| **Environment** | Missing env vars, invalid configuration |
+| **Package Manager** | Lock file mismatch, npm/pnpm/yarn conflicts, corepack issues |
+| **Node.js** | Version mismatch, incompatible dependencies, nvm errors |
+| **Environment** | Missing env vars, invalid configuration, build secrets |
 | **Build Tools** | TypeScript errors, ESLint failures, Vite/Next.js issues |
 | **Infrastructure** | Out of memory, timeout, permission denied |
-| **Network** | Download failures, registry issues |
+| **Network** | Download failures, registry issues, certificate errors |
+| **Amplify** | amplify.yml syntax errors, invalid build phases |
 
 ---
 
@@ -143,20 +169,17 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 
 | Command | Description |
 |---------|-------------|
+| **Open Dashboard** | Visual overview of all apps |
 | **Diagnose Latest Failed Build** | Analyze the most recent failed job |
+| **Apply Quick Fix** | Fix common issues with one click |
+| **Analyze Gen1 → Gen2 Migration** | Check migration readiness |
 | **List Apps** | Refresh the apps list |
-| **Switch AWS Profile** | Change AWS profile for cross-account access |
-| **Select App** | Choose an app to monitor |
-| **Select Branch** | Choose a branch to monitor |
-| **Start Build** | Trigger a new deployment for selected branch |
+| **Switch AWS Profile** | Change AWS profile |
+| **Start Build** | Trigger a new deployment |
 | **Stop Build** | Cancel a running deployment |
-| **Add Environment Variable** | Add new env var to selected branch |
-| **Edit Environment Variable** | Update an existing env var |
-| **Delete Environment Variable** | Remove an env var (with confirmation) |
-| **Reveal Value** | Show masked env var value |
+| **Add Environment Variable** | Add new env var to branch |
 | **Open in AWS Console** | Open app in browser |
-| **Refresh** | Refresh all panels |
-| **Open Settings** | Open extension settings |
+| **Open Migration Documentation** | AWS Gen2 migration docs |
 
 ---
 
@@ -164,7 +187,40 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 
 - **No credentials stored** - Uses AWS CLI/environment configuration
 - **Secure value masking** - Environment variables hidden by default
+- **Read-only by default** - Write operations require explicit action
 - **Open source** - Full code available on [GitHub](https://github.com/saga95/amplify-monitor)
+
+---
+
+## 🛠️ Architecture
+
+This extension is powered by a Rust CLI for maximum performance:
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    VS Code Extension                     │
+│  ┌─────────┐ ┌──────────┐ ┌──────────┐ ┌─────────────┐  │
+│  │Dashboard│ │Diagnosis │ │Migration │ │Quick Fixes  │  │
+│  │ Panel   │ │  Tree    │ │  Tree    │ │  Service    │  │
+│  └────┬────┘ └────┬─────┘ └────┬─────┘ └──────┬──────┘  │
+│       │           │            │              │          │
+│       └───────────┴─────┬──────┴──────────────┘          │
+│                         │                                 │
+│                   ┌─────▼─────┐                           │
+│                   │  CLI.ts   │                           │
+│                   └─────┬─────┘                           │
+└─────────────────────────┼───────────────────────────────┘
+                          │
+                   ┌──────▼──────┐
+                   │ amplify-    │
+                   │ monitor CLI │ (Rust)
+                   └──────┬──────┘
+                          │
+                   ┌──────▼──────┐
+                   │  AWS SDK    │
+                   │  Amplify    │
+                   └─────────────┘
+```
 
 ---
 
@@ -184,4 +240,4 @@ MIT © [saga95](https://github.com/saga95)
 
 ---
 
-**If this extension helped you, please [⭐ star the repo](https://github.com/saga95/amplify-monitor) and [rate it on the marketplace](https://marketplace.visualstudio.com/items?itemName=saga95.amplify-monitor&ssr=false#review-details)!**
+**If this extension helped you, please [⭐ star the repo](https://github.com/saga95/amplify-monitor) and [rate it on the marketplace](https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor&ssr=false#review-details)!**
