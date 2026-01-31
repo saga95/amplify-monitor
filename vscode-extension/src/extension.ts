@@ -7,6 +7,7 @@ import { JobsTreeProvider } from './views/jobsTree';
 import { DiagnosisTreeProvider } from './views/diagnosisTree';
 import { EnvVarsTreeProvider } from './views/envVarsTree';
 import { MigrationTreeProvider } from './views/migrationTree';
+import { DashboardPanel } from './views/dashboardPanel';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -69,6 +70,11 @@ export function activate(context: vscode.ExtensionContext) {
 
     // Register commands
     context.subscriptions.push(
+        // Dashboard command
+        vscode.commands.registerCommand('amplify-monitor.openDashboard', () => {
+            DashboardPanel.createOrShow(cli);
+        }),
+
         vscode.commands.registerCommand('amplify-monitor.listApps', async () => {
             await appsProvider.refresh();
             vscode.window.showInformationMessage('Amplify apps refreshed');

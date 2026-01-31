@@ -1,5 +1,20 @@
 # Changelog
 
+## [0.1.9] - 2026-01-30
+
+### Added
+- **Portfolio Dashboard**: New webview panel showing all apps, branches, and build statuses at a glance
+  - Visual summary with total apps, branches, succeeded, failed, and running builds
+  - Grid layout showing each app with all branches and their latest build status
+  - Quick action buttons: Start Build, Stop Build, View Logs, Open Console
+  - Real-time status icons and relative timestamps
+  - Responsive design adapts to VS Code window size
+- New command: `Amplify Monitor: Open Dashboard` (also available in Apps tree title)
+
+### Improved
+- Better visibility into multi-app deployments
+- Batch operations capability from a single view
+
 ## [0.1.8] - 2026-01-30
 
 ### Added
