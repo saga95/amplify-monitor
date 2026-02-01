@@ -237,6 +237,12 @@
         "title": "Pre-Deploy Validation",
         "category": "Amplify Monitor",
         "icon": "$(check-all)"
+      },
+      {
+        "command": "amplify-monitor.manageSecrets",
+        "title": "Manage Secrets (SSM/Secrets Manager)",
+        "category": "Amplify Monitor",
+        "icon": "$(key)"
       }
     ],
     "viewsContainers": {

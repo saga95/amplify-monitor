@@ -14,6 +14,7 @@ import { BuildPerformanceTracker, BuildPerformancePanel } from './views/buildPer
 import { MonorepoPanel } from './views/monorepoDetector';
 import { BuildOptimizationWizard } from './views/buildOptimizationWizard';
 import { PreDeployValidationPanel } from './views/preDeployValidation';
+import { SecretsManagerPanel } from './views/secretsManagerPanel';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -514,6 +515,18 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             PreDeployValidationPanel.createOrShow(workspaceFolder.uri.fsPath);
+        }),
+
+        // Secrets Manager Integration
+        vscode.commands.registerCommand('amplify-monitor.manageSecrets', async () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showErrorMessage('No workspace folder open');
+                return;
+            }
+            const appId = cli.getSelectedApp();
+            const branch = cli.getSelectedBranch();
+            SecretsManagerPanel.createOrShow(workspaceFolder.uri.fsPath, appId, branch);
         }),
 
         appsView,

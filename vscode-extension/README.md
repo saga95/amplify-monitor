@@ -11,13 +11,13 @@
 
 ---
 
-## 🚀 What's New in v0.1.13
+## 🚀 What's New in v0.1.15
 
-- 🧙 **Build Optimization Wizard** - Guided recommendations to speed up builds by 30-60%
-- 📦 **Bundle Size Analyzer** - Visualize build output against Amplify's 230MB limit
+- 🔐 **Secrets Manager Integration** - Sync env vars from AWS SSM/Secrets Manager
+- ✅ **Pre-Deploy Validation** - Catch issues BEFORE they cause failed builds
+- 🧙 **Build Optimization Wizard** - Guided recommendations to speed up builds
+- 📦 **Bundle Size Analyzer** - Visualize build output against 230MB limit
 - 📈 **Build Performance Tracker** - Track build times and detect regressions
-- 🏗️ **Monorepo Detector** - Auto-detect TurboRepo/Nx/Lerna and generate amplify.yml
-- ⚡ **21 Quick Fix Patterns** - One-click fixes for common build failures
 
 ---
 
@@ -69,7 +69,24 @@ Planning to migrate from Amplify Gen1 to Gen2? Get a full compatibility report:
   - ⚠️ **Blocking** - Must be resolved before migration
 - Links to official AWS migration documentation
 
-### 🧙 **Build Optimization Wizard** (NEW)
+### 🔐 **Secrets Manager Integration** (NEW)
+Centralize your secrets management with AWS SSM and Secrets Manager:
+- **Browse SSM Parameters** - Search by prefix, view SecureString/String types
+- **Browse Secrets Manager** - List and select secrets to sync
+- **Sync to Amplify** - Push secrets as environment variables with one click
+- **Backup to SSM** - Export Amplify env vars to Parameter Store
+- **Create .env.example** - Generate template from selected parameters
+- **Multi-region Support** - Switch regions on the fly
+
+### ✅ **Pre-Deploy Validation** (NEW)
+Catch issues BEFORE they cause failed builds:
+- **Git Checks** - Uncommitted changes, unpushed commits
+- **Dependency Checks** - Lock files, version mismatches
+- **Build Validation** - TypeScript errors, missing scripts
+- **Environment Checks** - Secrets in code, .env gitignored
+- **One-Click Deploy** - Deploy directly when all checks pass
+
+### 🧙 **Build Optimization Wizard**
 Speed up your Amplify builds with guided optimization:
 - **Caching Analysis** - Enable Amplify build cache, Next.js cache, node_modules caching
 - **Dependency Checks** - Use npm ci, detect duplicate packages, optimize lock files
@@ -200,6 +217,8 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 | Command | Description |
 |---------|-------------|
 | **Open Dashboard** | Visual overview of all apps |
+| **Manage Secrets** | Sync env vars from SSM/Secrets Manager |
+| **Pre-Deploy Validation** | Check for issues before deploying |
 | **Diagnose Latest Failed Build** | Analyze the most recent failed job |
 | **Apply Quick Fix** | Fix common issues with one click |
 | **Build Optimization Wizard** | Guided build speed improvements |
