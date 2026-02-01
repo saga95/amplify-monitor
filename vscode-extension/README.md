@@ -11,8 +11,9 @@
 
 ---
 
-## 🚀 What's New in v0.1.16
+## 🚀 What's New in v0.1.17
 
+- 🔍 **Node Version Detector** - Detect & fix Node.js version issues
 - 🔔 **Slack/Teams/Discord Notifications** - Get build alerts in your chat
 - 🔐 **Secrets Manager Integration** - Sync env vars from AWS SSM
 - ✅ **Pre-Deploy Validation** - Catch issues BEFORE failed builds
@@ -69,7 +70,7 @@ Planning to migrate from Amplify Gen1 to Gen2? Get a full compatibility report:
   - ⚠️ **Blocking** - Must be resolved before migration
 - Links to official AWS migration documentation
 
-### � **Build Notifications** (NEW)
+### 🔔 **Build Notifications** (NEW)
 Get instant alerts when builds complete:
 - **Slack Integration** - Rich formatted messages with build details
 - **Microsoft Teams** - Adaptive cards with action buttons
@@ -77,6 +78,15 @@ Get instant alerts when builds complete:
 - **Generic Webhooks** - JSON payloads for custom integrations
 - **Event Selection** - Choose which events to notify (started, succeeded, failed, cancelled)
 - **Test Notifications** - Verify webhook setup before going live
+
+### 🔍 **Node Version Detector** (NEW)
+Automatically detect and fix Node.js version issues:
+- **Multi-Source Detection** - Scans package.json, .nvmrc, .node-version, amplify.yml, Dockerfile
+- **Conflict Detection** - Identifies version mismatches between local and Amplify build
+- **Compatibility Check** - Validates against Amplify's supported Node versions (18, 20, 22, 24)
+- **One-Click Fixes** - Create .nvmrc, update amplify.yml with proper nvm commands
+- **Deprecation Warnings** - Alerts for Node 14/16 deprecation, experimental Node 25
+- **Local vs Amplify** - Compares your local Node version to what Amplify will use
 
 ### 🔐 **Secrets Manager Integration**
 Centralize your secrets management with AWS SSM and Secrets Manager:
@@ -226,6 +236,7 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 | Command | Description |
 |---------|-------------|
 | **Open Dashboard** | Visual overview of all apps |
+| **Detect Node Version Issues** | Find & fix Node.js version problems |
 | **Configure Notifications** | Set up Slack/Teams/Discord alerts |
 | **Manage Secrets** | Sync env vars from SSM/Secrets Manager |
 | **Pre-Deploy Validation** | Check for issues before deploying |

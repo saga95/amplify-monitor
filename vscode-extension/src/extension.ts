@@ -16,6 +16,7 @@ import { BuildOptimizationWizard } from './views/buildOptimizationWizard';
 import { PreDeployValidationPanel } from './views/preDeployValidation';
 import { SecretsManagerPanel } from './views/secretsManagerPanel';
 import { NotificationsPanel, NotificationsService } from './views/notificationsPanel';
+import { NodeVersionDetectorPanel } from './views/nodeVersionDetector';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -533,6 +534,16 @@ export function activate(context: vscode.ExtensionContext) {
         // Notifications (Slack/Teams/Discord)
         vscode.commands.registerCommand('amplify-monitor.configureNotifications', () => {
             NotificationsPanel.createOrShow(context);
+        }),
+
+        // Node Version Detector
+        vscode.commands.registerCommand('amplify-monitor.detectNodeVersion', () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showWarningMessage('Please open a workspace folder first');
+                return;
+            }
+            NodeVersionDetectorPanel.createOrShow(context.extensionUri);
         }),
 
         appsView,
