@@ -18,6 +18,7 @@ import { SecretsManagerPanel } from './views/secretsManagerPanel';
 import { NotificationsPanel, NotificationsService } from './views/notificationsPanel';
 import { NodeVersionDetectorPanel } from './views/nodeVersionDetector';
 import { EnvVarsTroubleshooterPanel } from './views/envVarsTroubleshooter';
+import { CustomDomainValidatorPanel } from './views/customDomainValidator';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -555,6 +556,11 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             EnvVarsTroubleshooterPanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        // Custom Domain Validator
+        vscode.commands.registerCommand('amplify-monitor.validateCustomDomain', () => {
+            CustomDomainValidatorPanel.createOrShow(context.extensionUri);
         }),
 
         appsView,

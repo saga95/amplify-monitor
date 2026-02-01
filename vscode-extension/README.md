@@ -11,14 +11,14 @@
 
 ---
 
-## 🚀 What's New in v0.1.18
+## 🚀 What's New in v0.1.19
 
+- 🌐 **Custom Domain Validator** - Validate DNS, SSL, and Amplify config for custom domains
 - 🔧 **Env Vars Troubleshooter** - Detect missing, mismatched, and exposed env vars
 - 🔍 **Node Version Detector** - Detect & fix Node.js version issues
 - 🔔 **Slack/Teams/Discord Notifications** - Get build alerts in your chat
 - 🔐 **Secrets Manager Integration** - Sync env vars from AWS SSM
 - ✅ **Pre-Deploy Validation** - Catch issues BEFORE failed builds
-- 🧙 **Build Optimization Wizard** - Speed up builds by 30-60%
 
 ---
 
@@ -98,6 +98,17 @@ Find and fix environment variable issues before they break your build:
 - **Client-Side Exposure** - Warns about sensitive vars with NEXT_PUBLIC_ prefix
 - **Gitignore Validation** - Ensures .env files aren't committed
 - **One-Click Fixes** - Add to .env, create .env.example, update .gitignore
+
+### 🌐 **Custom Domain Validator** (NEW)
+Validate your custom domain configuration before DNS propagation issues hit:
+- **DNS Record Validation** - Checks CNAME, A, TXT records for proper Amplify setup
+- **SSL Certificate Check** - Verifies certificate validity, expiration, and issuer
+- **Apex Domain Detection** - Identifies apex vs subdomain and provides correct guidance
+- **CloudFront Detection** - Validates CDN configuration and CNAME targets
+- **CDN Proxy Detection** - Warns about Cloudflare/other CDN proxy conflicts
+- **CAA Record Check** - Ensures CAA records allow Amplify certificate issuance
+- **Propagation Status** - Confirms DNS records have propagated globally
+- **Configuration Guide** - Shows exact records to add in your DNS provider
 
 ### 🔐 **Secrets Manager Integration**
 Centralize your secrets management with AWS SSM and Secrets Manager:
@@ -248,6 +259,7 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 |---------|-------------|
 | **Open Dashboard** | Visual overview of all apps |
 | **Troubleshoot Environment Variables** | Find missing/exposed env vars |
+| **Validate Custom Domain** | Check DNS, SSL, and Amplify config |
 | **Detect Node Version Issues** | Find & fix Node.js version problems |
 | **Configure Notifications** | Set up Slack/Teams/Discord alerts |
 | **Manage Secrets** | Sync env vars from SSM/Secrets Manager |
