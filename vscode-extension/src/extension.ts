@@ -15,6 +15,7 @@ import { MonorepoPanel } from './views/monorepoDetector';
 import { BuildOptimizationWizard } from './views/buildOptimizationWizard';
 import { PreDeployValidationPanel } from './views/preDeployValidation';
 import { SecretsManagerPanel } from './views/secretsManagerPanel';
+import { NotificationsPanel, NotificationsService } from './views/notificationsPanel';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -527,6 +528,11 @@ export function activate(context: vscode.ExtensionContext) {
             const appId = cli.getSelectedApp();
             const branch = cli.getSelectedBranch();
             SecretsManagerPanel.createOrShow(workspaceFolder.uri.fsPath, appId, branch);
+        }),
+
+        // Notifications (Slack/Teams/Discord)
+        vscode.commands.registerCommand('amplify-monitor.configureNotifications', () => {
+            NotificationsPanel.createOrShow(context);
         }),
 
         appsView,

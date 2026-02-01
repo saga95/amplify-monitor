@@ -11,13 +11,13 @@
 
 ---
 
-## 🚀 What's New in v0.1.15
+## 🚀 What's New in v0.1.16
 
-- 🔐 **Secrets Manager Integration** - Sync env vars from AWS SSM/Secrets Manager
-- ✅ **Pre-Deploy Validation** - Catch issues BEFORE they cause failed builds
-- 🧙 **Build Optimization Wizard** - Guided recommendations to speed up builds
-- 📦 **Bundle Size Analyzer** - Visualize build output against 230MB limit
-- 📈 **Build Performance Tracker** - Track build times and detect regressions
+- 🔔 **Slack/Teams/Discord Notifications** - Get build alerts in your chat
+- 🔐 **Secrets Manager Integration** - Sync env vars from AWS SSM
+- ✅ **Pre-Deploy Validation** - Catch issues BEFORE failed builds
+- 🧙 **Build Optimization Wizard** - Speed up builds by 30-60%
+- 📦 **Bundle Size Analyzer** - Stay under Amplify's 230MB limit
 
 ---
 
@@ -69,7 +69,16 @@ Planning to migrate from Amplify Gen1 to Gen2? Get a full compatibility report:
   - ⚠️ **Blocking** - Must be resolved before migration
 - Links to official AWS migration documentation
 
-### 🔐 **Secrets Manager Integration** (NEW)
+### � **Build Notifications** (NEW)
+Get instant alerts when builds complete:
+- **Slack Integration** - Rich formatted messages with build details
+- **Microsoft Teams** - Adaptive cards with action buttons
+- **Discord** - Embedded messages in your server
+- **Generic Webhooks** - JSON payloads for custom integrations
+- **Event Selection** - Choose which events to notify (started, succeeded, failed, cancelled)
+- **Test Notifications** - Verify webhook setup before going live
+
+### 🔐 **Secrets Manager Integration**
 Centralize your secrets management with AWS SSM and Secrets Manager:
 - **Browse SSM Parameters** - Search by prefix, view SecureString/String types
 - **Browse Secrets Manager** - List and select secrets to sync
@@ -217,6 +226,7 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 | Command | Description |
 |---------|-------------|
 | **Open Dashboard** | Visual overview of all apps |
+| **Configure Notifications** | Set up Slack/Teams/Discord alerts |
 | **Manage Secrets** | Sync env vars from SSM/Secrets Manager |
 | **Pre-Deploy Validation** | Check for issues before deploying |
 | **Diagnose Latest Failed Build** | Analyze the most recent failed job |
