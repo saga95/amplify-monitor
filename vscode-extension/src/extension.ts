@@ -21,6 +21,7 @@ import { EnvVarsTroubleshooterPanel } from './views/envVarsTroubleshooter';
 import { CustomDomainValidatorPanel } from './views/customDomainValidator';
 import { AwsProfileManagerPanel } from './views/awsProfileManager';
 import { CustomPatternsPanel } from './views/customPatternsPanel';
+import { BuildComparisonPanel } from './views/buildComparisonPanel';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -611,6 +612,11 @@ export function activate(context: vscode.ExtensionContext) {
         // Custom Failure Patterns
         vscode.commands.registerCommand('amplify-monitor.customPatterns', () => {
             CustomPatternsPanel.createOrShow(context.extensionUri, context);
+        }),
+
+        // Build Comparison
+        vscode.commands.registerCommand('amplify-monitor.compareBuilds', (appId?: string, branch?: string) => {
+            BuildComparisonPanel.createOrShow(context.extensionUri, cli, appId, branch);
         }),
 
         appsView,

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.22] - 2025-02-01
+
+### Added
+- **Build Comparison** - Compare two builds to see what changed between them
+  - **Side-by-Side Selection** - Pick two builds from the last 20 builds
+  - **Status Comparison** - See if builds went from success to failure
+  - **Duration Analysis** - Track build time changes with delta indicators
+  - **Error Diff** - See new errors added and errors that were fixed
+  - **Build Phase Timing** - Compare how long each phase took (Provisioning, Build, Deploy)
+  - **Commit History** - See which commits are between the two builds
+  - **Visual Diff Indicators** - Color-coded added/removed/changed items
+  - **Summary Bar** - Quick count of changes at a glance
+
+### Commands Added
+- `Amplify Monitor: Compare Builds` - Opens the Build Comparison panel
+
 ## [0.1.21] - 2025-02-01
 
 ### Added

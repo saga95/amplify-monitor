@@ -11,22 +11,30 @@
 
 ---
 
-## 🚀 What's New in v0.1.21
+## 🚀 What's New in v0.1.22
 
-- 🎯 **Custom Failure Patterns** - Define your own regex patterns to detect specific errors
-  - Create patterns with regex or plain text matching
-  - Test patterns against sample log output in real-time
-  - Define root cause descriptions and suggested fixes
-  - 10+ pre-built presets (ESLint, TypeScript, Webpack, etc.)
-  - Import/export patterns to share with your team
-  - Toggle patterns on/off without deleting
-  - Categorize as error, warning, or info
+- 🔄 **Build Comparison** - Compare two builds to see what changed
+  - Side-by-side build selection from recent builds
+  - Status and duration comparison
+  - Error analysis: new errors vs fixed errors
+  - Build phase timing comparison
+  - Commit diff between builds
+  - Visual diff indicators (added, removed, changed)
 
 ---
 
 ## ✨ Features
 
-### 🎯 **Custom Failure Patterns** (NEW)
+### 🔄 **Build Comparison** (NEW)
+Compare any two builds to understand what changed:
+- **Side-by-Side Selection** - Pick two builds from the last 20
+- **Status Comparison** - See if builds went from success to failure or vice versa
+- **Duration Analysis** - Track if builds got slower or faster
+- **Error Diff** - See new errors added and errors that were fixed
+- **Build Phase Timing** - Compare how long each phase took
+- **Commit History** - See which commits are between builds
+
+### 🎯 **Custom Failure Patterns**
 Define your own error detection patterns:
 - **Regex Support** - Use powerful regular expressions with capturing groups
 - **Pattern Testing** - Test patterns against sample log output before saving
