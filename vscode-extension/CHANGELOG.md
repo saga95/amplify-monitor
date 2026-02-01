@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.1.25] - 2025-02-01
+
+### Added
+- **Diagnosis Sharing & Export** - Share and export job diagnoses for team collaboration
+  - **Share Options QuickPick** - One-click menu to choose share format
+  - **Markdown Export** - Copy diagnosis as formatted Markdown for Slack, Teams, or GitHub
+  - **GitHub Issue Template** - Auto-generated issue with checkboxes for fixes
+  - **Plain Text** - Simple format for email or basic text sharing
+  - **Short Summary** - One-line summary with AWS Console link for quick chat messages
+  - **Console Link** - Copy direct AWS Console URL to the specific job
+  - **File Export** - Save diagnosis as JSON or Markdown file for documentation
+  - **Reference ID** - Unique identifier format: `amplify://appId/branch/jobId`
+
+### Commands Added
+- `Amplify Monitor: Share Diagnosis...` - Open share options menu
+- `Amplify Monitor: Copy Diagnosis as Markdown` - Copy as Markdown
+- `Amplify Monitor: Copy as GitHub Issue` - Copy as GitHub issue template
+- `Amplify Monitor: Copy Diagnosis as Text` - Copy as plain text
+- `Amplify Monitor: Copy Short Summary` - Copy one-liner with link
+- `Amplify Monitor: Copy AWS Console Link` - Copy direct link to AWS
+- `Amplify Monitor: Export Diagnosis to File` - Save to file
+
 ## [0.1.24] - 2025-02-01
 
 ### Added

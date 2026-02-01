@@ -24,6 +24,7 @@ import { CustomPatternsPanel } from './views/customPatternsPanel';
 import { BuildComparisonPanel } from './views/buildComparisonPanel';
 import { PostPushWatcher } from './postPushWatcher';
 import { Gen2MigrationPanel } from './views/gen2MigrationPanel';
+import { DiagnosisShareService } from './diagnosisShare';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -252,6 +253,70 @@ export function activate(context: vscode.ExtensionContext) {
             } else {
                 vscode.commands.executeCommand('amplify-monitor.applyQuickFix');
             }
+        }),
+
+        // Share Diagnosis commands
+        vscode.commands.registerCommand('amplify-monitor.shareDiagnosis', async () => {
+            const result = diagnosisProvider.getResult();
+            if (!result) {
+                vscode.window.showWarningMessage('No diagnosis available. Run a diagnosis first.');
+                return;
+            }
+            await DiagnosisShareService.showShareOptions(result);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.copyDiagnosisMarkdown', async () => {
+            const result = diagnosisProvider.getResult();
+            if (!result) {
+                vscode.window.showWarningMessage('No diagnosis available. Run a diagnosis first.');
+                return;
+            }
+            await DiagnosisShareService.copyAsMarkdown(result);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.copyDiagnosisGitHub', async () => {
+            const result = diagnosisProvider.getResult();
+            if (!result) {
+                vscode.window.showWarningMessage('No diagnosis available. Run a diagnosis first.');
+                return;
+            }
+            await DiagnosisShareService.copyAsGitHubIssue(result);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.copyDiagnosisText', async () => {
+            const result = diagnosisProvider.getResult();
+            if (!result) {
+                vscode.window.showWarningMessage('No diagnosis available. Run a diagnosis first.');
+                return;
+            }
+            await DiagnosisShareService.copyAsText(result);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.copyDiagnosisSummary', async () => {
+            const result = diagnosisProvider.getResult();
+            if (!result) {
+                vscode.window.showWarningMessage('No diagnosis available. Run a diagnosis first.');
+                return;
+            }
+            await DiagnosisShareService.copyShortSummary(result);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.copyDiagnosisConsoleLink', async () => {
+            const result = diagnosisProvider.getResult();
+            if (!result) {
+                vscode.window.showWarningMessage('No diagnosis available. Run a diagnosis first.');
+                return;
+            }
+            await DiagnosisShareService.copyReferenceLink(result);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.exportDiagnosis', async () => {
+            const result = diagnosisProvider.getResult();
+            if (!result) {
+                vscode.window.showWarningMessage('No diagnosis available. Run a diagnosis first.');
+                return;
+            }
+            await DiagnosisShareService.exportToFile(result);
         }),
 
         vscode.commands.registerCommand('amplify-monitor.switchProfile', async () => {
