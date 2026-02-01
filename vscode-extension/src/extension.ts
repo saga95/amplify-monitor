@@ -23,6 +23,7 @@ import { AwsProfileManagerPanel } from './views/awsProfileManager';
 import { CustomPatternsPanel } from './views/customPatternsPanel';
 import { BuildComparisonPanel } from './views/buildComparisonPanel';
 import { PostPushWatcher } from './postPushWatcher';
+import { Gen2MigrationPanel } from './views/gen2MigrationPanel';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -703,6 +704,11 @@ export function activate(context: vscode.ExtensionContext) {
 
         vscode.commands.registerCommand('amplify-monitor.showBuildWatcherLogs', () => {
             postPushWatcher.showOutput();
+        }),
+
+        // Gen1 → Gen2 Migration Helper
+        vscode.commands.registerCommand('amplify-monitor.gen2Migration', () => {
+            Gen2MigrationPanel.createOrShow(context.extensionUri, cli);
         }),
 
         appsView,

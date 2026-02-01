@@ -11,22 +11,30 @@
 
 ---
 
-## 🚀 What's New in v0.1.23
+## 🚀 What's New in v0.1.24
 
-- 👁️ **Post-Push Build Watcher** - Automatic build monitoring after git push
-  - Detects git push and starts monitoring builds automatically
-  - Real-time status bar showing build progress
-  - Instant notifications when builds succeed or fail
-  - Auto-diagnosis of failures with root cause analysis
-  - Quick actions: View logs, open in AWS Console
-  - Configurable polling interval and timeout
-  - MCP server tools for AI assistant integration
+- 🚀 **Gen1 → Gen2 Migration Helper** - Complete wizard for migrating to Amplify Gen2
+  - Project analysis with compatibility report
+  - Step-by-step migration wizard (5 stages)
+  - Auto-generated Gen2 code for Auth, API, Storage, Functions
+  - Category-by-category migration guidance
+  - Integration with `npm create amplify@latest`
+  - Links to official documentation
 
 ---
 
 ## ✨ Features
 
-### 👁️ **Post-Push Build Watcher** (NEW)
+### 🚀 **Gen1 → Gen2 Migration Helper** (NEW)
+Complete wizard for migrating your Amplify project to Gen2:
+- **Project Analysis** - Scans your Gen1 project and shows compatibility report
+- **5-Step Wizard** - Guided migration: Analyze → Review → Initialize → Migrate → Verify
+- **Code Generation** - Auto-generates Gen2 code for each category (Auth, API, Storage, Functions)
+- **Feature Mapping** - Shows which Gen1 features map to Gen2 equivalents
+- **CDK Indicators** - Identifies features requiring AWS CDK for migration
+- **Documentation Links** - Quick access to official migration guides
+
+### 👁️ **Post-Push Build Watcher**
 Never miss a build failure after pushing code:
 - **Auto-Detection** - Automatically starts watching after `git push`
 - **Real-Time Status** - Status bar shows build progress (spinning indicator)

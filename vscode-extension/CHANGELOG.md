@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.1.24] - 2025-02-01
+
+### Added
+- **Gen1 → Gen2 Migration Helper** - Complete wizard for migrating Amplify projects to Gen2
+  - **Project Analysis** - Scans Gen1 project structure and shows detailed compatibility report
+  - **5-Step Wizard** - Guided migration process: Analyze → Review → Initialize → Migrate → Verify
+  - **Code Generation** - Auto-generates Gen2 TypeScript code for each category:
+    - Auth (Cognito) - `defineAuth()` configuration
+    - API (GraphQL/REST) - `defineData()` with schema
+    - Storage (S3) - `defineStorage()` with access rules
+    - Functions (Lambda) - `defineFunction()` with handlers
+  - **Feature Mapping** - Shows which Gen1 features map to Gen2 and their compatibility
+  - **CDK Indicators** - Identifies features requiring AWS CDK for migration
+  - **Blocking Issues** - Highlights features that may block migration
+  - **Documentation Links** - Quick access to official Amplify migration guides
+  - **Terminal Integration** - Run `npm create amplify@latest` directly from wizard
+
+### Commands Added
+- `Amplify Monitor: Gen1 → Gen2 Migration Helper` - Opens the migration wizard
+
 ## [0.1.23] - 2025-02-01
 
 ### Added

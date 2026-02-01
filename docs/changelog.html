@@ -38,6 +38,7 @@
                     <nav class="doc-nav">
                         <h4>Versions</h4>
                         <ul>
+                            <li><a href="#v0124">v0.1.24</a></li>
                             <li><a href="#v0123">v0.1.23</a></li>
                             <li><a href="#v0122">v0.1.22</a></li>
                             <li><a href="#v0121">v0.1.21</a></li>
@@ -58,8 +59,34 @@
                     <h1>Changelog</h1>
                     <p class="text-muted">Version history and release notes for Amplify Monitor.</p>
 
-                    <h2 id="v0123">v0.1.23 <span class="text-muted">(February 2025)</span></h2>
+                    <h2 id="v0124">v0.1.24 <span class="text-muted">(February 2025)</span></h2>
                     <div class="badge" style="margin-bottom: 16px;">Latest</div>
+                    
+                    <h3>🚀 Gen1 → Gen2 Migration Helper</h3>
+                    <p>Complete wizard for migrating your Amplify project to Gen2:</p>
+                    <ul>
+                        <li><strong>Project Analysis</strong> - Scans Gen1 project structure and shows detailed compatibility report</li>
+                        <li><strong>5-Step Wizard</strong> - Guided migration: Analyze → Review → Initialize → Migrate → Verify</li>
+                        <li><strong>Code Generation</strong> - Auto-generates Gen2 TypeScript code for:
+                            <ul>
+                                <li>Auth (Cognito) - <code>defineAuth()</code> configuration</li>
+                                <li>API (GraphQL/REST) - <code>defineData()</code> with schema</li>
+                                <li>Storage (S3) - <code>defineStorage()</code> with access rules</li>
+                                <li>Functions (Lambda) - <code>defineFunction()</code> with handlers</li>
+                            </ul>
+                        </li>
+                        <li><strong>Feature Mapping</strong> - Shows which Gen1 features map to Gen2 and their compatibility</li>
+                        <li><strong>CDK Indicators</strong> - Identifies features requiring AWS CDK for migration</li>
+                        <li><strong>Blocking Issues</strong> - Highlights features that may block migration</li>
+                        <li><strong>Documentation Links</strong> - Quick access to official Amplify migration guides</li>
+                    </ul>
+
+                    <h3>New Commands</h3>
+                    <ul>
+                        <li><code>Amplify Monitor: Gen1 → Gen2 Migration Helper</code> - Opens the migration wizard</li>
+                    </ul>
+
+                    <h2 id="v0123">v0.1.23 <span class="text-muted">(February 2025)</span></h2>
                     
                     <h3>👁️ Post-Push Build Watcher</h3>
                     <p>Never miss a build failure after pushing code:</p>

@@ -2,7 +2,7 @@
   "name": "amplify-monitor",
   "displayName": "Amplify Monitor",
   "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
-  "version": "0.1.23",
+  "version": "0.1.24",
   "publisher": "SagaraHarasgama",
   "author": {
     "name": "saga95"
@@ -315,6 +315,12 @@
         "title": "Show Build Watcher Logs",
         "category": "Amplify Monitor",
         "icon": "$(output)"
+      },
+      {
+        "command": "amplify-monitor.gen2Migration",
+        "title": "Gen1 → Gen2 Migration Helper",
+        "category": "Amplify Monitor",
+        "icon": "$(rocket)"
       }
     ],
     "viewsContainers": {
