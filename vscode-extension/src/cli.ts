@@ -125,6 +125,23 @@ export class AmplifyMonitorCli {
         return profile && profile.trim() !== '' ? profile.trim() : undefined;
     }
 
+    /**
+     * Validate that a parameter is a proper string, not an object
+     */
+    private validateStringParam(name: string, value: unknown): string {
+        if (value === null || value === undefined) {
+            throw new Error(`${name} is required but was not provided`);
+        }
+        if (typeof value === 'object') {
+            throw new Error(`${name} must be a string, received object: ${JSON.stringify(value)}`);
+        }
+        const strValue = String(value);
+        if (!strValue || strValue === 'undefined' || strValue === '[object Object]') {
+            throw new Error(`${name} has invalid value: "${strValue}"`);
+        }
+        return strValue;
+    }
+
     private async runCommand<T>(args: string[], region?: string): Promise<T> {
         const cliPath = this.getCliPath();
         const fullArgs = ['--format', 'json'];
@@ -157,7 +174,40 @@ export class AmplifyMonitorCli {
                     );
                 }
                 if (execError.stderr) {
-                    throw new Error(execError.stderr);
+                    // Parse and improve common error messages
+                    const stderr = execError.stderr;
+                    
+                    // AWS API errors
+                    if (stderr.includes('NotFoundException')) {
+                        const appIdMatch = stderr.match(/App ([a-z0-9]+) not found/i);
+                        if (appIdMatch) {
+                            throw new Error(`App not found: "${appIdMatch[1]}". Please check the App ID in your Amplify Console.`);
+                        }
+                        throw new Error('Resource not found. The app, branch, or job may have been deleted.');
+                    }
+                    
+                    if (stderr.includes('ValidationException')) {
+                        throw new Error('Invalid parameters. Please ensure all values are correct strings, not objects.');
+                    }
+                    
+                    if (stderr.includes('AccessDeniedException') || stderr.includes('UnauthorizedAccess')) {
+                        throw new Error('AWS access denied. Please check your credentials and permissions.');
+                    }
+                    
+                    if (stderr.includes('ExpiredTokenException') || stderr.includes('expired')) {
+                        throw new Error('AWS credentials have expired. Please refresh your credentials.');
+                    }
+                    
+                    // CLI errors
+                    if (stderr.includes('unrecognized subcommand')) {
+                        const cmdMatch = stderr.match(/unrecognized subcommand '([^']+)'/);
+                        throw new Error(
+                            `CLI command not available: "${cmdMatch?.[1] || 'unknown'}". ` +
+                            'Please update the amplify-monitor CLI to the latest version.'
+                        );
+                    }
+                    
+                    throw new Error(stderr);
                 }
                 throw error;
             }
@@ -178,50 +228,72 @@ export class AmplifyMonitorCli {
     }
 
     async listBranches(appId: string, region?: string): Promise<AmplifyBranch[]> {
-        return this.runCommand<AmplifyBranch[]>(['branches', '--app-id', appId], region);
+        const validAppId = this.validateStringParam('appId', appId);
+        return this.runCommand<AmplifyBranch[]>(['branches', '--app-id', validAppId], region);
     }
 
     async listJobs(appId: string, branch: string, region?: string): Promise<AmplifyJob[]> {
-        return this.runCommand<AmplifyJob[]>(['jobs', '--app-id', appId, '--branch', branch], region);
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        return this.runCommand<AmplifyJob[]>(['jobs', '--app-id', validAppId, '--branch', validBranch], region);
     }
 
     async diagnose(appId: string, branch: string, jobId?: string, region?: string): Promise<DiagnosisResult> {
-        const args = ['diagnose', '--app-id', appId, '--branch', branch];
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        const args = ['diagnose', '--app-id', validAppId, '--branch', validBranch];
         if (jobId) {
-            args.push('--job-id', jobId);
+            const validJobId = this.validateStringParam('jobId', jobId);
+            args.push('--job-id', validJobId);
         }
         return this.runCommand<DiagnosisResult>(args, region);
     }
 
     async getLatestFailedJob(appId: string, branch: string, region?: string): Promise<AmplifyJob | null> {
         try {
-            return await this.runCommand<AmplifyJob>(['latest-failed', '--app-id', appId, '--branch', branch], region);
+            const validAppId = this.validateStringParam('appId', appId);
+            const validBranch = this.validateStringParam('branch', branch);
+            return await this.runCommand<AmplifyJob>(['latest-failed', '--app-id', validAppId, '--branch', validBranch], region);
         } catch {
             return null;
         }
     }
 
     async getEnvVariables(appId: string, branch: string, region?: string): Promise<EnvVariable[]> {
-        return this.runCommand<EnvVariable[]>(['env-vars', '--app-id', appId, '--branch', branch], region);
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        return this.runCommand<EnvVariable[]>(['env-vars', '--app-id', validAppId, '--branch', validBranch], region);
     }
 
     async setEnvVariable(appId: string, branch: string, name: string, value: string, region?: string): Promise<void> {
-        await this.runCommand(['set-env', '--app-id', appId, '--branch', branch, '--name', name, '--value', value], region);
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        const validName = this.validateStringParam('name', name);
+        await this.runCommand(['set-env', '--app-id', validAppId, '--branch', validBranch, '--name', validName, '--value', value], region);
     }
 
     async deleteEnvVariable(appId: string, branch: string, name: string, region?: string): Promise<void> {
-        await this.runCommand(['delete-env', '--app-id', appId, '--branch', branch, '--name', name], region);
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        const validName = this.validateStringParam('name', name);
+        await this.runCommand(['delete-env', '--app-id', validAppId, '--branch', validBranch, '--name', validName], region);
     }
 
     async startBuild(appId: string, branch: string, region?: string): Promise<StartJobResult> {
-        return this.runCommand<StartJobResult>(['start-build', '--app-id', appId, '--branch', branch], region);
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        return this.runCommand<StartJobResult>(['start-build', '--app-id', validAppId, '--branch', validBranch], region);
     }
 
     async stopBuild(appId: string, branch: string, jobId: string, region?: string): Promise<StopJobResult> {
-        return this.runCommand<StopJobResult>(['stop-build', '--app-id', appId, '--branch', branch, '--job-id', jobId], region);
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        const validJobId = this.validateStringParam('jobId', jobId);
+        return this.runCommand<StopJobResult>(['stop-build', '--app-id', validAppId, '--branch', validBranch, '--job-id', validJobId], region);
     }
 
     async analyzeMigration(projectPath: string): Promise<MigrationAnalysis> {
-        return this.runCommand<MigrationAnalysis>(['migration-analysis', '--path', projectPath]);
+        const validPath = this.validateStringParam('projectPath', projectPath);
+        return this.runCommand<MigrationAnalysis>(['migration-analysis', '--path', validPath]);
     }
 }

@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.15] - 2026-01-31
+
+### Fixed
+- **Critical: Dashboard Logs button** - Fixed `[object Object]` error when clicking "Logs" button in Amplify Dashboard
+  - The command was incorrectly passing an object instead of individual parameters
+  - Now properly passes appId, branch, and jobId to the diagnosis command
+  
+- **Parameter Validation** - Added validation for all CLI parameters
+  - Catches object-instead-of-string errors early with clear messages
+  - Prevents invalid API calls that would fail with cryptic AWS errors
+
+### Improved
+- **Error Messages** - More user-friendly error messages for common failures:
+  - AWS `NotFoundException` → "App not found: [id]. Please check the App ID in your Amplify Console."
+  - AWS `ValidationException` → Clear guidance about parameter types
+  - AWS `AccessDeniedException` → "Please check your credentials and permissions"
+  - Expired credentials → "AWS credentials have expired. Please refresh."
+  - CLI version mismatch → "Please update the amplify-monitor CLI to the latest version"
+
+- **Backwards Compatibility** - `diagnoseJob` command now accepts both:
+  - Positional arguments: `(appId, branch, jobId)`  
+  - Object argument: `{ appId, branch, jobId }` (for flexibility)
+
+## [0.1.14] - 2026-01-31
+
+### Added
+- **Pre-Deploy Validation** - Prevent failed builds by validating before deploying
+
 ## [0.1.12] - 2026-01-31
 
 ### Added

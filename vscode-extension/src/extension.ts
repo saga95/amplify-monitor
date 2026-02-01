@@ -132,8 +132,30 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.commands.executeCommand('workbench.action.openSettings', 'amplifyMonitor');
         }),
 
-        vscode.commands.registerCommand('amplify-monitor.diagnoseJob', async (appId: string, branch: string, jobId: string) => {
-            await runDiagnosisForJob(cli, diagnosisProvider, appId, branch, jobId);
+        vscode.commands.registerCommand('amplify-monitor.diagnoseJob', async (appIdOrObj: string | { appId?: string; branch?: string; branchName?: string; jobId?: string }, branch?: string, jobId?: string) => {
+            // Handle both object and positional arguments for backwards compatibility
+            let resolvedAppId: string | undefined;
+            let resolvedBranch: string | undefined;
+            let resolvedJobId: string | undefined;
+
+            if (typeof appIdOrObj === 'object' && appIdOrObj !== null) {
+                // Called with object argument (e.g., { appId, branch, jobId })
+                resolvedAppId = appIdOrObj.appId || cli.getSelectedApp();
+                resolvedBranch = appIdOrObj.branch || appIdOrObj.branchName || cli.getSelectedBranch();
+                resolvedJobId = appIdOrObj.jobId;
+            } else {
+                // Called with positional arguments
+                resolvedAppId = appIdOrObj || cli.getSelectedApp();
+                resolvedBranch = branch || cli.getSelectedBranch();
+                resolvedJobId = jobId;
+            }
+
+            if (!resolvedAppId || !resolvedBranch) {
+                vscode.window.showErrorMessage('Please select an app and branch first');
+                return;
+            }
+
+            await runDiagnosisForJob(cli, diagnosisProvider, resolvedAppId, resolvedBranch, resolvedJobId || '');
         }),
 
         vscode.commands.registerCommand('amplify-monitor.copyIssue', async (item: { issue?: { pattern: string; rootCause: string; suggestedFixes: string[] } }) => {

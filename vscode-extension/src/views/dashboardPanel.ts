@@ -149,13 +149,12 @@ export class DashboardPanel {
     }
 
     private async _viewLogs(appId: string, branchName: string, jobId: string, region: string) {
-        vscode.commands.executeCommand('amplify-monitor.selectApp', appId, region);
-        setTimeout(() => {
-            vscode.commands.executeCommand('amplify-monitor.selectBranch', branchName);
-            setTimeout(() => {
-                vscode.commands.executeCommand('amplify-monitor.diagnoseJob', { jobId, branchName });
-            }, 500);
-        }, 500);
+        // Set context for the diagnosis view
+        this._cli.setSelectedApp(appId, region);
+        this._cli.setSelectedBranch(branchName);
+        
+        // Execute diagnosis directly with all required parameters
+        vscode.commands.executeCommand('amplify-monitor.diagnoseJob', appId, branchName, jobId);
     }
 
     private async _openConsole(appId: string, region: string) {
