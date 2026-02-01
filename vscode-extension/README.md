@@ -11,21 +11,31 @@
 
 ---
 
-## 🚀 What's New in v0.1.20
+## 🚀 What's New in v0.1.21
 
-- 👥 **Multi-Account AWS Profiles** - Manage & switch between AWS profiles directly in VS Code
-  - List all profiles from ~/.aws/credentials and ~/.aws/config
-  - One-click profile switching with visual active indicator
-  - Validate credentials for each profile (account ID, user/role info)
-  - Add, edit, and delete profiles without leaving VS Code
-  - Status bar shows current profile - click to quick-switch
-  - Supports IAM credentials, SSO, and assumed roles
+- 🎯 **Custom Failure Patterns** - Define your own regex patterns to detect specific errors
+  - Create patterns with regex or plain text matching
+  - Test patterns against sample log output in real-time
+  - Define root cause descriptions and suggested fixes
+  - 10+ pre-built presets (ESLint, TypeScript, Webpack, etc.)
+  - Import/export patterns to share with your team
+  - Toggle patterns on/off without deleting
+  - Categorize as error, warning, or info
 
 ---
 
 ## ✨ Features
 
-### 👥 **Multi-Account AWS Profile Manager** (NEW)
+### 🎯 **Custom Failure Patterns** (NEW)
+Define your own error detection patterns:
+- **Regex Support** - Use powerful regular expressions with capturing groups
+- **Pattern Testing** - Test patterns against sample log output before saving
+- **Presets Library** - 10+ pre-built patterns for common errors
+- **Team Sharing** - Import/export patterns as JSON files
+- **Smart Matching** - Case-sensitive/insensitive options
+- **Rich Metadata** - Add root cause and suggested fixes to each pattern
+
+### 👥 **Multi-Account AWS Profile Manager**
 Seamlessly work across multiple AWS accounts:
 - **Profile Discovery** - Auto-discovers profiles from ~/.aws/credentials and config
 - **Quick Switch** - Change profiles with one click from status bar or command

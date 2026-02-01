@@ -1,5 +1,31 @@
 # Changelog
 
+## [0.1.21] - 2025-02-01
+
+### Added
+- **Custom Failure Patterns** - Define your own error detection patterns for build logs
+  - **Pattern Editor** - Create patterns with regex or plain text matching
+  - **Real-Time Testing** - Test patterns against sample log output before saving
+  - **Presets Library** - 10+ pre-built patterns for common errors:
+    - ESLint errors
+    - TypeScript compilation errors
+    - Webpack module resolution failures
+    - NPM peer dependency conflicts
+    - JavaScript heap out of memory
+    - Next.js build optimization failures
+    - Amplify build timeout
+    - Undefined environment variables
+    - Node.js deprecation warnings
+    - Vite build errors
+  - **Import/Export** - Share patterns with your team as JSON files
+  - **Category Labels** - Categorize patterns as error, warning, or info
+  - **Toggle On/Off** - Enable/disable patterns without deleting
+  - **Rich Metadata** - Add root cause descriptions and suggested fixes
+  - **Duplicate Patterns** - Copy existing patterns as starting point
+
+### Commands Added
+- `Amplify Monitor: Manage Custom Failure Patterns` - Opens the Custom Patterns panel
+
 ## [0.1.20] - 2025-02-01
 
 ### Added

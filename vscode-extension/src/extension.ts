@@ -20,6 +20,7 @@ import { NodeVersionDetectorPanel } from './views/nodeVersionDetector';
 import { EnvVarsTroubleshooterPanel } from './views/envVarsTroubleshooter';
 import { CustomDomainValidatorPanel } from './views/customDomainValidator';
 import { AwsProfileManagerPanel } from './views/awsProfileManager';
+import { CustomPatternsPanel } from './views/customPatternsPanel';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -605,6 +606,11 @@ export function activate(context: vscode.ExtensionContext) {
                 );
                 vscode.window.showInformationMessage(`Switched to AWS profile: ${profileName}`);
             }
+        }),
+
+        // Custom Failure Patterns
+        vscode.commands.registerCommand('amplify-monitor.customPatterns', () => {
+            CustomPatternsPanel.createOrShow(context.extensionUri, context);
         }),
 
         appsView,
