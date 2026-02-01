@@ -1,5 +1,72 @@
 # Changelog
 
+## [0.1.29] - 2025-02-02
+
+### Added
+- **🔧 Auto-Fix in Copilot Chat** - Automatic fix buttons in `@amplify` responses
+  - Lock file mismatch → Delete conflicting lock files
+  - Node.js version mismatch → Create `.nvmrc` file
+  - ESLint errors → Add `CI=false` to build settings
+  - Missing `amplify.yml` → Generate starter buildspec
+
+- **💰 Build Cost Estimator** - Real-time AWS cost analysis
+  - View estimated build costs based on AWS Amplify pricing
+  - Calculate costs by time period (7/30/90 days)
+  - Free tier tracking and remaining minutes
+  - Monthly cost projections
+  - Export cost reports to CSV
+
+- **📋 Build Queue Visualization** - Monitor all pending/running builds
+  - Real-time view of running and pending builds across all apps
+  - Auto-refresh every 15 seconds
+  - One-click stop build functionality
+  - Direct links to AWS Console
+  - Animated progress indicators
+
+- **↩️ Rollback Helper** - Quick deployment rollback
+  - View deployment history per branch
+  - One-click redeploy to previous successful versions
+  - Side-by-side comparison of deployments
+  - Visual job status timeline
+
+- **🔀 PR Preview Environments Manager** - Manage preview branches
+  - Automatically detects PR/feature branches
+  - Categorizes as Active, Failed, or Stale (30+ days)
+  - Quick actions: Open preview, View console, Rebuild, Diagnose
+  - Delete stale preview environments
+
+- **📊 Performance Regression Alerts** - Proactive monitoring
+  - Duration spike detection (50%+ increase)
+  - Consecutive failure alerts
+  - Slow build warnings (10+ minutes)
+  - Flaky build detection (high failure rate)
+  - Build time trend analysis with sparkline charts
+
+- **🔔 Webhook Notifications** - Slack/Teams/Discord integration
+  - Configure webhooks for build notifications
+  - Support for Slack, Microsoft Teams, Discord, and custom webhooks
+  - Rich message formatting with build details
+  - Optional log excerpts and @mentions on failure
+  - Test webhook functionality
+
+### Commands Added
+- `Amplify Monitor: Build Cost Estimator` - Open cost analysis panel
+- `Amplify Monitor: Build Queue` - View pending/running builds
+- `Amplify Monitor: Rollback Helper` - Access deployment rollback
+- `Amplify Monitor: PR Preview Environments` - Manage previews
+- `Amplify Monitor: Performance Alerts` - View performance issues
+- `Amplify Monitor: Configure Webhook Notifications` - Setup webhooks
+- `Amplify Monitor: Test Webhook` - Send test notification
+- `Amplify Monitor: Show Webhook Logs` - View webhook activity
+
+### Settings Added
+- `amplifyMonitor.webhook.enabled` - Enable webhook notifications
+- `amplifyMonitor.webhook.url` - Webhook endpoint URL
+- `amplifyMonitor.webhook.type` - Webhook type (slack/teams/discord/custom)
+- `amplifyMonitor.webhook.events.*` - Event toggles
+- `amplifyMonitor.webhook.includeLogExcerpt` - Include log snippets
+- `amplifyMonitor.webhook.mentionOnFailure` - @channel on failures
+
 ## [0.1.26] - 2025-02-01
 
 ### Added

@@ -195,13 +195,26 @@ export class AmplifyCopilotParticipant {
         }
 
         const buildContext = this.lastBuildContext;
+        const query = request.prompt.toLowerCase();
 
         stream.markdown(`## 🔧 Fixing Build Issues\n\n`);
         stream.markdown(`Based on the build failure for **${buildContext.appName}** on branch **${buildContext.branch}**:\n\n`);
 
-        // Provide detailed fix guidance based on issues
+        // Check if user wants auto-fix
+        const wantsAutoFix = query.includes('auto') || query.includes('apply') || query.includes('do it') || query.includes('make the change');
+
+        // Analyze issues and provide/apply fixes
         for (const issue of buildContext.issues) {
             stream.markdown(`### ${issue.pattern.replace(/_/g, ' ')}\n\n`);
+            
+            // Try to auto-fix if requested
+            if (wantsAutoFix) {
+                const autoFixResult = await this.attemptAutoFix(issue.pattern, buildContext.logs, stream);
+                if (autoFixResult.fixed) {
+                    stream.markdown(`\n✅ **Auto-fixed:** ${autoFixResult.message}\n\n`);
+                    continue;
+                }
+            }
             
             // Provide specific code fixes based on pattern
             const codeFixSuggestion = this.getCodeFixForPattern(issue.pattern, buildContext.logs);
@@ -216,9 +229,225 @@ export class AmplifyCopilotParticipant {
         stream.markdown(this.extractErrorContext(buildContext.logs));
         stream.markdown('\n```\n\n');
 
-        stream.markdown(`\n*I can help you implement these fixes. Describe what you'd like me to change, or ask me to edit a specific file.*`);
+        if (!wantsAutoFix) {
+            stream.markdown(`\n💡 *Say "auto fix" or "apply the fix" to have me make changes directly.*`);
+        }
 
-        return { metadata: { success: true } };
+        return { metadata: { success: true, autoFixAvailable: true } };
+    }
+
+    private async attemptAutoFix(
+        pattern: string,
+        logs: string,
+        stream: vscode.ChatResponseStream
+    ): Promise<{ fixed: boolean; message: string }> {
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        if (!workspaceFolders || workspaceFolders.length === 0) {
+            return { fixed: false, message: 'No workspace folder open' };
+        }
+
+        const rootPath = workspaceFolders[0].uri.fsPath;
+
+        switch (pattern) {
+            case 'lock_file_mismatch':
+            case 'multiple_lock_files':
+                return await this.fixLockFileMismatch(rootPath, logs, stream);
+            
+            case 'node_version_mismatch':
+                return await this.fixNodeVersionMismatch(rootPath, logs, stream);
+            
+            case 'missing_env_var':
+                return await this.fixMissingEnvVar(rootPath, logs, stream);
+            
+            case 'eslint_error':
+                return await this.fixEslintError(rootPath, logs, stream);
+            
+            case 'amplify_yml_missing':
+                return await this.fixMissingAmplifyYml(rootPath, stream);
+            
+            default:
+                return { fixed: false, message: 'No auto-fix available for this issue' };
+        }
+    }
+
+    private async fixLockFileMismatch(
+        rootPath: string,
+        logs: string,
+        stream: vscode.ChatResponseStream
+    ): Promise<{ fixed: boolean; message: string }> {
+        const fs = await import('fs');
+        const path = await import('path');
+
+        const pnpmLock = path.join(rootPath, 'pnpm-lock.yaml');
+        const yarnLock = path.join(rootPath, 'yarn.lock');
+        const npmLock = path.join(rootPath, 'package-lock.json');
+
+        const hasPnpm = fs.existsSync(pnpmLock);
+        const hasYarn = fs.existsSync(yarnLock);
+        const hasNpm = fs.existsSync(npmLock);
+
+        const lockCount = [hasPnpm, hasYarn, hasNpm].filter(Boolean).length;
+
+        if (lockCount <= 1) {
+            return { fixed: false, message: 'No conflicting lock files found' };
+        }
+
+        stream.progress('Detecting lock file conflict...');
+
+        // Prefer npm if package-lock.json exists, otherwise keep the first one found
+        let toDelete: string[] = [];
+        let keeping = '';
+
+        if (hasNpm) {
+            keeping = 'package-lock.json (npm)';
+            if (hasPnpm) toDelete.push(pnpmLock);
+            if (hasYarn) toDelete.push(yarnLock);
+        } else if (hasYarn) {
+            keeping = 'yarn.lock';
+            if (hasPnpm) toDelete.push(pnpmLock);
+        }
+
+        if (toDelete.length === 0) {
+            return { fixed: false, message: 'Could not determine which lock file to remove' };
+        }
+
+        // Ask for confirmation via button
+        stream.button({
+            command: 'amplify-monitor.deleteLockFiles',
+            title: `🗑️ Delete conflicting lock files`,
+            arguments: [toDelete]
+        });
+
+        return { 
+            fixed: false, 
+            message: `Found ${lockCount} lock files. Click the button above to delete conflicting files (keeping ${keeping}).` 
+        };
+    }
+
+    private async fixNodeVersionMismatch(
+        rootPath: string,
+        logs: string,
+        stream: vscode.ChatResponseStream
+    ): Promise<{ fixed: boolean; message: string }> {
+        const fs = await import('fs');
+        const path = await import('path');
+
+        // Extract required Node version from logs
+        const versionMatch = logs.match(/node[:\s]+v?(\d+)/i) || 
+                            logs.match(/requires?\s+node\s+v?(\d+)/i) ||
+                            logs.match(/expected\s+node\s+v?(\d+)/i);
+        
+        const nodeVersion = versionMatch ? versionMatch[1] : '18';
+
+        const nvmrcPath = path.join(rootPath, '.nvmrc');
+        
+        // Check if .nvmrc already exists
+        if (fs.existsSync(nvmrcPath)) {
+            const current = fs.readFileSync(nvmrcPath, 'utf-8').trim();
+            if (current === nodeVersion) {
+                return { fixed: false, message: `.nvmrc already set to ${nodeVersion}` };
+            }
+        }
+
+        // Create/update .nvmrc
+        stream.button({
+            command: 'amplify-monitor.createNvmrc',
+            title: `📝 Create .nvmrc with Node ${nodeVersion}`,
+            arguments: [rootPath, nodeVersion]
+        });
+
+        return { 
+            fixed: false, 
+            message: `Click the button to create .nvmrc with Node ${nodeVersion}` 
+        };
+    }
+
+    private async fixMissingEnvVar(
+        rootPath: string,
+        logs: string,
+        stream: vscode.ChatResponseStream
+    ): Promise<{ fixed: boolean; message: string }> {
+        // Extract missing env var name from logs
+        const envMatch = logs.match(/(?:missing|undefined|not set)[:\s]+([A-Z][A-Z0-9_]+)/i) ||
+                        logs.match(/process\.env\.([A-Z][A-Z0-9_]+)/i) ||
+                        logs.match(/\$\{?([A-Z][A-Z0-9_]+)\}?.*(?:undefined|missing)/i);
+
+        if (!envMatch) {
+            return { fixed: false, message: 'Could not identify the missing environment variable' };
+        }
+
+        const envVarName = envMatch[1];
+
+        stream.button({
+            command: 'amplify-monitor.addEnvVar',
+            title: `🔑 Add ${envVarName} to Amplify`,
+            arguments: []
+        });
+
+        stream.markdown(`\nDetected missing variable: \`${envVarName}\`\n`);
+
+        return { 
+            fixed: false, 
+            message: `Missing env var: ${envVarName}. Click the button to add it in Amplify Console.` 
+        };
+    }
+
+    private async fixEslintError(
+        rootPath: string,
+        logs: string,
+        stream: vscode.ChatResponseStream
+    ): Promise<{ fixed: boolean; message: string }> {
+        const fs = await import('fs');
+        const path = await import('path');
+
+        const amplifyYmlPath = path.join(rootPath, 'amplify.yml');
+        
+        if (!fs.existsSync(amplifyYmlPath)) {
+            return { fixed: false, message: 'No amplify.yml found to modify' };
+        }
+
+        // Offer to add CI=false to build command
+        stream.button({
+            command: 'amplify-monitor.addCiFalse',
+            title: `⚙️ Add CI=false to amplify.yml`,
+            arguments: [amplifyYmlPath]
+        });
+
+        stream.button({
+            command: 'workbench.action.terminal.sendSequence',
+            title: `🔧 Run npm run lint --fix`,
+            arguments: [{ text: 'npm run lint -- --fix\n' }]
+        });
+
+        return { 
+            fixed: false, 
+            message: 'Choose to either add CI=false to skip lint errors, or run lint --fix locally.' 
+        };
+    }
+
+    private async fixMissingAmplifyYml(
+        rootPath: string,
+        stream: vscode.ChatResponseStream
+    ): Promise<{ fixed: boolean; message: string }> {
+        const fs = await import('fs');
+        const path = await import('path');
+
+        const amplifyYmlPath = path.join(rootPath, 'amplify.yml');
+        
+        if (fs.existsSync(amplifyYmlPath)) {
+            return { fixed: false, message: 'amplify.yml already exists' };
+        }
+
+        stream.button({
+            command: 'amplify-monitor.createAmplifyYml',
+            title: `📄 Create amplify.yml`,
+            arguments: [rootPath]
+        });
+
+        return { 
+            fixed: false, 
+            message: 'Click the button to create a starter amplify.yml' 
+        };
     }
 
     private async handleStatusRequest(

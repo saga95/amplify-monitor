@@ -2,7 +2,7 @@
   "name": "amplify-monitor",
   "displayName": "Amplify Monitor",
   "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
-  "version": "0.1.28",
+  "version": "0.1.29",
   "publisher": "SagaraHarasgama",
   "author": {
     "name": "saga95"
@@ -391,6 +391,54 @@
         "title": "Gen1 → Gen2 Migration Helper",
         "category": "Amplify Monitor",
         "icon": "$(rocket)"
+      },
+      {
+        "command": "amplify-monitor.buildCostEstimator",
+        "title": "Build Cost Estimator",
+        "category": "Amplify Monitor",
+        "icon": "$(credit-card)"
+      },
+      {
+        "command": "amplify-monitor.buildQueue",
+        "title": "Build Queue",
+        "category": "Amplify Monitor",
+        "icon": "$(list-ordered)"
+      },
+      {
+        "command": "amplify-monitor.rollbackHelper",
+        "title": "Rollback Helper",
+        "category": "Amplify Monitor",
+        "icon": "$(history)"
+      },
+      {
+        "command": "amplify-monitor.previewEnvironments",
+        "title": "PR Preview Environments",
+        "category": "Amplify Monitor",
+        "icon": "$(git-pull-request)"
+      },
+      {
+        "command": "amplify-monitor.performanceAlerts",
+        "title": "Performance Alerts",
+        "category": "Amplify Monitor",
+        "icon": "$(pulse)"
+      },
+      {
+        "command": "amplify-monitor.configureWebhook",
+        "title": "Configure Webhook Notifications",
+        "category": "Amplify Monitor",
+        "icon": "$(bell)"
+      },
+      {
+        "command": "amplify-monitor.testWebhook",
+        "title": "Test Webhook",
+        "category": "Amplify Monitor",
+        "icon": "$(beaker)"
+      },
+      {
+        "command": "amplify-monitor.showWebhookLogs",
+        "title": "Show Webhook Logs",
+        "category": "Amplify Monitor",
+        "icon": "$(output)"
       }
     ],
     "viewsContainers": {
@@ -613,6 +661,55 @@
           "default": true,
           "description": "Automatically diagnose build failures and show root cause",
           "order": 10
+        },
+        "amplifyMonitor.webhook.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable webhook notifications for build events",
+          "order": 11
+        },
+        "amplifyMonitor.webhook.url": {
+          "type": "string",
+          "default": "",
+          "description": "Webhook URL (Slack, Teams, Discord, or custom)",
+          "order": 12
+        },
+        "amplifyMonitor.webhook.type": {
+          "type": "string",
+          "enum": ["slack", "teams", "discord", "custom"],
+          "default": "slack",
+          "description": "Webhook service type",
+          "order": 13
+        },
+        "amplifyMonitor.webhook.events.buildStarted": {
+          "type": "boolean",
+          "default": false,
+          "description": "Send notification when build starts",
+          "order": 14
+        },
+        "amplifyMonitor.webhook.events.buildSucceeded": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send notification when build succeeds",
+          "order": 15
+        },
+        "amplifyMonitor.webhook.events.buildFailed": {
+          "type": "boolean",
+          "default": true,
+          "description": "Send notification when build fails",
+          "order": 16
+        },
+        "amplifyMonitor.webhook.includeLogExcerpt": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include log excerpt in failure notifications",
+          "order": 17
+        },
+        "amplifyMonitor.webhook.mentionOnFailure": {
+          "type": "string",
+          "default": "",
+          "description": "Mention to include on failures (e.g., @here, @channel, <@USER_ID>)",
+          "order": 18
         }
       }
     }

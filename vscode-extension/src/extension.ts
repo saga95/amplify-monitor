@@ -26,6 +26,12 @@ import { PostPushWatcher } from './postPushWatcher';
 import { Gen2MigrationPanel } from './views/gen2MigrationPanel';
 import { DiagnosisShareService } from './diagnosisShare';
 import { AmplifyCopilotParticipant } from './copilotParticipant';
+import { BuildCostPanel } from './views/buildCostPanel';
+import { BuildQueuePanel } from './views/buildQueuePanel';
+import { RollbackHelperPanel } from './views/rollbackHelper';
+import { PreviewEnvironmentsPanel } from './views/previewEnvironments';
+import { PerformanceAlertsPanel } from './views/performanceAlerts';
+import { WebhookNotificationService, configureWebhook } from './webhookNotifications';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -322,6 +328,99 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             await DiagnosisShareService.exportToFile(result);
+        }),
+
+        // Auto-fix commands for Copilot Chat
+        vscode.commands.registerCommand('amplify-monitor.deleteLockFiles', async (filesToDelete: string[]) => {
+            const confirm = await vscode.window.showWarningMessage(
+                `Delete ${filesToDelete.length} conflicting lock file(s)?`,
+                { modal: true },
+                'Delete'
+            );
+            if (confirm === 'Delete') {
+                for (const file of filesToDelete) {
+                    try {
+                        await vscode.workspace.fs.delete(vscode.Uri.file(file));
+                        vscode.window.showInformationMessage(`Deleted: ${path.basename(file)}`);
+                    } catch (e) {
+                        vscode.window.showErrorMessage(`Failed to delete ${file}: ${e}`);
+                    }
+                }
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.createNvmrc', async (rootPath: string, nodeVersion: string) => {
+            const nvmrcPath = path.join(rootPath, '.nvmrc');
+            const content = nodeVersion + '\n';
+            await fs.promises.writeFile(nvmrcPath, content);
+            
+            const doc = await vscode.workspace.openTextDocument(nvmrcPath);
+            await vscode.window.showTextDocument(doc);
+            vscode.window.showInformationMessage(`Created .nvmrc with Node ${nodeVersion}`);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.addCiFalse', async (amplifyYmlPath: string) => {
+            try {
+                const content = await fs.promises.readFile(amplifyYmlPath, 'utf-8');
+                
+                // Check if CI=false is already present
+                if (content.includes('CI=false') || content.includes('CI=0')) {
+                    vscode.window.showInformationMessage('CI=false is already in amplify.yml');
+                    return;
+                }
+
+                // Add CI=false to build commands
+                let newContent = content;
+                if (content.includes('npm run build')) {
+                    newContent = content.replace(
+                        /npm run build/g,
+                        'CI=false npm run build'
+                    );
+                } else {
+                    // Add as environment variable
+                    if (content.includes('frontend:')) {
+                        newContent = content.replace(
+                            /(frontend:\s*\n\s*phases:)/,
+                            'frontend:\n  env:\n    variables:\n      CI: "false"\n  phases:'
+                        );
+                    }
+                }
+
+                await fs.promises.writeFile(amplifyYmlPath, newContent);
+                
+                const doc = await vscode.workspace.openTextDocument(amplifyYmlPath);
+                await vscode.window.showTextDocument(doc);
+                vscode.window.showInformationMessage('Added CI=false to amplify.yml');
+            } catch (e) {
+                vscode.window.showErrorMessage(`Failed to modify amplify.yml: ${e}`);
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.createAmplifyYml', async (rootPath: string) => {
+            const amplifyYmlPath = path.join(rootPath, 'amplify.yml');
+            const defaultContent = `version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - npm ci
+    build:
+      commands:
+        - npm run build
+  artifacts:
+    baseDirectory: .next
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*
+      - .next/cache/**/*
+`;
+            await fs.promises.writeFile(amplifyYmlPath, defaultContent);
+            
+            const doc = await vscode.workspace.openTextDocument(amplifyYmlPath);
+            await vscode.window.showTextDocument(doc);
+            vscode.window.showInformationMessage('Created amplify.yml - please customize for your project');
         }),
 
         vscode.commands.registerCommand('amplify-monitor.switchProfile', async () => {
@@ -779,6 +878,44 @@ export function activate(context: vscode.ExtensionContext) {
         // Gen1 → Gen2 Migration Helper
         vscode.commands.registerCommand('amplify-monitor.gen2Migration', () => {
             Gen2MigrationPanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        // Build Cost Estimator
+        vscode.commands.registerCommand('amplify-monitor.buildCostEstimator', () => {
+            BuildCostPanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        // Build Queue Visualization
+        vscode.commands.registerCommand('amplify-monitor.buildQueue', () => {
+            BuildQueuePanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        // Rollback Helper
+        vscode.commands.registerCommand('amplify-monitor.rollbackHelper', () => {
+            RollbackHelperPanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        // PR Preview Environments
+        vscode.commands.registerCommand('amplify-monitor.previewEnvironments', () => {
+            PreviewEnvironmentsPanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        // Performance Alerts
+        vscode.commands.registerCommand('amplify-monitor.performanceAlerts', () => {
+            PerformanceAlertsPanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        // Webhook Notifications
+        vscode.commands.registerCommand('amplify-monitor.configureWebhook', () => {
+            configureWebhook();
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.testWebhook', () => {
+            WebhookNotificationService.getInstance().testWebhook();
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.showWebhookLogs', () => {
+            WebhookNotificationService.getInstance().showOutput();
         }),
 
         appsView,
