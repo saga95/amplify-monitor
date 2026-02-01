@@ -20,11 +20,14 @@ export class AppsTreeProvider implements vscode.TreeDataProvider<AppTreeItem> {
             const config = vscode.workspace.getConfiguration('amplifyMonitor');
             this.isMultiAccountMode = config.get<boolean>('multiAccount.enabled', false);
             const configuredProfiles = config.get<string[]>('multiAccount.profiles', []);
+            const defaultProfile = this.cli.getAwsProfile() || 'default';
 
             if (this.isMultiAccountMode && configuredProfiles.length > 0) {
                 // Multi-account mode: fetch apps from all configured profiles
+                // Also include default profile if not already in the list
+                const profilesToFetch = [...new Set([...configuredProfiles, defaultProfile])];
                 const allApps: AppWithProfile[] = [];
-                const profilePromises = configuredProfiles.map(async (profile) => {
+                const profilePromises = profilesToFetch.map(async (profile) => {
                     try {
                         const apps = await this.cli.listAppsForProfile(profile, true);
                         return apps.map(app => ({ app, profile }));
@@ -39,8 +42,7 @@ export class AppsTreeProvider implements vscode.TreeDataProvider<AppTreeItem> {
             } else {
                 // Single account mode: use default/configured profile
                 const apps = await this.cli.listApps(true);
-                const currentProfile = this.cli.getAwsProfile() || 'default';
-                this.apps = apps.map(app => ({ app, profile: currentProfile }));
+                this.apps = apps.map(app => ({ app, profile: defaultProfile }));
             }
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to load apps: ${error}`);
@@ -75,7 +77,7 @@ export class AppsTreeProvider implements vscode.TreeDataProvider<AppTreeItem> {
                 vscode.TreeItemCollapsibleState.Collapsed,
                 undefined,
                 app.region,
-                this.isMultiAccountMode ? profile : undefined
+                profile  // Always pass profile
             ));
         }
 
@@ -126,7 +128,7 @@ export class AppTreeItem extends vscode.TreeItem {
             this.command = {
                 command: 'amplify-monitor.selectApp',
                 title: 'Select App',
-                arguments: [appId, region]
+                arguments: [appId, region, profile]
             };
         } else {
             this.contextValue = 'amplifyBranch';

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.34] - 2026-02-01
+
+### Fixed
+- **Default profile apps missing** - Apps from the default/configured AWS profile are now always included, even when multi-account mode is enabled
+  - Multi-account mode now automatically includes the default profile alongside configured profiles
+  - No need to manually add the default profile to the profiles list
+
+- **Environment variables not loading** - Fixed "App not found" error when loading environment variables for cross-account apps
+  - Added `selectedProfile` tracking to CLI
+  - Environment variables panel now uses the correct profile for the selected app
+  - All app selection commands now properly track and pass the profile
+
+- **Profile context propagation** - Profile is now properly passed through all operations
+  - Dashboard logs/actions use the correct profile
+  - Branch listing uses the correct profile credentials
+
 ## [0.1.33] - 2026-02-01
 
 ### Fixed

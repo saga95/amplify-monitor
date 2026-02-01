@@ -93,15 +93,17 @@ export class AmplifyMonitorCli {
     private selectedApp: string | undefined;
     private selectedBranch: string | undefined;
     private selectedRegion: string | undefined;
+    private selectedProfile: string | undefined;
 
     getCliPath(): string {
         const config = vscode.workspace.getConfiguration('amplifyMonitor');
         return config.get<string>('cliPath') || 'amplify-monitor';
     }
 
-    setSelectedApp(appId: string, region?: string) {
+    setSelectedApp(appId: string, region?: string, profile?: string) {
         this.selectedApp = appId;
         this.selectedRegion = region;
+        this.selectedProfile = profile;
     }
 
     getSelectedApp(): string | undefined {
@@ -110,6 +112,10 @@ export class AmplifyMonitorCli {
 
     getSelectedRegion(): string | undefined {
         return this.selectedRegion;
+    }
+
+    getSelectedProfile(): string | undefined {
+        return this.selectedProfile;
     }
 
     setSelectedBranch(branch: string) {
@@ -268,10 +274,10 @@ export class AmplifyMonitorCli {
         }
     }
 
-    async getEnvVariables(appId: string, branch: string, region?: string): Promise<EnvVariable[]> {
+    async getEnvVariables(appId: string, branch: string, region?: string, profile?: string): Promise<EnvVariable[]> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
-        return this.runCommand<EnvVariable[]>(['env-vars', '--app-id', validAppId, '--branch', validBranch], region);
+        return this.runCommand<EnvVariable[]>(['env-vars', '--app-id', validAppId, '--branch', validBranch], region, profile);
     }
 
     async setEnvVariable(appId: string, branch: string, name: string, value: string, region?: string): Promise<void> {

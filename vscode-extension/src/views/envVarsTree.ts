@@ -31,7 +31,8 @@ export class EnvVarsTreeProvider implements vscode.TreeDataProvider<EnvVarItem> 
 
         try {
             const region = this.cli.getSelectedRegion();
-            this.envVars = await this.cli.getEnvVariables(appId, branch, region);
+            const profile = this.cli.getSelectedProfile();
+            this.envVars = await this.cli.getEnvVariables(appId, branch, region, profile);
 
             if (this.envVars.length === 0) {
                 return [new EnvVarItem('No environment variables', '', 'info')];

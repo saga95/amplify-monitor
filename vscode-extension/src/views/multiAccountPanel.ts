@@ -164,8 +164,8 @@ export class MultiAccountPanel {
         const config = vscode.workspace.getConfiguration('amplifyMonitor');
         await config.update('awsProfile', profile, vscode.ConfigurationTarget.Global);
         
-        // Set the selected app
-        this._cli.setSelectedApp(appId, region);
+        // Set the selected app with profile
+        this._cli.setSelectedApp(appId, region, profile);
         
         vscode.window.showInformationMessage(`Selected app in profile "${profile}": ${appId}`);
         

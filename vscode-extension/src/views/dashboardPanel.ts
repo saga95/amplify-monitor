@@ -65,7 +65,7 @@ export class DashboardPanel {
                         await this._stopBuild(message.appId, message.branchName, message.jobId, message.region);
                         break;
                     case 'viewLogs':
-                        await this._viewLogs(message.appId, message.branchName, message.jobId, message.region);
+                        await this._viewLogs(message.appId, message.branchName, message.jobId, message.region, message.profile);
                         break;
                     case 'openConsole':
                         await this._openConsole(message.appId, message.region);
@@ -90,12 +90,15 @@ export class DashboardPanel {
             const config = vscode.workspace.getConfiguration('amplifyMonitor');
             const isMultiAccountMode = config.get<boolean>('multiAccount.enabled', false);
             const configuredProfiles = config.get<string[]>('multiAccount.profiles', []);
+            const defaultProfile = this._cli.getAwsProfile() || 'default';
             
             let allApps: { app: AmplifyApp; profile?: string }[] = [];
 
             if (isMultiAccountMode && configuredProfiles.length > 0) {
                 // Multi-account mode: fetch apps from all configured profiles
-                const profilePromises = configuredProfiles.map(async (profile) => {
+                // Also include default profile if not already in the list
+                const profilesToFetch = [...new Set([...configuredProfiles, defaultProfile])];
+                const profilePromises = profilesToFetch.map(async (profile) => {
                     try {
                         const apps = await this._cli.listAppsForProfile(profile, true);
                         return apps.map(app => ({ app, profile }));
@@ -110,8 +113,7 @@ export class DashboardPanel {
             } else {
                 // Single account mode: use default/configured profile
                 const apps = await this._cli.listApps(true);
-                const currentProfile = this._cli.getAwsProfile() || 'default';
-                allApps = apps.map(app => ({ app, profile: currentProfile }));
+                allApps = apps.map(app => ({ app, profile: defaultProfile }));
             }
 
             const appsWithDetails: AppWithDetails[] = [];
@@ -181,9 +183,9 @@ export class DashboardPanel {
         }
     }
 
-    private async _viewLogs(appId: string, branchName: string, jobId: string, region: string) {
+    private async _viewLogs(appId: string, branchName: string, jobId: string, region: string, profile?: string) {
         // Set context for the diagnosis view
-        this._cli.setSelectedApp(appId, region);
+        this._cli.setSelectedApp(appId, region, profile);
         this._cli.setSelectedBranch(branchName);
         
         // Execute diagnosis directly with all required parameters
@@ -304,7 +306,7 @@ export class DashboardPanel {
                                 </button>
                             `}
                             ${latestJob ? `
-                                <button class="btn btn-logs" onclick="viewLogs('${app.appId}', '${branch.branchName}', '${latestJob.jobId}', '${app.region}')">
+                                <button class="btn btn-logs" onclick="viewLogs('${app.appId}', '${branch.branchName}', '${latestJob.jobId}', '${app.region}', '${profile || ''}')">
                                     📋 Logs
                                 </button>
                             ` : ''}
@@ -648,8 +650,8 @@ export class DashboardPanel {
                     vscode.postMessage({ command: 'stopBuild', appId, branchName, jobId, region });
                 }
                 
-                function viewLogs(appId, branchName, jobId, region) {
-                    vscode.postMessage({ command: 'viewLogs', appId, branchName, jobId, region });
+                function viewLogs(appId, branchName, jobId, region, profile) {
+                    vscode.postMessage({ command: 'viewLogs', appId, branchName, jobId, region, profile });
                 }
                 
                 function openConsole(appId, region) {
