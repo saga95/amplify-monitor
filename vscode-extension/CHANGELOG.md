@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.23] - 2025-02-01
+
+### Added
+- **Post-Push Build Watcher** - Automatic build monitoring after git push
+  - **Auto-Detection** - Detects git push and starts watching builds automatically
+  - **Real-Time Status Bar** - Shows spinning indicator with build count while watching
+  - **Smart Notifications** - Immediate alerts when builds succeed (✅) or fail (❌)
+  - **Auto-Diagnosis** - Failed builds are automatically analyzed for root cause
+  - **Quick Actions** - View diagnosis, logs, or open in AWS Console from notification
+  - **Manual Watch** - Start/stop watching any branch with commands
+  - **Configurable Settings** - Poll interval, auto-watch toggle, notification preferences
+
+### MCP Server Updates
+- **amplify_monitor_build** - Monitor build status with optional wait for completion
+- **amplify_get_build_logs** - Fetch and analyze build logs with error detection
+
+### Commands Added
+- `Amplify Monitor: Watch Build After Push` - Start watching builds for current branch
+- `Amplify Monitor: Stop Watching Builds` - Stop watching builds
+- `Amplify Monitor: Show Watched Builds` - View all currently watched builds
+- `Amplify Monitor: Show Build Watcher Logs` - View watcher debug output
+
+### Configuration Added
+- `amplifyMonitor.autoWatchBuilds` - Enable/disable automatic watching (default: true)
+- `amplifyMonitor.buildPollInterval` - Polling interval in seconds (default: 10)
+- `amplifyMonitor.showBuildNotifications` - Enable/disable notifications (default: true)
+- `amplifyMonitor.autoDiagnoseFailures` - Auto-diagnose failures (default: true)
+
 ## [0.1.22] - 2025-02-01
 
 ### Added

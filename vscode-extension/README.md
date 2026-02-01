@@ -11,21 +11,32 @@
 
 ---
 
-## 🚀 What's New in v0.1.22
+## 🚀 What's New in v0.1.23
 
-- 🔄 **Build Comparison** - Compare two builds to see what changed
-  - Side-by-side build selection from recent builds
-  - Status and duration comparison
-  - Error analysis: new errors vs fixed errors
-  - Build phase timing comparison
-  - Commit diff between builds
-  - Visual diff indicators (added, removed, changed)
+- 👁️ **Post-Push Build Watcher** - Automatic build monitoring after git push
+  - Detects git push and starts monitoring builds automatically
+  - Real-time status bar showing build progress
+  - Instant notifications when builds succeed or fail
+  - Auto-diagnosis of failures with root cause analysis
+  - Quick actions: View logs, open in AWS Console
+  - Configurable polling interval and timeout
+  - MCP server tools for AI assistant integration
 
 ---
 
 ## ✨ Features
 
-### 🔄 **Build Comparison** (NEW)
+### 👁️ **Post-Push Build Watcher** (NEW)
+Never miss a build failure after pushing code:
+- **Auto-Detection** - Automatically starts watching after `git push`
+- **Real-Time Status** - Status bar shows build progress (spinning indicator)
+- **Smart Notifications** - Success (✅) or failure (❌) alerts with duration
+- **Auto-Diagnosis** - Failures are immediately analyzed for root cause
+- **Quick Actions** - View diagnosis, logs, or open in AWS Console directly from notification
+- **Manual Watch** - Start/stop watching any branch manually
+- **MCP Integration** - AI assistants can monitor builds and get failure analysis
+
+### 🔄 **Build Comparison**
 Compare any two builds to understand what changed:
 - **Side-by-Side Selection** - Pick two builds from the last 20
 - **Status Comparison** - See if builds went from success to failure or vice versa

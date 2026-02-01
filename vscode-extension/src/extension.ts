@@ -22,17 +22,23 @@ import { CustomDomainValidatorPanel } from './views/customDomainValidator';
 import { AwsProfileManagerPanel } from './views/awsProfileManager';
 import { CustomPatternsPanel } from './views/customPatternsPanel';
 import { BuildComparisonPanel } from './views/buildComparisonPanel';
+import { PostPushWatcher } from './postPushWatcher';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
 let connectionStatusBarItem: vscode.StatusBarItem;
 let buildPerformanceTracker: BuildPerformanceTracker;
+let postPushWatcher: PostPushWatcher;
 
 export function activate(context: vscode.ExtensionContext) {
     console.log('Amplify Monitor extension is now active');
 
     const cli = new AmplifyMonitorCli();
     buildPerformanceTracker = new BuildPerformanceTracker(context);
+    
+    // Initialize Post-Push Build Watcher
+    postPushWatcher = new PostPushWatcher(cli);
+    context.subscriptions.push({ dispose: () => postPushWatcher.dispose() });
     
     // Create tree data providers
     const appsProvider = new AppsTreeProvider(cli);
@@ -617,6 +623,86 @@ export function activate(context: vscode.ExtensionContext) {
         // Build Comparison
         vscode.commands.registerCommand('amplify-monitor.compareBuilds', (appId?: string, branch?: string) => {
             BuildComparisonPanel.createOrShow(context.extensionUri, cli, appId, branch);
+        }),
+
+        // Post-Push Build Watcher Commands
+        vscode.commands.registerCommand('amplify-monitor.watchBuild', async (appId?: string, branch?: string) => {
+            const resolvedAppId = appId || cli.getSelectedApp();
+            const resolvedBranch = branch || cli.getSelectedBranch();
+
+            if (!resolvedAppId) {
+                vscode.window.showWarningMessage('Please select an app first');
+                return;
+            }
+            if (!resolvedBranch) {
+                vscode.window.showWarningMessage('Please select a branch first');
+                return;
+            }
+
+            await postPushWatcher.startWatching(resolvedAppId, resolvedBranch);
+            vscode.window.showInformationMessage(`Now watching builds for ${resolvedBranch}`);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.stopWatching', (appId?: string, branch?: string) => {
+            const resolvedAppId = appId || cli.getSelectedApp();
+            const resolvedBranch = branch || cli.getSelectedBranch();
+
+            if (resolvedAppId && resolvedBranch) {
+                postPushWatcher.stopWatching(resolvedAppId, resolvedBranch);
+                vscode.window.showInformationMessage(`Stopped watching ${resolvedBranch}`);
+            } else {
+                postPushWatcher.stopAll();
+                vscode.window.showInformationMessage('Stopped watching all builds');
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.showWatchedBuilds', async () => {
+            const watched = postPushWatcher.getWatchedBuilds();
+            
+            if (watched.length === 0) {
+                const action = await vscode.window.showInformationMessage(
+                    'No builds being watched. Start watching a build?',
+                    'Watch Current App'
+                );
+                if (action === 'Watch Current App') {
+                    vscode.commands.executeCommand('amplify-monitor.watchBuild');
+                }
+                return;
+            }
+
+            const items = watched.map(w => ({
+                label: `${w.branch} (${w.appId})`,
+                description: `Job #${w.jobId} - ${w.lastStatus}`,
+                detail: `Polling for ${Math.floor((Date.now() - w.startTime.getTime()) / 1000 / 60)} minutes`,
+                appId: w.appId,
+                branch: w.branch
+            }));
+
+            const selected = await vscode.window.showQuickPick(items, {
+                placeHolder: 'Select a build to stop watching',
+                title: 'Watched Builds'
+            });
+
+            if (selected) {
+                const action = await vscode.window.showQuickPick(['Stop Watching', 'View in Console'], {
+                    placeHolder: `Actions for ${selected.label}`
+                });
+
+                if (action === 'Stop Watching') {
+                    postPushWatcher.stopWatching(selected.appId, selected.branch);
+                } else if (action === 'View in Console') {
+                    const region = vscode.workspace.getConfiguration('amplifyMonitor').get<string>('defaultRegion') || 'us-east-1';
+                    const w = watched.find(b => b.appId === selected.appId && b.branch === selected.branch);
+                    if (w) {
+                        const url = `https://${region}.console.aws.amazon.com/amplify/home?region=${region}#/${w.appId}/${w.branch}/${w.jobId}`;
+                        vscode.env.openExternal(vscode.Uri.parse(url));
+                    }
+                }
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.showBuildWatcherLogs', () => {
+            postPushWatcher.showOutput();
         }),
 
         appsView,

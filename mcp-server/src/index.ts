@@ -77,6 +77,21 @@ const MigrationAnalysisSchema = z.object({
     projectPath: z.string().min(1, 'projectPath is required'),
 });
 
+const MonitorBuildSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+    jobId: z.string().optional(),
+    waitForCompletion: z.boolean().optional().default(true),
+    timeoutSeconds: z.number().optional().default(1800),
+});
+
+const GetBuildLogsSchema = BaseSchema.extend({
+    appId: z.string().min(1, 'appId is required'),
+    branch: z.string().min(1, 'branch is required'),
+    jobId: z.string().optional(),
+    logType: z.enum(['build', 'deploy', 'both']).optional().default('both'),
+});
+
 // ============================================================================
 // Tool Definitions
 // ============================================================================
@@ -364,6 +379,79 @@ const tools: Tool[] = [
             },
             required: ['projectPath']
         }
+    },
+    {
+        name: 'amplify_monitor_build',
+        description: 'Monitor a build and get real-time status with automatic failure diagnosis. Use this after a git push to track build progress and get immediate failure analysis.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                appId: {
+                    type: 'string',
+                    description: 'The Amplify application ID'
+                },
+                branch: {
+                    type: 'string',
+                    description: 'The branch name to monitor'
+                },
+                jobId: {
+                    type: 'string',
+                    description: 'Specific job ID to monitor (optional, defaults to latest)'
+                },
+                waitForCompletion: {
+                    type: 'boolean',
+                    description: 'Wait for build to complete and return final status with diagnosis (default: true)'
+                },
+                timeoutSeconds: {
+                    type: 'number',
+                    description: 'Maximum time to wait for build completion in seconds (default: 1800 = 30 min)'
+                },
+                region: {
+                    type: 'string',
+                    description: 'AWS region where the app is located (optional)'
+                },
+                profile: {
+                    type: 'string',
+                    description: 'AWS profile name for cross-account access (optional)'
+                }
+            },
+            required: ['appId', 'branch']
+        }
+    },
+    {
+        name: 'amplify_get_build_logs',
+        description: 'Fetch and analyze build/deploy logs for a specific job. Returns log content with error analysis.',
+        inputSchema: {
+            type: 'object',
+            properties: {
+                appId: {
+                    type: 'string',
+                    description: 'The Amplify application ID'
+                },
+                branch: {
+                    type: 'string',
+                    description: 'The branch name'
+                },
+                jobId: {
+                    type: 'string',
+                    description: 'The job ID (optional, defaults to latest failed job)'
+                },
+                logType: {
+                    type: 'string',
+                    enum: ['build', 'deploy', 'both'],
+                    description: 'Type of logs to fetch (default: both)'
+                },
+                region: {
+                    type: 'string',
+                    description: 'AWS region where the app is located (optional)'
+                },
+                profile: {
+                    type: 'string',
+                    description: 'AWS profile name for cross-account access (optional)'
+                }
+            },
+            required: ['appId', 'branch']
+        }
     }
 ];
 
@@ -632,6 +720,172 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
                             text: output
                         }
                     ]
+                };
+            }
+
+            case 'amplify_monitor_build': {
+                const validated = MonitorBuildSchema.parse(args);
+                
+                // Get current job status
+                const jobs = await cli.listJobs(validated.appId, validated.branch, validated.region, validated.profile);
+                
+                if (jobs.length === 0) {
+                    return {
+                        content: [{
+                            type: 'text',
+                            text: '⚠️ No builds found for this branch. Push code to trigger a build.'
+                        }]
+                    };
+                }
+
+                let targetJob = validated.jobId 
+                    ? jobs.find(j => j.jobId === validated.jobId) 
+                    : jobs[0];
+
+                if (!targetJob) {
+                    return {
+                        content: [{
+                            type: 'text',
+                            text: `❌ Job ${validated.jobId} not found`
+                        }]
+                    };
+                }
+
+                // If not waiting for completion, return current status
+                if (!validated.waitForCompletion) {
+                    return {
+                        content: [{
+                            type: 'text',
+                            text: `## Build Status\n\n**Job:** #${targetJob.jobId}\n**Branch:** ${targetJob.branch}\n**Status:** ${targetJob.status}\n**Started:** ${targetJob.startTime || 'N/A'}`
+                        }]
+                    };
+                }
+
+                // Poll until completion or timeout
+                const startTime = Date.now();
+                const timeout = (validated.timeoutSeconds || 1800) * 1000;
+                const pollInterval = 10000; // 10 seconds
+
+                while (targetJob.status === 'PENDING' || targetJob.status === 'RUNNING') {
+                    if (Date.now() - startTime > timeout) {
+                        return {
+                            content: [{
+                                type: 'text',
+                                text: `⏱️ Timeout waiting for build completion.\n\n**Current Status:** ${targetJob.status}\n**Job:** #${targetJob.jobId}`
+                            }]
+                        };
+                    }
+
+                    // Wait before polling again
+                    await new Promise(resolve => setTimeout(resolve, pollInterval));
+
+                    // Refresh job status
+                    const refreshedJobs = await cli.listJobs(validated.appId, validated.branch, validated.region, validated.profile);
+                    targetJob = refreshedJobs.find(j => j.jobId === targetJob!.jobId) || targetJob;
+                }
+
+                // Build completed - get diagnosis if failed
+                let output = `## Build ${targetJob.status === 'SUCCEED' ? 'Succeeded ✅' : 'Failed ❌'}\n\n`;
+                output += `**Job:** #${targetJob.jobId}\n`;
+                output += `**Branch:** ${targetJob.branch}\n`;
+                output += `**Status:** ${targetJob.status}\n`;
+                output += `**Started:** ${targetJob.startTime || 'N/A'}\n`;
+                output += `**Ended:** ${targetJob.endTime || 'N/A'}\n`;
+
+                if (targetJob.status === 'FAILED') {
+                    // Auto-diagnose the failure
+                    try {
+                        const diagnosis = await cli.diagnose(validated.appId, validated.branch, targetJob.jobId, validated.region, validated.profile);
+                        
+                        if (diagnosis.issues && diagnosis.issues.length > 0) {
+                            output += `\n### Issues Detected (${diagnosis.issues.length})\n\n`;
+                            
+                            for (const issue of diagnosis.issues) {
+                                output += `#### ⚠️ ${issue.pattern}\n`;
+                                output += `**Root Cause:** ${issue.rootCause}\n\n`;
+                                output += `**Suggested Fixes:**\n`;
+                                issue.suggestedFixes.forEach(fix => {
+                                    output += `- ${fix}\n`;
+                                });
+                                output += '\n';
+                            }
+                        } else {
+                            output += `\n### No specific issues detected\nCheck the build logs for more details.\n`;
+                        }
+                    } catch {
+                        output += `\n⚠️ Could not auto-diagnose failure. Check build logs manually.\n`;
+                    }
+                }
+
+                const elapsedMs = Date.now() - startTime;
+                output += `\n---\n*Monitored for ${Math.round(elapsedMs / 1000)} seconds*`;
+
+                return {
+                    content: [{
+                        type: 'text',
+                        text: output
+                    }]
+                };
+            }
+
+            case 'amplify_get_build_logs': {
+                const validated = GetBuildLogsSchema.parse(args);
+                
+                // Get jobs to find the target
+                const jobs = await cli.listJobs(validated.appId, validated.branch, validated.region, validated.profile);
+                
+                let targetJobId = validated.jobId;
+                
+                if (!targetJobId) {
+                    // Find latest failed job
+                    const failedJob = jobs.find(j => j.status === 'FAILED');
+                    if (failedJob) {
+                        targetJobId = failedJob.jobId;
+                    } else if (jobs.length > 0) {
+                        targetJobId = jobs[0].jobId;
+                    }
+                }
+
+                if (!targetJobId) {
+                    return {
+                        content: [{
+                            type: 'text',
+                            text: '⚠️ No jobs found to get logs from.'
+                        }]
+                    };
+                }
+
+                // Get diagnosis which includes log analysis
+                const diagnosis = await cli.diagnose(validated.appId, validated.branch, targetJobId, validated.region, validated.profile);
+                
+                let output = `## Build Logs Analysis\n\n`;
+                output += `**App:** ${diagnosis.appId}\n`;
+                output += `**Branch:** ${diagnosis.branch}\n`;
+                output += `**Job:** #${diagnosis.jobId}\n`;
+                output += `**Status:** ${diagnosis.status}\n\n`;
+
+                if (diagnosis.issues && diagnosis.issues.length > 0) {
+                    output += `### Detected Issues (${diagnosis.issues.length})\n\n`;
+                    
+                    for (const issue of diagnosis.issues) {
+                        output += `#### ${issue.pattern}\n`;
+                        output += `- **Root Cause:** ${issue.rootCause}\n`;
+                        output += `- **Fixes:**\n`;
+                        issue.suggestedFixes.forEach(fix => {
+                            output += `  - ${fix}\n`;
+                        });
+                        output += '\n';
+                    }
+                } else {
+                    output += `### ✅ No issues detected in logs\n`;
+                    output += `The build completed with status: ${diagnosis.status}\n`;
+                }
+
+                return {
+                    content: [{
+                        type: 'text',
+                        text: output
+                    }]
                 };
             }
 

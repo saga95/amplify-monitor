@@ -38,6 +38,7 @@
                     <nav class="doc-nav">
                         <h4>Versions</h4>
                         <ul>
+                            <li><a href="#v0123">v0.1.23</a></li>
                             <li><a href="#v0122">v0.1.22</a></li>
                             <li><a href="#v0121">v0.1.21</a></li>
                             <li><a href="#v0120">v0.1.20</a></li>
@@ -57,8 +58,38 @@
                     <h1>Changelog</h1>
                     <p class="text-muted">Version history and release notes for Amplify Monitor.</p>
 
-                    <h2 id="v0122">v0.1.22 <span class="text-muted">(February 2025)</span></h2>
+                    <h2 id="v0123">v0.1.23 <span class="text-muted">(February 2025)</span></h2>
                     <div class="badge" style="margin-bottom: 16px;">Latest</div>
+                    
+                    <h3>👁️ Post-Push Build Watcher</h3>
+                    <p>Never miss a build failure after pushing code:</p>
+                    <ul>
+                        <li><strong>Auto-Detection</strong> - Automatically detects git push and starts watching builds</li>
+                        <li><strong>Real-Time Status Bar</strong> - Shows spinning indicator with build count while watching</li>
+                        <li><strong>Smart Notifications</strong> - Instant alerts when builds succeed (✅) or fail (❌)</li>
+                        <li><strong>Auto-Diagnosis</strong> - Failed builds are automatically analyzed for root cause</li>
+                        <li><strong>Quick Actions</strong> - View diagnosis, logs, or open in AWS Console directly from notification</li>
+                        <li><strong>Manual Watch</strong> - Start/stop watching any branch with commands</li>
+                        <li><strong>MCP Integration</strong> - AI assistants can monitor builds via <code>amplify_monitor_build</code> and <code>amplify_get_build_logs</code> tools</li>
+                    </ul>
+
+                    <h3>New Commands</h3>
+                    <ul>
+                        <li><code>Amplify Monitor: Watch Build After Push</code> - Start watching builds for current branch</li>
+                        <li><code>Amplify Monitor: Stop Watching Builds</code> - Stop watching builds</li>
+                        <li><code>Amplify Monitor: Show Watched Builds</code> - View all currently watched builds</li>
+                        <li><code>Amplify Monitor: Show Build Watcher Logs</code> - View watcher debug output</li>
+                    </ul>
+
+                    <h3>New Settings</h3>
+                    <ul>
+                        <li><code>amplifyMonitor.autoWatchBuilds</code> - Enable/disable automatic watching (default: true)</li>
+                        <li><code>amplifyMonitor.buildPollInterval</code> - Polling interval in seconds (default: 10)</li>
+                        <li><code>amplifyMonitor.showBuildNotifications</code> - Enable/disable notifications (default: true)</li>
+                        <li><code>amplifyMonitor.autoDiagnoseFailures</code> - Auto-diagnose failures (default: true)</li>
+                    </ul>
+
+                    <h2 id="v0122">v0.1.22 <span class="text-muted">(February 2025)</span></h2>
                     
                     <h3>🔀 Build Comparison</h3>
                     <p>Compare two builds side-by-side to identify what changed:</p>

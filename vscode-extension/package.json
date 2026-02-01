@@ -2,7 +2,7 @@
   "name": "amplify-monitor",
   "displayName": "Amplify Monitor",
   "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
-  "version": "0.1.22",
+  "version": "0.1.23",
   "publisher": "SagaraHarasgama",
   "author": {
     "name": "saga95"
@@ -291,6 +291,30 @@
         "title": "Compare Builds",
         "category": "Amplify Monitor",
         "icon": "$(diff)"
+      },
+      {
+        "command": "amplify-monitor.watchBuild",
+        "title": "Watch Build After Push",
+        "category": "Amplify Monitor",
+        "icon": "$(eye)"
+      },
+      {
+        "command": "amplify-monitor.stopWatching",
+        "title": "Stop Watching Builds",
+        "category": "Amplify Monitor",
+        "icon": "$(eye-closed)"
+      },
+      {
+        "command": "amplify-monitor.showWatchedBuilds",
+        "title": "Show Watched Builds",
+        "category": "Amplify Monitor",
+        "icon": "$(list-unordered)"
+      },
+      {
+        "command": "amplify-monitor.showBuildWatcherLogs",
+        "title": "Show Build Watcher Logs",
+        "category": "Amplify Monitor",
+        "icon": "$(output)"
       }
     ],
     "viewsContainers": {
@@ -482,6 +506,32 @@
           "default": 60,
           "description": "Auto-refresh interval in seconds",
           "order": 6
+        },
+        "amplifyMonitor.autoWatchBuilds": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically watch for build status after git push",
+          "order": 7
+        },
+        "amplifyMonitor.buildPollInterval": {
+          "type": "number",
+          "default": 10,
+          "minimum": 5,
+          "maximum": 60,
+          "description": "How often to check build status (in seconds) when watching builds",
+          "order": 8
+        },
+        "amplifyMonitor.showBuildNotifications": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show notifications when builds succeed or fail",
+          "order": 9
+        },
+        "amplifyMonitor.autoDiagnoseFailures": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically diagnose build failures and show root cause",
+          "order": 10
         }
       }
     }
