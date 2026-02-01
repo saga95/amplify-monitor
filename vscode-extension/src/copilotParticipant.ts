@@ -297,6 +297,7 @@ export class AmplifyCopilotParticipant {
             // Get selected app/branch or find latest failed
             let appId = this.cli.getSelectedApp();
             let branch = this.cli.getSelectedBranch();
+            let region = this.cli.getSelectedRegion();
 
             // If no selection, try to find a failed build across apps
             if (!appId) {
@@ -304,14 +305,15 @@ export class AmplifyCopilotParticipant {
                 if (!apps || apps.length === 0) return null;
 
                 for (const app of apps) {
-                    const branches = await this.cli.listBranches(app.appId);
+                    const branches = await this.cli.listBranches(app.appId, app.region);
                     if (!branches) continue;
 
                     for (const br of branches) {
-                        const jobs = await this.cli.listJobs(app.appId, br.branchName);
+                        const jobs = await this.cli.listJobs(app.appId, br.branchName, app.region);
                         if (jobs && jobs.length > 0 && jobs[0].status === 'FAILED') {
                             appId = app.appId;
                             branch = br.branchName;
+                            region = app.region;
                             break;
                         }
                     }
@@ -324,15 +326,38 @@ export class AmplifyCopilotParticipant {
             // Get app info
             const apps = await this.cli.listApps();
             const appInfo = apps?.find(a => a.appId === appId);
+            if (appInfo?.region) {
+                region = appInfo.region;
+            }
 
             // Get latest job
-            const jobs = await this.cli.listJobs(appId, branch);
+            const jobs = await this.cli.listJobs(appId, branch, region);
             if (!jobs || jobs.length === 0) return null;
 
             const latestJob = jobs.find(j => j.status === 'FAILED') || jobs[0];
             
-            // Run diagnosis to get logs and issues
-            const diagnosisResult = await this.cli.diagnose(appId, branch, latestJob.jobId);
+            // Run diagnosis with logs to get full context
+            let diagnosisResult;
+            let rawLogs = '';
+            
+            try {
+                // Try to get diagnosis with logs
+                diagnosisResult = await this.cli.diagnoseWithLogs(appId, branch, latestJob.jobId, region);
+                rawLogs = diagnosisResult?.rawLogs || '';
+            } catch (e) {
+                console.error('diagnoseWithLogs failed, falling back:', e);
+                // Fallback to regular diagnosis
+                diagnosisResult = await this.cli.diagnose(appId, branch, latestJob.jobId, region);
+            }
+            
+            // If still no logs, try fetching them directly
+            if (!rawLogs) {
+                try {
+                    rawLogs = await this.cli.getBuildLogs(appId, branch, latestJob.jobId, region);
+                } catch (e) {
+                    console.error('Failed to fetch build logs:', e);
+                }
+            }
             
             return {
                 appId,
@@ -342,7 +367,7 @@ export class AmplifyCopilotParticipant {
                 status: latestJob.status,
                 startTime: latestJob.startTime,
                 endTime: latestJob.endTime,
-                logs: diagnosisResult?.rawLogs || '',
+                logs: rawLogs,
                 issues: diagnosisResult?.issues || []
             };
         } catch (error) {
