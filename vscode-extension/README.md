@@ -11,14 +11,14 @@
 
 ---
 
-## 🚀 What's New in v0.1.17
+## 🚀 What's New in v0.1.18
 
+- 🔧 **Env Vars Troubleshooter** - Detect missing, mismatched, and exposed env vars
 - 🔍 **Node Version Detector** - Detect & fix Node.js version issues
 - 🔔 **Slack/Teams/Discord Notifications** - Get build alerts in your chat
 - 🔐 **Secrets Manager Integration** - Sync env vars from AWS SSM
 - ✅ **Pre-Deploy Validation** - Catch issues BEFORE failed builds
 - 🧙 **Build Optimization Wizard** - Speed up builds by 30-60%
-- 📦 **Bundle Size Analyzer** - Stay under Amplify's 230MB limit
 
 ---
 
@@ -87,6 +87,17 @@ Automatically detect and fix Node.js version issues:
 - **One-Click Fixes** - Create .nvmrc, update amplify.yml with proper nvm commands
 - **Deprecation Warnings** - Alerts for Node 14/16 deprecation, experimental Node 25
 - **Local vs Amplify** - Compares your local Node version to what Amplify will use
+
+### 🔧 **Env Vars Troubleshooter** (NEW)
+Find and fix environment variable issues before they break your build:
+- **Code Scanning** - Finds all `process.env.*` and `import.meta.env.*` references
+- **Missing Detection** - Identifies vars used in code but not defined anywhere
+- **Amplify Sync Check** - Warns if local .env vars aren't in Amplify
+- **Framework-Aware** - Understands Next.js, Vite, CRA prefix requirements
+- **Security Scanning** - Detects hardcoded secrets and exposed sensitive vars
+- **Client-Side Exposure** - Warns about sensitive vars with NEXT_PUBLIC_ prefix
+- **Gitignore Validation** - Ensures .env files aren't committed
+- **One-Click Fixes** - Add to .env, create .env.example, update .gitignore
 
 ### 🔐 **Secrets Manager Integration**
 Centralize your secrets management with AWS SSM and Secrets Manager:
@@ -236,6 +247,7 @@ Open Command Palette (`Ctrl+Shift+P`) and type "Amplify Monitor":
 | Command | Description |
 |---------|-------------|
 | **Open Dashboard** | Visual overview of all apps |
+| **Troubleshoot Environment Variables** | Find missing/exposed env vars |
 | **Detect Node Version Issues** | Find & fix Node.js version problems |
 | **Configure Notifications** | Set up Slack/Teams/Discord alerts |
 | **Manage Secrets** | Sync env vars from SSM/Secrets Manager |

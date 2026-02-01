@@ -17,6 +17,7 @@ import { PreDeployValidationPanel } from './views/preDeployValidation';
 import { SecretsManagerPanel } from './views/secretsManagerPanel';
 import { NotificationsPanel, NotificationsService } from './views/notificationsPanel';
 import { NodeVersionDetectorPanel } from './views/nodeVersionDetector';
+import { EnvVarsTroubleshooterPanel } from './views/envVarsTroubleshooter';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -544,6 +545,16 @@ export function activate(context: vscode.ExtensionContext) {
                 return;
             }
             NodeVersionDetectorPanel.createOrShow(context.extensionUri);
+        }),
+
+        // Env Vars Troubleshooter
+        vscode.commands.registerCommand('amplify-monitor.troubleshootEnvVars', () => {
+            const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
+            if (!workspaceFolder) {
+                vscode.window.showWarningMessage('Please open a workspace folder first');
+                return;
+            }
+            EnvVarsTroubleshooterPanel.createOrShow(context.extensionUri, cli);
         }),
 
         appsView,
