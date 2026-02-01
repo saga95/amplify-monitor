@@ -236,15 +236,15 @@ export class AmplifyMonitorCli {
         return this.runCommand<AmplifyApp[]>(['apps'], region);
     }
 
-    async listBranches(appId: string, region?: string): Promise<AmplifyBranch[]> {
+    async listBranches(appId: string, region?: string, profile?: string): Promise<AmplifyBranch[]> {
         const validAppId = this.validateStringParam('appId', appId);
-        return this.runCommand<AmplifyBranch[]>(['branches', '--app-id', validAppId], region);
+        return this.runCommand<AmplifyBranch[]>(['branches', '--app-id', validAppId], region, profile);
     }
 
-    async listJobs(appId: string, branch: string, region?: string): Promise<AmplifyJob[]> {
+    async listJobs(appId: string, branch: string, region?: string, profile?: string): Promise<AmplifyJob[]> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
-        return this.runCommand<AmplifyJob[]>(['jobs', '--app-id', validAppId, '--branch', validBranch], region);
+        return this.runCommand<AmplifyJob[]>(['jobs', '--app-id', validAppId, '--branch', validBranch], region, profile);
     }
 
     async diagnose(appId: string, branch: string, jobId?: string, region?: string): Promise<DiagnosisResult> {

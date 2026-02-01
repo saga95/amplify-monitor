@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.33] - 2026-02-01
+
+### Fixed
+- **Multi-Account Dashboard Branches** - Dashboard now properly loads branches and jobs for apps across different AWS profiles
+  - Added profile parameter to `listBranches` and `listJobs` CLI methods
+  - Dashboard passes profile when fetching branch and job data
+
+### Improved
+- **Apps Panel Multi-Account Support** - Sidebar Apps tree now displays apps from all configured AWS profiles
+  - Shows profile badge next to each app when multi-account mode is enabled
+  - Branches are fetched using the correct profile credentials
+
+### Removed
+- **Status Bar Items** - Removed AWS profile and app count status bar indicators
+  - Multi-account mode is now the standard approach
+  - Configure profiles in Settings → Amplify Monitor → Multi Account → Profiles
+
 ## [0.1.32] - 2026-02-01
 
 ### Fixed

@@ -36,8 +36,6 @@ import { MultiAccountPanel } from './views/multiAccountPanel';
 import { configureAwsProfile } from './views/profileConfigWizard';
 
 let refreshInterval: NodeJS.Timeout | undefined;
-let profileStatusBarItem: vscode.StatusBarItem;
-let connectionStatusBarItem: vscode.StatusBarItem;
 let buildPerformanceTracker: BuildPerformanceTracker;
 let postPushWatcher: PostPushWatcher;
 
@@ -87,20 +85,6 @@ export function activate(context: vscode.ExtensionContext) {
         treeDataProvider: migrationProvider,
         showCollapseAll: true
     });
-
-    // Create status bar item for AWS profile
-    profileStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 100);
-    profileStatusBarItem.command = 'amplify-monitor.switchProfile';
-    profileStatusBarItem.tooltip = 'Click to switch AWS profile';
-    updateProfileStatusBar(cli);
-    profileStatusBarItem.show();
-
-    // Create connection status bar item
-    connectionStatusBarItem = vscode.window.createStatusBarItem(vscode.StatusBarAlignment.Left, 99);
-    connectionStatusBarItem.command = 'amplify-monitor.listApps';
-    connectionStatusBarItem.text = '$(sync~spin) Amplify: Connecting...';
-    connectionStatusBarItem.tooltip = 'Click to refresh Amplify apps';
-    connectionStatusBarItem.show();
 
     // Auto-detect Amplify project and fetch apps on startup
     autoDetectAndInitialize(cli, appsProvider, migrationProvider, context);
@@ -436,9 +420,6 @@ frontend:
             if (profile !== undefined) {
                 const config = vscode.workspace.getConfiguration('amplifyMonitor');
                 await config.update('awsProfile', profile, vscode.ConfigurationTarget.Global);
-                
-                // Update status bar immediately
-                updateProfileStatusBar(cli);
                 
                 // Refresh all views with new credentials
                 await Promise.all([
@@ -953,9 +934,9 @@ frontend:
                 e.affectsConfiguration('amplifyMonitor.autoRefreshInterval')) {
                 setupAutoRefresh(appsProvider, jobsProvider);
             }
-            // Refresh views when AWS profile changes
-            if (e.affectsConfiguration('amplifyMonitor.awsProfile')) {
-                updateProfileStatusBar(cli);
+            // Refresh views when AWS profile or multi-account settings change
+            if (e.affectsConfiguration('amplifyMonitor.awsProfile') ||
+                e.affectsConfiguration('amplifyMonitor.multiAccount')) {
                 await Promise.all([
                     appsProvider.refresh(),
                     jobsProvider.refresh()
@@ -963,10 +944,6 @@ frontend:
             }
         })
     );
-
-    // Add status bar to subscriptions for cleanup
-    context.subscriptions.push(profileStatusBarItem);
-    context.subscriptions.push(connectionStatusBarItem);
 }
 
 async function runDiagnosis(cli: AmplifyMonitorCli, provider: DiagnosisTreeProvider) {
@@ -1037,29 +1014,6 @@ function setupAutoRefresh(appsProvider: AppsTreeProvider, jobsProvider: JobsTree
     }
 }
 
-function updateProfileStatusBar(cli: AmplifyMonitorCli) {
-    const profile = cli.getAwsProfile() || 'default';
-    profileStatusBarItem.text = `$(account) AWS: ${profile}`;
-    profileStatusBarItem.tooltip = `Current AWS Profile: ${profile}\nClick to switch profiles`;
-    profileStatusBarItem.command = 'amplify-monitor.switchProfile';
-}
-
-function updateConnectionStatus(connected: boolean, appCount?: number) {
-    if (connected && appCount !== undefined) {
-        connectionStatusBarItem.text = `$(cloud) Amplify: ${appCount} app${appCount !== 1 ? 's' : ''}`;
-        connectionStatusBarItem.backgroundColor = undefined;
-        connectionStatusBarItem.tooltip = `Connected - ${appCount} Amplify app${appCount !== 1 ? 's' : ''} found. Click to refresh.`;
-    } else if (connected) {
-        connectionStatusBarItem.text = '$(cloud) Amplify: Connected';
-        connectionStatusBarItem.backgroundColor = undefined;
-        connectionStatusBarItem.tooltip = 'Connected to AWS. Click to refresh apps.';
-    } else {
-        connectionStatusBarItem.text = '$(cloud-offline) Amplify: Not Connected';
-        connectionStatusBarItem.backgroundColor = new vscode.ThemeColor('statusBarItem.warningBackground');
-        connectionStatusBarItem.tooltip = 'Could not connect to AWS. Click to retry or configure credentials.';
-    }
-}
-
 async function autoDetectAndInitialize(
     cli: AmplifyMonitorCli, 
     appsProvider: AppsTreeProvider, 
@@ -1086,7 +1040,6 @@ async function autoDetectAndInitialize(
     // Try to fetch apps to check AWS connection
     try {
         const apps = await cli.listApps(true);
-        updateConnectionStatus(true, apps.length);
         
         // Show notification if Amplify project found
         if (hasAmplifyProject) {
@@ -1129,8 +1082,6 @@ async function autoDetectAndInitialize(
         appsProvider.refresh();
         
     } catch (error) {
-        updateConnectionStatus(false);
-        
         if (hasAmplifyProject) {
             // Amplify project found but no AWS credentials
             const action = await vscode.window.showWarningMessage(
@@ -1166,9 +1117,6 @@ export function deactivate() {
     if (refreshInterval) {
         clearInterval(refreshInterval);
         refreshInterval = undefined;
-    }
-    if (profileStatusBarItem) {
-        profileStatusBarItem.dispose();
     }
 }
 

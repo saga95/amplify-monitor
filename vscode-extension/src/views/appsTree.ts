@@ -1,18 +1,47 @@
 import * as vscode from 'vscode';
 import { AmplifyMonitorCli, AmplifyApp } from '../cli';
 
+interface AppWithProfile {
+    app: AmplifyApp;
+    profile: string;
+}
+
 export class AppsTreeProvider implements vscode.TreeDataProvider<AppTreeItem> {
     private _onDidChangeTreeData = new vscode.EventEmitter<AppTreeItem | undefined | null | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    private apps: AmplifyApp[] = [];
+    private apps: AppWithProfile[] = [];
+    private isMultiAccountMode: boolean = false;
 
     constructor(private cli: AmplifyMonitorCli) {}
 
     async refresh(): Promise<void> {
         try {
-            // Load apps from all regions
-            this.apps = await this.cli.listApps(true);
+            const config = vscode.workspace.getConfiguration('amplifyMonitor');
+            this.isMultiAccountMode = config.get<boolean>('multiAccount.enabled', false);
+            const configuredProfiles = config.get<string[]>('multiAccount.profiles', []);
+
+            if (this.isMultiAccountMode && configuredProfiles.length > 0) {
+                // Multi-account mode: fetch apps from all configured profiles
+                const allApps: AppWithProfile[] = [];
+                const profilePromises = configuredProfiles.map(async (profile) => {
+                    try {
+                        const apps = await this.cli.listAppsForProfile(profile, true);
+                        return apps.map(app => ({ app, profile }));
+                    } catch (error) {
+                        console.warn(`Failed to fetch apps for profile ${profile}:`, error);
+                        return [];
+                    }
+                });
+                
+                const results = await Promise.all(profilePromises);
+                this.apps = results.flat();
+            } else {
+                // Single account mode: use default/configured profile
+                const apps = await this.cli.listApps(true);
+                const currentProfile = this.cli.getAwsProfile() || 'default';
+                this.apps = apps.map(app => ({ app, profile: currentProfile }));
+            }
         } catch (error) {
             vscode.window.showErrorMessage(`Failed to load apps: ${error}`);
             this.apps = [];
@@ -30,27 +59,38 @@ export class AppsTreeProvider implements vscode.TreeDataProvider<AppTreeItem> {
             if (this.apps.length === 0) {
                 await this.refresh();
             }
-            return this.apps.map(app => new AppTreeItem(
+            
+            // Sort by profile (if multi-account) then by name
+            const sortedApps = [...this.apps].sort((a, b) => {
+                if (this.isMultiAccountMode && a.profile !== b.profile) {
+                    return a.profile.localeCompare(b.profile);
+                }
+                return a.app.name.localeCompare(b.app.name);
+            });
+
+            return sortedApps.map(({ app, profile }) => new AppTreeItem(
                 app.name,
                 app.appId,
                 'app',
                 vscode.TreeItemCollapsibleState.Collapsed,
                 undefined,
-                app.region
+                app.region,
+                this.isMultiAccountMode ? profile : undefined
             ));
         }
 
         if (element.type === 'app') {
             // App level - show branches
             try {
-                const branches = await this.cli.listBranches(element.appId, element.region);
+                const branches = await this.cli.listBranches(element.appId, element.region, element.profile);
                 return branches.map(branch => new AppTreeItem(
                     branch.branchName,
                     element.appId,
                     'branch',
                     vscode.TreeItemCollapsibleState.None,
                     branch.branchName,
-                    element.region
+                    element.region,
+                    element.profile
                 ));
             } catch (error) {
                 vscode.window.showErrorMessage(`Failed to load branches: ${error}`);
@@ -69,15 +109,20 @@ export class AppTreeItem extends vscode.TreeItem {
         public readonly type: 'app' | 'branch',
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly branchName?: string,
-        public readonly region?: string
+        public readonly region?: string,
+        public readonly profile?: string
     ) {
         super(label, collapsibleState);
 
         if (type === 'app') {
             this.contextValue = 'amplifyApp';
             this.iconPath = new vscode.ThemeIcon('cloud');
-            this.description = region || '';
-            this.tooltip = `App ID: ${appId}\nRegion: ${region || 'unknown'}`;
+            // Show region and profile in description
+            const descParts = [];
+            if (region) descParts.push(region);
+            if (profile) descParts.push(`👤 ${profile}`);
+            this.description = descParts.join(' · ');
+            this.tooltip = `App: ${label}\nApp ID: ${appId}\nRegion: ${region || 'unknown'}${profile ? `\nProfile: ${profile}` : ''}`;
             this.command = {
                 command: 'amplify-monitor.selectApp',
                 title: 'Select App',

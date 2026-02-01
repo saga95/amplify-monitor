@@ -119,13 +119,13 @@ export class DashboardPanel {
             // Fetch branches and latest jobs for each app (in parallel)
             await Promise.all(allApps.map(async ({ app, profile }) => {
                 try {
-                    const branches = await this._cli.listBranches(app.appId, app.region);
+                    const branches = await this._cli.listBranches(app.appId, app.region, profile);
                     const branchesWithJobs: BranchWithJobs[] = [];
 
                     // Get latest job for each branch
                     await Promise.all(branches.map(async (branch) => {
                         try {
-                            const jobs = await this._cli.listJobs(app.appId, branch.branchName, app.region);
+                            const jobs = await this._cli.listJobs(app.appId, branch.branchName, app.region, profile);
                             branchesWithJobs.push({
                                 branch,
                                 latestJob: jobs[0] // Jobs are ordered by most recent
