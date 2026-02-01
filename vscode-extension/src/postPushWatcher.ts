@@ -22,6 +22,7 @@ interface BuildNotification {
 export class PostPushWatcher {
     private _cli: AmplifyMonitorCli;
     private _watchedBuilds: Map<string, WatchedBuild> = new Map();
+    private _notifiedJobs: Set<string> = new Set(); // Track jobs we've already shown notifications for
     private _pollInterval: NodeJS.Timeout | undefined;
     private _gitExtension: vscode.Extension<any> | undefined;
     private _disposables: vscode.Disposable[] = [];
@@ -189,6 +190,7 @@ export class PostPushWatcher {
 
                 if (latestJob.status === 'PENDING' || latestJob.status === 'RUNNING') {
                     this._showBuildStartedNotification(appId, branch, latestJob.jobId);
+                    this._notifiedJobs.add(`${appId}:${branch}:${latestJob.jobId}:started`);
                 }
             } else {
                 // Watch for any new build
@@ -230,6 +232,7 @@ export class PostPushWatcher {
      */
     public stopAll(): void {
         this._watchedBuilds.clear();
+        this._notifiedJobs.clear(); // Also clear notification history
         this._stopPolling();
         this._updateStatusBar();
         this._log('Stopped watching all builds');
@@ -323,8 +326,10 @@ export class PostPushWatcher {
                     watched.jobId = latestJob.jobId;
                     watched.lastStatus = latestJob.status;
 
-                    if (latestJob.status === 'PENDING' || latestJob.status === 'RUNNING') {
+                    const notifyKey = `${watched.appId}:${watched.branch}:${latestJob.jobId}:started`;
+                    if ((latestJob.status === 'PENDING' || latestJob.status === 'RUNNING') && !this._notifiedJobs.has(notifyKey)) {
                         this._showBuildStartedNotification(watched.appId, watched.branch, latestJob.jobId);
+                        this._notifiedJobs.add(notifyKey);
                     }
                 }
 
@@ -336,13 +341,17 @@ export class PostPushWatcher {
                     this._log(`Build status changed: ${oldStatus} -> ${latestJob.status}`);
 
                     // Handle completed builds
-                    if (latestJob.status === 'SUCCEED') {
+                    const completedKey = `${watched.appId}:${watched.branch}:${latestJob.jobId}:${latestJob.status}`;
+                    if (latestJob.status === 'SUCCEED' && !this._notifiedJobs.has(completedKey)) {
+                        this._notifiedJobs.add(completedKey);
                         await this._handleBuildSuccess(watched, latestJob);
                         this._watchedBuilds.delete(key);
-                    } else if (latestJob.status === 'FAILED') {
+                    } else if (latestJob.status === 'FAILED' && !this._notifiedJobs.has(completedKey)) {
+                        this._notifiedJobs.add(completedKey);
                         await this._handleBuildFailure(watched, latestJob);
                         this._watchedBuilds.delete(key);
-                    } else if (latestJob.status === 'CANCELLED') {
+                    } else if (latestJob.status === 'CANCELLED' && !this._notifiedJobs.has(completedKey)) {
+                        this._notifiedJobs.add(completedKey);
                         this._showBuildCancelledNotification(watched, latestJob);
                         this._watchedBuilds.delete(key);
                     }

@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.31] - 2025-02-02
+
+### Fixed
+- **Duplicate build notifications** - Notifications no longer appear multiple times after clicking Cancel or interacting with the notification
+  - Added deduplication tracking for build started, succeeded, failed, and cancelled notifications
+  - Each notification (per job ID and status) will only appear once
+
 ## [0.1.30] - 2025-02-02
 
 ### Added
