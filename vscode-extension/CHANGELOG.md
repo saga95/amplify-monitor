@@ -1,5 +1,33 @@
 # Changelog
 
+## [0.1.30] - 2025-02-02
+
+### Added
+- **🔐 Multi-Account Support** - View Amplify apps across all AWS profiles
+  - See apps from all configured AWS profiles in one unified panel
+  - Switch between profiles with a single click
+  - Real-time loading of apps from multiple accounts in parallel
+  - Visual indicators for active profile and app counts
+  - Error handling for invalid/expired credentials
+
+- **⚙️ AWS Profile Configuration Wizard** - Manage AWS credentials without CLI
+  - Create new AWS profiles with guided wizard
+  - Edit existing profile credentials and regions
+  - Delete profiles safely with confirmation
+  - View all profiles with active indicator
+  - Open credentials/config files directly in VS Code
+  - Support for all major AWS regions
+  - Automatic switching to newly created profiles
+
+### Commands Added
+- `Amplify Monitor: Toggle Multi-Account Mode` - Open multi-account panel
+- `Amplify Monitor: Select Profiles for Multi-Account View` - Open multi-account panel
+- `Amplify Monitor: Configure AWS Profile` - Open profile configuration wizard
+
+### Settings Added
+- `amplifyMonitor.multiAccount.enabled` - Enable multi-account mode
+- `amplifyMonitor.multiAccount.profiles` - AWS profiles to show in multi-account mode
+
 ## [0.1.29] - 2025-02-02
 
 ### Added

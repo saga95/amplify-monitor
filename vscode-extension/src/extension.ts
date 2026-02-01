@@ -32,6 +32,8 @@ import { RollbackHelperPanel } from './views/rollbackHelper';
 import { PreviewEnvironmentsPanel } from './views/previewEnvironments';
 import { PerformanceAlertsPanel } from './views/performanceAlerts';
 import { WebhookNotificationService, configureWebhook } from './webhookNotifications';
+import { MultiAccountPanel } from './views/multiAccountPanel';
+import { configureAwsProfile } from './views/profileConfigWizard';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -916,6 +918,22 @@ frontend:
 
         vscode.commands.registerCommand('amplify-monitor.showWebhookLogs', () => {
             WebhookNotificationService.getInstance().showOutput();
+        }),
+
+        // Multi-Account Commands
+        vscode.commands.registerCommand('amplify-monitor.toggleMultiAccount', async () => {
+            // Open Multi-Account Panel
+            MultiAccountPanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.selectMultiAccountProfiles', async () => {
+            // Open Multi-Account Panel
+            MultiAccountPanel.createOrShow(context.extensionUri, cli);
+        }),
+
+        // Profile Configuration Wizard
+        vscode.commands.registerCommand('amplify-monitor.configureProfile', async () => {
+            await configureAwsProfile();
         }),
 
         appsView,

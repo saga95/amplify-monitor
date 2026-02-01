@@ -143,12 +143,12 @@ export class AmplifyMonitorCli {
         return strValue;
     }
 
-    private async runCommand<T>(args: string[], region?: string): Promise<T> {
+    private async runCommand<T>(args: string[], region?: string, overrideProfile?: string): Promise<T> {
         const cliPath = this.getCliPath();
         const fullArgs = ['--format', 'json'];
         
-        // Add AWS profile if configured
-        const profile = this.getAwsProfile();
+        // Add AWS profile - use override if provided, otherwise use configured profile
+        const profile = overrideProfile || this.getAwsProfile();
         if (profile) {
             fullArgs.push('--profile', profile);
         }
@@ -222,6 +222,14 @@ export class AmplifyMonitorCli {
             args.push('--all-regions');
         }
         return this.runCommand<AmplifyApp[]>(args);
+    }
+
+    async listAppsForProfile(profile: string, allRegions: boolean = false): Promise<AmplifyApp[]> {
+        const args = ['apps'];
+        if (allRegions) {
+            args.push('--all-regions');
+        }
+        return this.runCommand<AmplifyApp[]>(args, undefined, profile);
     }
 
     async listAppsInRegion(region: string): Promise<AmplifyApp[]> {
