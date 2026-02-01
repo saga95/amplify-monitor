@@ -4,6 +4,7 @@ import { AmplifyMonitorCli, AmplifyApp, AmplifyBranch, AmplifyJob } from '../cli
 interface AppWithDetails {
     app: AmplifyApp;
     branches: BranchWithJobs[];
+    profile?: string;  // Track which profile this app belongs to
 }
 
 interface BranchWithJobs {
@@ -86,11 +87,37 @@ export class DashboardPanel {
         this._panel.webview.html = this._getLoadingHtml();
         
         try {
-            const apps = await this._cli.listApps(true);
+            const config = vscode.workspace.getConfiguration('amplifyMonitor');
+            const isMultiAccountMode = config.get<boolean>('multiAccount.enabled', false);
+            const configuredProfiles = config.get<string[]>('multiAccount.profiles', []);
+            
+            let allApps: { app: AmplifyApp; profile?: string }[] = [];
+
+            if (isMultiAccountMode && configuredProfiles.length > 0) {
+                // Multi-account mode: fetch apps from all configured profiles
+                const profilePromises = configuredProfiles.map(async (profile) => {
+                    try {
+                        const apps = await this._cli.listAppsForProfile(profile, true);
+                        return apps.map(app => ({ app, profile }));
+                    } catch (error) {
+                        console.warn(`Failed to fetch apps for profile ${profile}:`, error);
+                        return [];
+                    }
+                });
+                
+                const results = await Promise.all(profilePromises);
+                allApps = results.flat();
+            } else {
+                // Single account mode: use default/configured profile
+                const apps = await this._cli.listApps(true);
+                const currentProfile = this._cli.getAwsProfile() || 'default';
+                allApps = apps.map(app => ({ app, profile: currentProfile }));
+            }
+
             const appsWithDetails: AppWithDetails[] = [];
 
             // Fetch branches and latest jobs for each app (in parallel)
-            await Promise.all(apps.map(async (app) => {
+            await Promise.all(allApps.map(async ({ app, profile }) => {
                 try {
                     const branches = await this._cli.listBranches(app.appId, app.region);
                     const branchesWithJobs: BranchWithJobs[] = [];
@@ -110,19 +137,25 @@ export class DashboardPanel {
 
                     appsWithDetails.push({
                         app,
+                        profile,
                         branches: branchesWithJobs.sort((a, b) => 
                             a.branch.branchName.localeCompare(b.branch.branchName)
                         )
                     });
                 } catch {
-                    appsWithDetails.push({ app, branches: [] });
+                    appsWithDetails.push({ app, profile, branches: [] });
                 }
             }));
 
-            // Sort apps by name
-            appsWithDetails.sort((a, b) => a.app.name.localeCompare(b.app.name));
+            // Sort apps by name (and group by profile in multi-account mode)
+            appsWithDetails.sort((a, b) => {
+                if (isMultiAccountMode && a.profile !== b.profile) {
+                    return (a.profile || '').localeCompare(b.profile || '');
+                }
+                return a.app.name.localeCompare(b.app.name);
+            });
 
-            this._panel.webview.html = this._getDashboardHtml(appsWithDetails);
+            this._panel.webview.html = this._getDashboardHtml(appsWithDetails, isMultiAccountMode);
         } catch (error) {
             this._panel.webview.html = this._getErrorHtml(String(error));
         }
@@ -236,8 +269,13 @@ export class DashboardPanel {
         </html>`;
     }
 
-    private _getDashboardHtml(apps: AppWithDetails[]): string {
-        const appCards = apps.map(({ app, branches }) => {
+    private _getDashboardHtml(apps: AppWithDetails[], isMultiAccountMode: boolean = false): string {
+        // Group apps by profile if in multi-account mode
+        const uniqueProfiles = isMultiAccountMode 
+            ? [...new Set(apps.map(a => a.profile || 'default'))] 
+            : [];
+
+        const appCards = apps.map(({ app, branches, profile }) => {
             const branchRows = branches.map(({ branch, latestJob }) => {
                 const status = latestJob?.status || 'UNKNOWN';
                 const statusClass = this._getStatusClass(status);
@@ -288,6 +326,7 @@ export class DashboardPanel {
                             <span class="app-icon">☁️</span>
                             <h3>${this._escapeHtml(app.name)}</h3>
                             <span class="region-badge">${app.region}</span>
+                            ${isMultiAccountMode && profile ? `<span class="profile-badge">👤 ${this._escapeHtml(profile)}</span>` : ''}
                         </div>
                         <div class="app-actions">
                             <button class="btn btn-console" onclick="openConsole('${app.appId}', '${app.region}')">
@@ -363,6 +402,15 @@ export class DashboardPanel {
                     gap: 10px;
                 }
                 
+                .multi-account-badge {
+                    font-size: 12px;
+                    padding: 4px 8px;
+                    background: var(--vscode-button-background);
+                    color: var(--vscode-button-foreground);
+                    border-radius: 4px;
+                    font-weight: normal;
+                }
+                
                 .summary-bar {
                     display: flex;
                     gap: 24px;
@@ -429,6 +477,15 @@ export class DashboardPanel {
                     background: var(--vscode-badge-background);
                     color: var(--vscode-badge-foreground);
                     border-radius: 4px;
+                }
+                
+                .profile-badge {
+                    font-size: 11px;
+                    padding: 2px 6px;
+                    background: var(--vscode-button-secondaryBackground);
+                    color: var(--vscode-button-secondaryForeground);
+                    border-radius: 4px;
+                    margin-left: 4px;
                 }
                 
                 .app-summary {
@@ -530,11 +587,17 @@ export class DashboardPanel {
         </head>
         <body>
             <div class="header">
-                <h1>🚀 Amplify Dashboard</h1>
+                <h1>🚀 Amplify Dashboard ${isMultiAccountMode ? '<span class="multi-account-badge">Multi-Account</span>' : ''}</h1>
                 <button class="btn btn-refresh" onclick="refresh()">🔄 Refresh</button>
             </div>
             
             <div class="summary-bar">
+                ${isMultiAccountMode && uniqueProfiles.length > 0 ? `
+                <div class="summary-item">
+                    <span class="number">${uniqueProfiles.length}</span>
+                    <span class="label">Profiles</span>
+                </div>
+                ` : ''}
                 <div class="summary-item">
                     <span class="number">${totalApps}</span>
                     <span class="label">Apps</span>
@@ -564,7 +627,9 @@ export class DashboardPanel {
             ` : `
                 <div class="no-apps">
                     <h2>No Amplify Apps Found</h2>
-                    <p>Make sure your AWS credentials are configured correctly.</p>
+                    <p>${isMultiAccountMode 
+                        ? 'No apps found in the configured profiles. Check Settings → Amplify Monitor → Multi Account to configure profiles.' 
+                        : 'Make sure your AWS credentials are configured correctly.'}</p>
                 </div>
             `}
             

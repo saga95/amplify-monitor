@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.32] - 2026-02-01
+
+### Fixed
+- **Multi-Account Dashboard Support** - Dashboard now properly displays apps from all configured AWS profiles
+  - Dashboard reads `multiAccount.enabled` and `multiAccount.profiles` settings
+  - Apps are fetched in parallel from all configured profiles
+  - Profile badges show which AWS profile each app belongs to
+  - "Multi-Account" badge displayed in dashboard header when enabled
+  - Summary bar shows profile count in multi-account mode
+  - Improved error message when no apps found in configured profiles
+
 ## [0.1.31] - 2025-02-02
 
 ### Fixed
