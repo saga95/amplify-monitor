@@ -38,6 +38,7 @@
                     <nav class="doc-nav">
                         <h4>Versions</h4>
                         <ul>
+                            <li><a href="#v0120">v0.1.20</a></li>
                             <li><a href="#v0119">v0.1.19</a></li>
                             <li><a href="#v0118">v0.1.18</a></li>
                             <li><a href="#v0117">v0.1.17</a></li>
@@ -54,8 +55,31 @@
                     <h1>Changelog</h1>
                     <p class="text-muted">Version history and release notes for Amplify Monitor.</p>
 
-                    <h2 id="v0119">v0.1.19 <span class="text-muted">(February 2026)</span></h2>
+                    <h2 id="v0120">v0.1.20 <span class="text-muted">(February 2025)</span></h2>
                     <div class="badge" style="margin-bottom: 16px;">Latest</div>
+                    
+                    <h3>👥 Multi-Account AWS Profile Manager</h3>
+                    <p>Seamlessly work across multiple AWS accounts without leaving VS Code:</p>
+                    <ul>
+                        <li><strong>Profile Discovery</strong> - Auto-discovers all profiles from ~/.aws/credentials and ~/.aws/config</li>
+                        <li><strong>Quick Switch</strong> - Change active profile with one click from status bar or Profile Manager panel</li>
+                        <li><strong>Credential Validation</strong> - Test credentials for each profile, see account ID and user/role</li>
+                        <li><strong>Visual Status</strong> - Active profile clearly marked with orange badge, validation badges for all profiles</li>
+                        <li><strong>Add New Profiles</strong> - Create new AWS profiles directly in VS Code with guided form</li>
+                        <li><strong>Edit Config Files</strong> - Quick access to credentials and config files for manual editing</li>
+                        <li><strong>SSO Support</strong> - Full support for AWS SSO profiles and assumed roles</li>
+                        <li><strong>Region Per Profile</strong> - Each profile shows its configured default region</li>
+                        <li><strong>AWS Console Integration</strong> - One-click launch to AWS Console with correct region</li>
+                        <li><strong>Status Bar Indicator</strong> - Current profile always visible, click to quick-switch</li>
+                    </ul>
+
+                    <h3>New Commands</h3>
+                    <ul>
+                        <li><code>Amplify Monitor: Manage AWS Profiles</code> - Opens the full Profile Manager panel</li>
+                        <li><code>Amplify Monitor: Switch AWS Profile</code> - Quick pick dropdown to switch profiles</li>
+                    </ul>
+
+                    <h2 id="v0119">v0.1.19 <span class="text-muted">(February 2025)</span></h2>
                     
                     <h3>🌐 Custom Domain Validator</h3>
                     <p>New feature to validate custom domain configurations:</p>

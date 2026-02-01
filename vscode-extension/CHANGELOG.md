@@ -1,5 +1,38 @@
 # Changelog
 
+## [0.1.20] - 2025-02-01
+
+### Added
+- **Multi-Account AWS Profile Manager** - Seamlessly work across multiple AWS accounts
+  - **Profile Discovery** - Auto-discovers all profiles from ~/.aws/credentials and ~/.aws/config
+  - **Quick Switch** - Change active profile with one click from status bar or Profile Manager panel
+  - **Credential Validation** - Test credentials for each profile, see account ID and user/role
+  - **Visual Status** - Active profile clearly marked with orange badge, others show validation status
+  - **Add New Profiles** - Create new AWS profiles directly in VS Code
+  - **Edit Config Files** - Quick access to credentials and config files for manual editing
+  - **SSO Support** - Full support for AWS SSO profiles and assumed roles
+  - **Region Per Profile** - Each profile shows its configured default region
+  - **AWS Console Integration** - One-click launch to AWS Console with correct region
+  - **Status Bar Indicator** - Current profile always visible, click to quick-switch
+
+### Commands Added
+- `Amplify Monitor: Manage AWS Profiles` - Opens the full Profile Manager panel
+- `Amplify Monitor: Switch AWS Profile` - Quick pick to switch between profiles
+
+### Improved
+- Status bar now shows current AWS profile and is clickable to switch
+- All Amplify operations respect the selected profile
+- Profile changes automatically refresh all views
+
+## [0.1.19] - 2025-01-31
+
+### Added
+- **Custom Domain Validator** - Validate DNS, SSL, and Amplify configuration for custom domains
+  - DNS record validation (CNAME, A, TXT records)
+  - SSL certificate verification
+  - CDN/CloudFront detection
+  - Propagation status checking
+
 ## [0.1.15] - 2026-01-31
 
 ### Fixed

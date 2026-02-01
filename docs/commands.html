@@ -39,6 +39,7 @@
                         <h4>Command Categories</h4>
                         <ul>
                             <li><a href="#dashboard">Dashboard</a></li>
+                            <li><a href="#profiles">AWS Profiles</a></li>
                             <li><a href="#diagnosis">Diagnosis</a></li>
                             <li><a href="#troubleshooting">Troubleshooting</a></li>
                             <li><a href="#optimization">Optimization</a></li>
@@ -78,6 +79,37 @@
                             </tr>
                         </tbody>
                     </table>
+
+                    <h2 id="profiles">AWS Profile Management</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Manage AWS Profiles</code></td>
+                                <td>Opens the full Profile Manager panel to view, add, validate, and switch between AWS profiles</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Switch AWS Profile</code></td>
+                                <td>Quick pick dropdown to rapidly switch between configured AWS profiles</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="info-box" style="margin-top: 16px;">
+                        <h4>💡 Multi-Account Tips</h4>
+                        <ul>
+                            <li>Click the <strong>AWS: [profile]</strong> in the status bar for quick profile switching</li>
+                            <li>Use "Validate" to test credentials and see account ID for each profile</li>
+                            <li>Profiles with SSO are marked with a purple SSO badge</li>
+                            <li>The active profile is highlighted with an orange border</li>
+                            <li>All Amplify operations automatically use the selected profile</li>
+                        </ul>
+                    </div>
 
                     <h2 id="diagnosis">Build Diagnosis</h2>
                     <table>

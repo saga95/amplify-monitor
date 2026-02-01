@@ -1,0 +1,273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AWS Profile Manager - Amplify Monitor Documentation</title>
+    <meta name="description" content="Manage multiple AWS accounts and profiles directly in VS Code with Amplify Monitor's Profile Manager.">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="../index.html#features">Features</a>
+                <a href="../getting-started.html">Getting Started</a>
+                <a href="../commands.html">Commands</a>
+                <a href="../configuration.html">Configuration</a>
+                <a href="../troubleshooting.html">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="container">
+            <div class="doc-layout">
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h4>On This Page</h4>
+                        <ul>
+                            <li><a href="#overview">Overview</a></li>
+                            <li><a href="#features">Key Features</a></li>
+                            <li><a href="#quick-switch">Quick Switch</a></li>
+                            <li><a href="#profile-manager">Profile Manager</a></li>
+                            <li><a href="#validation">Credential Validation</a></li>
+                            <li><a href="#adding-profiles">Adding Profiles</a></li>
+                            <li><a href="#sso-support">SSO Support</a></li>
+                            <li><a href="#best-practices">Best Practices</a></li>
+                        </ul>
+                        <h4>Related Features</h4>
+                        <ul>
+                            <li><a href="dashboard.html">Dashboard</a></li>
+                            <li><a href="custom-domain.html">Custom Domain Validator</a></li>
+                            <li><a href="../commands.html#profiles">Profile Commands</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <main class="doc-content">
+                    <h1>👥 AWS Profile Manager</h1>
+                    <p class="text-muted">Seamlessly work across multiple AWS accounts without leaving VS Code.</p>
+
+                    <div class="badge" style="margin-bottom: 24px;">New in v0.1.20</div>
+
+                    <h2 id="overview">Overview</h2>
+                    <p>
+                        The AWS Profile Manager makes it easy to work with multiple AWS accounts, whether you're 
+                        managing development, staging, and production environments, or working across different 
+                        client projects. Switch profiles with a single click and all Amplify operations will use 
+                        the selected credentials.
+                    </p>
+
+                    <h2 id="features">Key Features</h2>
+                    <div class="feature-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin: 24px 0;">
+                        <div class="card">
+                            <h4>🔍 Profile Discovery</h4>
+                            <p>Automatically finds all profiles from <code>~/.aws/credentials</code> and <code>~/.aws/config</code></p>
+                        </div>
+                        <div class="card">
+                            <h4>⚡ Quick Switch</h4>
+                            <p>Change profiles instantly from the status bar or command palette</p>
+                        </div>
+                        <div class="card">
+                            <h4>✓ Validation</h4>
+                            <p>Test credentials and see account ID, user/role for each profile</p>
+                        </div>
+                        <div class="card">
+                            <h4>➕ Add Profiles</h4>
+                            <p>Create new profiles directly in VS Code with a guided form</p>
+                        </div>
+                        <div class="card">
+                            <h4>🔐 SSO Support</h4>
+                            <p>Works with AWS SSO profiles and assumed roles</p>
+                        </div>
+                        <div class="card">
+                            <h4>🌐 Console Link</h4>
+                            <p>One-click launch to AWS Console with the correct region</p>
+                        </div>
+                    </div>
+
+                    <h2 id="quick-switch">Quick Profile Switch</h2>
+                    <p>The fastest way to switch profiles is using the status bar:</p>
+                    <ol>
+                        <li>Look at the bottom status bar - you'll see <strong>"AWS: [profile-name]"</strong></li>
+                        <li>Click on it to open the profile picker</li>
+                        <li>Select your desired profile</li>
+                        <li>All Amplify views will automatically refresh with the new credentials</li>
+                    </ol>
+
+                    <p>You can also use the Command Palette:</p>
+                    <div class="code-block">
+                        <code>Ctrl+Shift+P → "Amplify Monitor: Switch AWS Profile"</code>
+                    </div>
+
+                    <h2 id="profile-manager">Profile Manager Panel</h2>
+                    <p>For a comprehensive view of all your profiles, open the Profile Manager:</p>
+                    <div class="code-block">
+                        <code>Ctrl+Shift+P → "Amplify Monitor: Manage AWS Profiles"</code>
+                    </div>
+
+                    <h3>Profile Card Information</h3>
+                    <p>Each profile card shows:</p>
+                    <ul>
+                        <li><strong>Profile Name</strong> - The name from your credentials/config files</li>
+                        <li><strong>Region</strong> - The default region configured for the profile</li>
+                        <li><strong>Access Key</strong> - First 8 characters of the access key (for identification)</li>
+                        <li><strong>Account ID</strong> - The AWS account number (after validation)</li>
+                        <li><strong>User/Role</strong> - The IAM user or role name (after validation)</li>
+                    </ul>
+
+                    <h3>Profile Badges</h3>
+                    <ul>
+                        <li><span style="background: #ff9900; color: #000; padding: 2px 8px; border-radius: 4px; font-size: 12px;">ACTIVE</span> - Currently selected profile</li>
+                        <li><span style="background: #2196f3; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">DEFAULT</span> - The default profile</li>
+                        <li><span style="background: #9c27b0; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">SSO</span> - AWS SSO profile</li>
+                        <li><span style="background: #673ab7; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">ROLE</span> - Assumed role profile</li>
+                        <li><span style="background: #4caf50; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">✓ VALID</span> - Credentials tested successfully</li>
+                        <li><span style="background: #f44336; color: white; padding: 2px 8px; border-radius: 4px; font-size: 12px;">✗ INVALID</span> - Credentials failed validation</li>
+                    </ul>
+
+                    <h2 id="validation">Credential Validation</h2>
+                    <p>
+                        Validate your credentials to ensure they're working correctly before switching. 
+                        Validation runs <code>aws sts get-caller-identity</code> to verify access and retrieve account information.
+                    </p>
+
+                    <h3>Validation Actions</h3>
+                    <ul>
+                        <li><strong>Validate</strong> - Test a single profile's credentials</li>
+                        <li><strong>Validate All</strong> - Test all profiles at once (toolbar button)</li>
+                    </ul>
+
+                    <h3>Validation Results</h3>
+                    <p>After validation, you'll see:</p>
+                    <ul>
+                        <li><strong>Account ID</strong> - The 12-digit AWS account number</li>
+                        <li><strong>User/Role</strong> - The IAM entity (user name or role)</li>
+                        <li><strong>Error Message</strong> - If credentials are invalid, the specific error</li>
+                    </ul>
+
+                    <div class="warning-box">
+                        <h4>⚠️ Common Validation Errors</h4>
+                        <ul>
+                            <li><strong>ExpiredToken</strong> - Your session credentials have expired. Refresh with <code>aws sso login</code></li>
+                            <li><strong>InvalidClientTokenId</strong> - The access key ID is invalid or doesn't exist</li>
+                            <li><strong>SignatureDoesNotMatch</strong> - The secret access key is incorrect</li>
+                            <li><strong>AWS CLI not found</strong> - Install the AWS CLI: <code>pip install awscli</code></li>
+                        </ul>
+                    </div>
+
+                    <h2 id="adding-profiles">Adding New Profiles</h2>
+                    <p>Create new profiles directly in VS Code without manually editing files:</p>
+                    <ol>
+                        <li>Click <strong>"➕ Add Profile"</strong> in the Profile Manager toolbar</li>
+                        <li>Enter a profile name (alphanumeric and hyphens only)</li>
+                        <li>Enter your Access Key ID</li>
+                        <li>Enter your Secret Access Key</li>
+                        <li>Select a default region</li>
+                        <li>Click <strong>"Add Profile"</strong></li>
+                    </ol>
+
+                    <p>The profile will be added to both <code>~/.aws/credentials</code> and <code>~/.aws/config</code>.</p>
+
+                    <h3>Editing Files Directly</h3>
+                    <p>
+                        For more advanced configuration (SSO, assumed roles, MFA), click 
+                        <strong>"Edit Credentials"</strong> or <strong>"Edit Config"</strong> to open the files directly.
+                    </p>
+
+                    <h2 id="sso-support">AWS SSO Support</h2>
+                    <p>
+                        The Profile Manager fully supports AWS SSO profiles. SSO profiles are detected automatically 
+                        and marked with a purple <strong>SSO</strong> badge.
+                    </p>
+
+                    <h3>SSO Profile Example</h3>
+                    <pre><code># ~/.aws/config
+[profile my-sso-profile]
+sso_start_url = https://my-org.awsapps.com/start
+sso_region = us-east-1
+sso_account_id = 123456789012
+sso_role_name = AdministratorAccess
+region = us-west-2</code></pre>
+
+                    <h3>Logging into SSO</h3>
+                    <p>If your SSO session expires, run:</p>
+                    <div class="code-block">
+                        <code>aws sso login --profile my-sso-profile</code>
+                    </div>
+
+                    <h2 id="best-practices">Best Practices</h2>
+                    
+                    <h3>Profile Naming</h3>
+                    <ul>
+                        <li>Use descriptive names: <code>myapp-dev</code>, <code>myapp-prod</code>, <code>client-xyz-staging</code></li>
+                        <li>Keep <code>default</code> for your most commonly used account</li>
+                        <li>Use consistent prefixes for related profiles</li>
+                    </ul>
+
+                    <h3>Security</h3>
+                    <ul>
+                        <li>Use IAM roles with least-privilege permissions</li>
+                        <li>Prefer SSO over long-lived access keys</li>
+                        <li>Rotate access keys regularly</li>
+                        <li>Never commit credentials files to version control</li>
+                    </ul>
+
+                    <h3>Organization</h3>
+                    <ul>
+                        <li>Validate profiles after adding them</li>
+                        <li>Delete unused profiles to reduce clutter</li>
+                        <li>Document profile purposes in your team wiki</li>
+                    </ul>
+
+                    <div class="info-box">
+                        <h4>💡 Pro Tips</h4>
+                        <ul>
+                            <li>Use keyboard shortcut: Add <code>"amplify-monitor.switchProfile"</code> to your keybindings</li>
+                            <li>The status bar profile indicator updates immediately after switching</li>
+                            <li>Profile changes persist across VS Code restarts</li>
+                            <li>All Amplify tree views refresh automatically when you switch profiles</li>
+                        </ul>
+                    </div>
+
+                    <div class="nav-links-bottom">
+                        <a href="dashboard.html" class="btn btn-outline">← Dashboard</a>
+                        <a href="custom-domain.html" class="btn btn-primary">Custom Domain Validator →</a>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-brand">
+                    <span class="logo-icon">⚡</span>
+                    <span>Amplify Monitor</span>
+                </div>
+                <div class="footer-links">
+                    <a href="https://github.com/saga95/amplify-monitor">GitHub</a>
+                    <a href="https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor">VS Code Marketplace</a>
+                    <a href="https://github.com/saga95/amplify-monitor/issues">Report Issue</a>
+                </div>
+                <p class="footer-copyright">© 2025 Amplify Monitor. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

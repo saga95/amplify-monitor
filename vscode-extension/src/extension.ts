@@ -19,6 +19,7 @@ import { NotificationsPanel, NotificationsService } from './views/notificationsP
 import { NodeVersionDetectorPanel } from './views/nodeVersionDetector';
 import { EnvVarsTroubleshooterPanel } from './views/envVarsTroubleshooter';
 import { CustomDomainValidatorPanel } from './views/customDomainValidator';
+import { AwsProfileManagerPanel } from './views/awsProfileManager';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -563,6 +564,49 @@ export function activate(context: vscode.ExtensionContext) {
             CustomDomainValidatorPanel.createOrShow(context.extensionUri);
         }),
 
+        // AWS Profile Manager
+        vscode.commands.registerCommand('amplify-monitor.manageProfiles', () => {
+            AwsProfileManagerPanel.createOrShow(context.extensionUri);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.switchProfile', async () => {
+            const profiles = await getAwsProfiles();
+            if (profiles.length === 0) {
+                const action = await vscode.window.showWarningMessage(
+                    'No AWS profiles found',
+                    'Open Profile Manager'
+                );
+                if (action === 'Open Profile Manager') {
+                    AwsProfileManagerPanel.createOrShow(context.extensionUri);
+                }
+                return;
+            }
+
+            const currentProfile = vscode.workspace.getConfiguration('amplifyMonitor').get<string>('awsProfile') || 
+                                   process.env.AWS_PROFILE || 'default';
+
+            const items: vscode.QuickPickItem[] = profiles.map(p => ({
+                label: p === currentProfile ? `$(check) ${p}` : p,
+                description: p === 'default' ? 'Default profile' : undefined,
+                picked: p === currentProfile
+            }));
+
+            const selected = await vscode.window.showQuickPick(items, {
+                placeHolder: 'Select AWS Profile',
+                title: 'Switch AWS Profile'
+            });
+
+            if (selected) {
+                const profileName = selected.label.replace('$(check) ', '');
+                await vscode.workspace.getConfiguration('amplifyMonitor').update(
+                    'awsProfile',
+                    profileName,
+                    vscode.ConfigurationTarget.Global
+                );
+                vscode.window.showInformationMessage(`Switched to AWS profile: ${profileName}`);
+            }
+        }),
+
         appsView,
         jobsView,
         diagnosisView,
@@ -667,6 +711,8 @@ function setupAutoRefresh(appsProvider: AppsTreeProvider, jobsProvider: JobsTree
 function updateProfileStatusBar(cli: AmplifyMonitorCli) {
     const profile = cli.getAwsProfile() || 'default';
     profileStatusBarItem.text = `$(account) AWS: ${profile}`;
+    profileStatusBarItem.tooltip = `Current AWS Profile: ${profile}\nClick to switch profiles`;
+    profileStatusBarItem.command = 'amplify-monitor.switchProfile';
 }
 
 function updateConnectionStatus(connected: boolean, appCount?: number) {
@@ -795,4 +841,45 @@ export function deactivate() {
     if (profileStatusBarItem) {
         profileStatusBarItem.dispose();
     }
+}
+
+// Helper function to get AWS profiles from credentials and config files
+async function getAwsProfiles(): Promise<string[]> {
+    const os = require('os');
+    const profiles = new Set<string>();
+    
+    const configPath = process.env.AWS_CONFIG_FILE || path.join(os.homedir(), '.aws', 'config');
+    const credentialsPath = process.env.AWS_SHARED_CREDENTIALS_FILE || path.join(os.homedir(), '.aws', 'credentials');
+    
+    // Parse credentials file
+    if (fs.existsSync(credentialsPath)) {
+        const content = fs.readFileSync(credentialsPath, 'utf-8');
+        const matches = content.match(/^\[([^\]]+)\]/gm);
+        if (matches) {
+            for (const match of matches) {
+                profiles.add(match.slice(1, -1));
+            }
+        }
+    }
+    
+    // Parse config file
+    if (fs.existsSync(configPath)) {
+        const content = fs.readFileSync(configPath, 'utf-8');
+        const matches = content.match(/^\[([^\]]+)\]/gm);
+        if (matches) {
+            for (const match of matches) {
+                let name = match.slice(1, -1);
+                if (name.startsWith('profile ')) {
+                    name = name.substring(8);
+                }
+                profiles.add(name);
+            }
+        }
+    }
+    
+    return Array.from(profiles).sort((a, b) => {
+        if (a === 'default') return -1;
+        if (b === 'default') return 1;
+        return a.localeCompare(b);
+    });
 }

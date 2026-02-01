@@ -11,18 +11,30 @@
 
 ---
 
-## 🚀 What's New in v0.1.19
+## 🚀 What's New in v0.1.20
 
-- 🌐 **Custom Domain Validator** - Validate DNS, SSL, and Amplify config for custom domains
-- 🔧 **Env Vars Troubleshooter** - Detect missing, mismatched, and exposed env vars
-- 🔍 **Node Version Detector** - Detect & fix Node.js version issues
-- 🔔 **Slack/Teams/Discord Notifications** - Get build alerts in your chat
-- 🔐 **Secrets Manager Integration** - Sync env vars from AWS SSM
-- ✅ **Pre-Deploy Validation** - Catch issues BEFORE failed builds
+- 👥 **Multi-Account AWS Profiles** - Manage & switch between AWS profiles directly in VS Code
+  - List all profiles from ~/.aws/credentials and ~/.aws/config
+  - One-click profile switching with visual active indicator
+  - Validate credentials for each profile (account ID, user/role info)
+  - Add, edit, and delete profiles without leaving VS Code
+  - Status bar shows current profile - click to quick-switch
+  - Supports IAM credentials, SSO, and assumed roles
 
 ---
 
 ## ✨ Features
+
+### 👥 **Multi-Account AWS Profile Manager** (NEW)
+Seamlessly work across multiple AWS accounts:
+- **Profile Discovery** - Auto-discovers profiles from ~/.aws/credentials and config
+- **Quick Switch** - Change profiles with one click from status bar or command
+- **Validation** - Test credentials and see account ID, user/role for each profile
+- **Visual Status** - Active profile clearly marked with orange badge
+- **Add Profiles** - Create new profiles directly in VS Code
+- **Edit Files** - Quick access to credentials and config files
+- **SSO Support** - Works with AWS SSO profiles and assumed roles
+- **AWS Console** - One-click launch to AWS Console with correct region
 
 ### 📊 **Portfolio Dashboard**
 Get a bird's-eye view of your entire Amplify infrastructure:
