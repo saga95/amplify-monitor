@@ -25,6 +25,7 @@ import { BuildComparisonPanel } from './views/buildComparisonPanel';
 import { PostPushWatcher } from './postPushWatcher';
 import { Gen2MigrationPanel } from './views/gen2MigrationPanel';
 import { DiagnosisShareService } from './diagnosisShare';
+import { AmplifyCopilotParticipant } from './copilotParticipant';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let profileStatusBarItem: vscode.StatusBarItem;
@@ -41,6 +42,10 @@ export function activate(context: vscode.ExtensionContext) {
     // Initialize Post-Push Build Watcher
     postPushWatcher = new PostPushWatcher(cli);
     context.subscriptions.push({ dispose: () => postPushWatcher.dispose() });
+    
+    // Initialize Copilot Chat Participant
+    const copilotParticipant = new AmplifyCopilotParticipant(cli);
+    context.subscriptions.push(...copilotParticipant.register(context));
     
     // Create tree data providers
     const appsProvider = new AppsTreeProvider(cli);

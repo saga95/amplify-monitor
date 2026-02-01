@@ -2,7 +2,7 @@
   "name": "amplify-monitor",
   "displayName": "Amplify Monitor",
   "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
-  "version": "0.1.25",
+  "version": "0.1.26",
   "publisher": "SagaraHarasgama",
   "author": {
     "name": "saga95"
@@ -22,7 +22,7 @@
   },
   "homepage": "https://github.com/saga95/amplify-monitor#readme",
   "engines": {
-    "vscode": "^1.85.0"
+    "vscode": "^1.93.0"
   },
   "categories": [
     "Other",
@@ -61,6 +61,33 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "chatParticipants": [
+      {
+        "id": "amplify-monitor.amplify",
+        "fullName": "Amplify Monitor",
+        "name": "amplify",
+        "description": "Analyze AWS Amplify build failures and get fix suggestions",
+        "isSticky": true,
+        "commands": [
+          {
+            "name": "diagnose",
+            "description": "Diagnose the latest failed build"
+          },
+          {
+            "name": "logs",
+            "description": "Show build logs"
+          },
+          {
+            "name": "fix",
+            "description": "Get fix suggestions for build failures"
+          },
+          {
+            "name": "status",
+            "description": "Check status of all Amplify apps"
+          }
+        ]
+      }
+    ],
     "snippets": [
       {
         "language": "yaml",

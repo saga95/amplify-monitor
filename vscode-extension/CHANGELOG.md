@@ -1,5 +1,27 @@
 # Changelog
 
+## [0.1.26] - 2025-02-01
+
+### Added
+- **🤖 Copilot Chat Integration** - Talk to `@amplify` in GitHub Copilot Chat to analyze and fix build failures
+  - **@amplify diagnose** - Analyze the latest failed build with full context
+  - **@amplify logs** - View complete build logs in chat
+  - **@amplify fix** - Get detailed fix suggestions with code samples
+  - **@amplify status** - Check status of all your Amplify apps
+  - **Smart Error Extraction** - Automatically identifies relevant log sections
+  - **Follow-up Suggestions** - Contextual next steps after each response
+  - **Full Log Access** - Copilot can read entire build logs to understand failures
+
+### CLI Updates
+- `amplify-monitor logs --app-id X --branch Y --job-id Z` - Fetch raw build logs
+- `amplify-monitor diagnose --include-logs` - Include raw logs in diagnosis output
+
+### How to Use
+1. Open GitHub Copilot Chat (Ctrl+Alt+I)
+2. Type `@amplify diagnose` to analyze a failed build
+3. Ask follow-up questions like "fix this" or "what changes should I make?"
+4. Copilot will suggest code changes based on the actual build logs
+
 ## [0.1.25] - 2025-02-01
 
 ### Added

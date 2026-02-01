@@ -101,6 +101,25 @@ enum Commands {
         /// The job ID (optional, defaults to latest failed)
         #[arg(long)]
         job_id: Option<String>,
+
+        /// Include raw build logs in output
+        #[arg(long)]
+        include_logs: bool,
+    },
+
+    /// Get raw build logs for a job
+    Logs {
+        /// The Amplify app ID (uses config default if not specified)
+        #[arg(long)]
+        app_id: Option<String>,
+
+        /// The branch name (uses config default if not specified)
+        #[arg(long)]
+        branch: Option<String>,
+
+        /// The job ID
+        #[arg(long)]
+        job_id: String,
     },
 
     /// List environment variables for a branch
@@ -275,6 +294,7 @@ async fn main() -> Result<()> {
             app_id,
             branch,
             job_id,
+            include_logs,
         } => {
             let app_id = resolve_app_id(app_id, &config)?;
             let branch = resolve_branch(branch, &config)?;
@@ -293,15 +313,37 @@ async fn main() -> Result<()> {
             let issues = parser::analyze_logs(&log_content);
 
             // Build diagnosis output
-            let diagnosis = DiagnosisResult {
+            let diagnosis = DiagnosisResultWithLogs {
                 app_id,
                 branch,
                 job_id: job.job_id,
                 status: job.status,
                 issues,
+                raw_logs: if include_logs { Some(log_content.raw_content.clone()) } else { None },
             };
 
             output(&diagnosis, format)?;
+        }
+
+        Commands::Logs {
+            app_id,
+            branch,
+            job_id,
+        } => {
+            let app_id = resolve_app_id(app_id, &config)?;
+            let branch = resolve_branch(branch, &config)?;
+
+            // Download and extract logs
+            let log_content = logs::download_job_logs(&client, &app_id, &branch, &job_id).await?;
+
+            let result = LogsResult {
+                app_id,
+                branch,
+                job_id,
+                logs: log_content.raw_content,
+            };
+
+            output(&result, format)?;
         }
 
         Commands::EnvVars { app_id, branch } => {
@@ -426,6 +468,27 @@ struct DiagnosisResult {
     job_id: String,
     status: String,
     issues: Vec<parser::Issue>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DiagnosisResultWithLogs {
+    app_id: String,
+    branch: String,
+    job_id: String,
+    status: String,
+    issues: Vec<parser::Issue>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    raw_logs: Option<String>,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct LogsResult {
+    app_id: String,
+    branch: String,
+    job_id: String,
+    logs: String,
 }
 
 #[derive(Serialize)]
@@ -572,6 +635,57 @@ impl TextOutput for DiagnosisResult {
                 }
             }
         }
+        out
+    }
+}
+
+impl TextOutput for DiagnosisResultWithLogs {
+    fn to_text(&self) -> String {
+        let mut out = String::from("DIAGNOSIS REPORT\n");
+        out.push_str(&"═".repeat(60));
+        out.push('\n');
+        out.push_str(&format!("App: {}\n", self.app_id));
+        out.push_str(&format!("Branch: {}\n", self.branch));
+        out.push_str(&format!("Job: {}\n", self.job_id));
+        out.push_str(&format!("Status: {}\n", self.status));
+        out.push('\n');
+
+        if self.issues.is_empty() {
+            out.push_str("No known failure patterns detected.\n");
+        } else {
+            out.push_str(&format!("ISSUES FOUND: {}\n", self.issues.len()));
+            out.push_str(&"─".repeat(60));
+            out.push('\n');
+
+            for (i, issue) in self.issues.iter().enumerate() {
+                out.push_str(&format!("\n{}. [{}]\n", i + 1, issue.pattern));
+                out.push_str(&format!("   Cause: {}\n", issue.root_cause));
+                out.push_str("   Fixes:\n");
+                for fix in &issue.suggested_fixes {
+                    out.push_str(&format!("   → {}\n", fix));
+                }
+            }
+        }
+
+        if let Some(logs) = &self.raw_logs {
+            out.push_str("\n");
+            out.push_str(&"─".repeat(60));
+            out.push_str("\nRAW LOGS:\n");
+            out.push_str(&"─".repeat(60));
+            out.push('\n');
+            out.push_str(logs);
+        }
+        out
+    }
+}
+
+impl TextOutput for LogsResult {
+    fn to_text(&self) -> String {
+        let mut out = format!("BUILD LOGS - Job {}\n", self.job_id);
+        out.push_str(&format!("App: {} | Branch: {}\n", self.app_id, self.branch));
+        out.push_str(&"═".repeat(60));
+        out.push('\n');
+        out.push_str(&self.logs);
         out
     }
 }

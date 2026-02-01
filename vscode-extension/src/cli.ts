@@ -37,6 +37,7 @@ export interface DiagnosisResult {
     jobId: string;
     status: string;
     issues: DiagnosisIssue[];
+    rawLogs?: string;
 }
 
 export interface EnvVariable {
@@ -295,5 +296,31 @@ export class AmplifyMonitorCli {
     async analyzeMigration(projectPath: string): Promise<MigrationAnalysis> {
         const validPath = this.validateStringParam('projectPath', projectPath);
         return this.runCommand<MigrationAnalysis>(['migration-analysis', '--path', validPath]);
+    }
+
+    async getBuildLogs(appId: string, branch: string, jobId: string, region?: string): Promise<string> {
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        const validJobId = this.validateStringParam('jobId', jobId);
+        
+        try {
+            const result = await this.runCommand<{ logs: string }>(['logs', '--app-id', validAppId, '--branch', validBranch, '--job-id', validJobId], region);
+            return result.logs || '';
+        } catch {
+            // Fallback: try to get logs from diagnosis
+            const diagnosis = await this.diagnose(validAppId, validBranch, validJobId, region);
+            return diagnosis.rawLogs || '';
+        }
+    }
+
+    async diagnoseWithLogs(appId: string, branch: string, jobId?: string, region?: string): Promise<DiagnosisResult & { rawLogs: string }> {
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        const args = ['diagnose', '--app-id', validAppId, '--branch', validBranch, '--include-logs'];
+        if (jobId) {
+            const validJobId = this.validateStringParam('jobId', jobId);
+            args.push('--job-id', validJobId);
+        }
+        return this.runCommand<DiagnosisResult & { rawLogs: string }>(args, region);
     }
 }
