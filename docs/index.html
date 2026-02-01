@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Amplify Monitor - AWS Amplify Development Toolkit for VS Code</title>
+    <meta name="description" content="The ultimate AWS Amplify development toolkit for VS Code. Monitor builds, diagnose failures with AI-powered analysis, and optimize your deployment workflow.">
+    <meta name="keywords" content="AWS Amplify, VS Code extension, build monitoring, CI/CD, deployment, DevOps">
+    <meta property="og:title" content="Amplify Monitor - AWS Amplify Toolkit for VS Code">
+    <meta property="og:description" content="Monitor builds, diagnose failures, and optimize your AWS Amplify workflow without leaving VS Code.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://saga95.github.io/amplify-monitor/">
+    <link rel="canonical" href="https://saga95.github.io/amplify-monitor/">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="/" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="#features">Features</a>
+                <a href="getting-started.html">Getting Started</a>
+                <a href="commands.html">Commands</a>
+                <a href="configuration.html">Configuration</a>
+                <a href="troubleshooting.html">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="badge">v0.1.19 — Now with Custom Domain Validator</div>
+                <h1>The Ultimate AWS Amplify Toolkit for VS Code</h1>
+                <p class="hero-subtitle">
+                    Monitor builds, diagnose failures with AI-powered analysis, optimize performance, 
+                    and manage your entire Amplify portfolio — all without leaving your editor.
+                </p>
+                <div class="hero-buttons">
+                    <a href="vscode:extension/SagaraHarasgama.amplify-monitor" class="btn btn-primary btn-lg">
+                        <i class="fas fa-download"></i> Install Extension
+                    </a>
+                    <a href="getting-started.html" class="btn btn-secondary btn-lg">
+                        <i class="fas fa-book"></i> Documentation
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <span class="stat-number">23+</span>
+                        <span class="stat-label">Commands</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">20+</span>
+                        <span class="stat-label">Error Patterns</span>
+                    </div>
+                    <div class="stat">
+                        <span class="stat-number">16</span>
+                        <span class="stat-label">Quick Fixes</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-image">
+                <img src="images/dashboard-preview.png" alt="Amplify Monitor Dashboard" loading="lazy">
+            </div>
+        </div>
+    </header>
+
+    <section id="features" class="features">
+        <div class="container">
+            <h2 class="section-title">Everything You Need</h2>
+            <p class="section-subtitle">From build monitoring to deployment optimization, we've got you covered</p>
+            
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h3>Portfolio Dashboard</h3>
+                    <p>Visual overview of all your Amplify apps, branches, and build statuses in one place. Quick actions for common tasks.</p>
+                    <a href="features/dashboard.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+                        <i class="fas fa-diagnoses"></i>
+                    </div>
+                    <h3>Smart Diagnosis</h3>
+                    <p>AI-powered analysis detects 20+ error patterns including lock file mismatches, Node.js conflicts, and env var issues.</p>
+                    <a href="features/diagnosis.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+                        <i class="fas fa-magic"></i>
+                    </div>
+                    <h3>Quick Fixes</h3>
+                    <p>One-click automated fixes for common issues. No more manually editing configs or hunting through documentation.</p>
+                    <a href="features/quick-fixes.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>Build Optimization</h3>
+                    <p>Guided wizard to speed up builds by 30-60%. Caching strategies, dependency optimization, and more.</p>
+                    <a href="features/optimization.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <h3>Build Notifications</h3>
+                    <p>Get instant alerts on Slack, Microsoft Teams, or Discord when builds complete. Never miss a failed deployment.</p>
+                    <a href="features/notifications.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <h3>Secrets Manager</h3>
+                    <p>Sync environment variables from AWS SSM Parameter Store and Secrets Manager. Centralize your secrets.</p>
+                    <a href="features/secrets.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%);">
+                        <i class="fab fa-node-js"></i>
+                    </div>
+                    <h3>Node Version Detector</h3>
+                    <p>Automatically detect and fix Node.js version mismatches between local, package.json, and Amplify build.</p>
+                    <a href="features/node-version.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #d299c2 0%, #fef9d7 100%);">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Env Vars Troubleshooter</h3>
+                    <p>Find missing, mismatched, and exposed environment variables. Security scanning for hardcoded secrets.</p>
+                    <a href="features/env-vars.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #89f7fe 0%, #66a6ff 100%);">
+                        <i class="fas fa-globe"></i>
+                    </div>
+                    <h3>Custom Domain Validator</h3>
+                    <p>Validate DNS records, SSL certificates, and Amplify configuration for your custom domains.</p>
+                    <a href="features/custom-domain.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #c471f5 0%, #fa71cd 100%);">
+                        <i class="fas fa-check-circle"></i>
+                    </div>
+                    <h3>Pre-Deploy Validation</h3>
+                    <p>Catch issues BEFORE they cause failed builds. Git checks, dependency validation, and more.</p>
+                    <a href="features/pre-deploy.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h3>Gen2 Migration</h3>
+                    <p>Planning to migrate from Amplify Gen1 to Gen2? Get a full compatibility report and migration guidance.</p>
+                    <a href="features/migration.html" class="feature-link">Learn more →</a>
+                </div>
+
+                <div class="feature-card">
+                    <div class="feature-icon" style="background: linear-gradient(135deg, #30cfd0 0%, #330867 100%);">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <h3>Monorepo Support</h3>
+                    <p>First-class support for TurboRepo, Nx, Lerna, and workspace architectures with auto-configuration.</p>
+                    <a href="features/monorepo.html" class="feature-link">Learn more →</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="quick-start">
+        <div class="container">
+            <h2 class="section-title">Quick Start</h2>
+            <p class="section-subtitle">Get up and running in under 2 minutes</p>
+            
+            <div class="steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <div class="step-content">
+                        <h3>Install the Extension</h3>
+                        <p>Search for "Amplify Monitor" in VS Code Extensions, or click the install button above.</p>
+                        <code>ext install SagaraHarasgama.amplify-monitor</code>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <div class="step-content">
+                        <h3>Configure AWS Credentials</h3>
+                        <p>Set up your AWS credentials using environment variables or AWS CLI profile.</p>
+                        <code>aws configure</code>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <div class="step-content">
+                        <h3>Open Your Project</h3>
+                        <p>Open any Amplify project — the extension auto-detects and connects to your apps.</p>
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <div class="step-content">
+                        <h3>Start Monitoring!</h3>
+                        <p>Click the Amplify Monitor icon in the Activity Bar and open the Dashboard.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="cta-box">
+                <a href="getting-started.html" class="btn btn-primary">
+                    <i class="fas fa-book-open"></i> Full Getting Started Guide
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <section class="detected-issues">
+        <div class="container">
+            <h2 class="section-title">20+ Error Patterns Detected</h2>
+            <p class="section-subtitle">We catch the issues that waste your time</p>
+            
+            <div class="issues-table">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Category</th>
+                            <th>Patterns Detected</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><i class="fas fa-box"></i> Package Manager</td>
+                            <td>Lock file mismatch, npm/pnpm/yarn conflicts, corepack issues</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fab fa-node-js"></i> Node.js</td>
+                            <td>Version mismatch, incompatible dependencies, nvm errors</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-key"></i> Environment</td>
+                            <td>Missing env vars, invalid configuration, build secrets</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-tools"></i> Build Tools</td>
+                            <td>TypeScript errors, ESLint failures, Vite/Next.js issues</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-server"></i> Infrastructure</td>
+                            <td>Out of memory, timeout, permission denied</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-network-wired"></i> Network</td>
+                            <td>Download failures, registry issues, certificate errors</td>
+                        </tr>
+                        <tr>
+                            <td><i class="fas fa-cogs"></i> Amplify</td>
+                            <td>amplify.yml syntax errors, invalid build phases</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section class="testimonials">
+        <div class="container">
+            <h2 class="section-title">Why Developers Love It</h2>
+            <div class="testimonials-grid">
+                <blockquote class="testimonial">
+                    <p>"Finally, I can debug Amplify builds without switching between 5 different AWS console tabs!"</p>
+                    <cite>— Full Stack Developer</cite>
+                </blockquote>
+                <blockquote class="testimonial">
+                    <p>"The quick fixes alone saved me hours. Lock file mismatches used to take 30 minutes to debug."</p>
+                    <cite>— DevOps Engineer</cite>
+                </blockquote>
+                <blockquote class="testimonial">
+                    <p>"Build time went from 8 minutes to 3 minutes after using the optimization wizard. Incredible!"</p>
+                    <cite>— Frontend Lead</cite>
+                </blockquote>
+            </div>
+        </div>
+    </section>
+
+    <section class="cta">
+        <div class="container">
+            <h2>Ready to Supercharge Your Amplify Workflow?</h2>
+            <p>Join developers who are building faster with Amplify Monitor</p>
+            <div class="cta-buttons">
+                <a href="vscode:extension/SagaraHarasgama.amplify-monitor" class="btn btn-primary btn-lg">
+                    <i class="fas fa-download"></i> Install Free Extension
+                </a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline btn-lg" target="_blank">
+                    <i class="fab fa-github"></i> Star on GitHub
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div class="footer-brand">
+                    <span class="logo-icon">⚡</span>
+                    <span>Amplify Monitor</span>
+                    <p>The ultimate AWS Amplify development toolkit for VS Code.</p>
+                </div>
+                <div class="footer-links">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="getting-started.html">Getting Started</a></li>
+                        <li><a href="commands.html">Commands</a></li>
+                        <li><a href="configuration.html">Configuration</a></li>
+                        <li><a href="troubleshooting.html">Troubleshooting</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Features</h4>
+                    <ul>
+                        <li><a href="features/dashboard.html">Dashboard</a></li>
+                        <li><a href="features/diagnosis.html">Build Diagnosis</a></li>
+                        <li><a href="features/quick-fixes.html">Quick Fixes</a></li>
+                        <li><a href="features/optimization.html">Optimization</a></li>
+                    </ul>
+                </div>
+                <div class="footer-links">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="https://github.com/saga95/amplify-monitor" target="_blank">GitHub</a></li>
+                        <li><a href="https://github.com/saga95/amplify-monitor/issues" target="_blank">Report Issue</a></li>
+                        <li><a href="https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor" target="_blank">VS Code Marketplace</a></li>
+                        <li><a href="changelog.html">Changelog</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Amplify Monitor. MIT License.</p>
+                <p>Not affiliated with Amazon Web Services.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

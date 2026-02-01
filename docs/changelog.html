@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - Amplify Monitor Documentation</title>
+    <meta name="description" content="Amplify Monitor version history and changelog. See what's new in each release.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="getting-started.html">Getting Started</a>
+                <a href="commands.html">Commands</a>
+                <a href="configuration.html">Configuration</a>
+                <a href="troubleshooting.html">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="container">
+            <div class="doc-layout">
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h4>Versions</h4>
+                        <ul>
+                            <li><a href="#v0119">v0.1.19</a></li>
+                            <li><a href="#v0118">v0.1.18</a></li>
+                            <li><a href="#v0117">v0.1.17</a></li>
+                            <li><a href="#v0116">v0.1.16</a></li>
+                            <li><a href="#v0115">v0.1.15</a></li>
+                            <li><a href="#v0114">v0.1.14</a></li>
+                            <li><a href="#v0113">v0.1.13</a></li>
+                            <li><a href="#earlier">Earlier Versions</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <main class="doc-content">
+                    <h1>Changelog</h1>
+                    <p class="text-muted">Version history and release notes for Amplify Monitor.</p>
+
+                    <h2 id="v0119">v0.1.19 <span class="text-muted">(February 2026)</span></h2>
+                    <div class="badge" style="margin-bottom: 16px;">Latest</div>
+                    
+                    <h3>🌐 Custom Domain Validator</h3>
+                    <p>New feature to validate custom domain configurations:</p>
+                    <ul>
+                        <li><strong>DNS Record Validation</strong> - Checks CNAME, A, TXT, CAA records for proper Amplify setup</li>
+                        <li><strong>SSL Certificate Check</strong> - Verifies certificate validity, expiration, and issuer</li>
+                        <li><strong>Apex Domain Detection</strong> - Identifies apex vs subdomain and provides correct guidance</li>
+                        <li><strong>CloudFront Detection</strong> - Validates CDN configuration and CNAME targets</li>
+                        <li><strong>CDN Proxy Warning</strong> - Warns about Cloudflare/other CDN proxy conflicts</li>
+                        <li><strong>Propagation Status</strong> - Confirms DNS records have propagated globally</li>
+                        <li><strong>Configuration Guide</strong> - Shows exact records to add in your DNS provider</li>
+                    </ul>
+
+                    <h2 id="v0118">v0.1.18 <span class="text-muted">(February 2026)</span></h2>
+                    
+                    <h3>🔧 Env Vars Troubleshooter</h3>
+                    <p>Comprehensive environment variable analysis:</p>
+                    <ul>
+                        <li><strong>Code Scanning</strong> - Finds all process.env.* and import.meta.env.* references</li>
+                        <li><strong>Missing Detection</strong> - Identifies vars used in code but not defined</li>
+                        <li><strong>Amplify Sync Check</strong> - Warns if local .env vars aren't in Amplify</li>
+                        <li><strong>Framework-Aware</strong> - Understands Next.js, Vite, CRA prefix requirements</li>
+                        <li><strong>Security Scanning</strong> - Detects hardcoded secrets and exposed sensitive vars</li>
+                        <li><strong>Client-Side Exposure</strong> - Warns about sensitive vars with NEXT_PUBLIC_ prefix</li>
+                        <li><strong>Gitignore Validation</strong> - Ensures .env files aren't committed</li>
+                    </ul>
+
+                    <h2 id="v0117">v0.1.17 <span class="text-muted">(February 2026)</span></h2>
+                    
+                    <h3>🔍 Node Version Detector</h3>
+                    <p>Automatically detect and fix Node.js version issues:</p>
+                    <ul>
+                        <li><strong>Multi-Source Detection</strong> - Scans package.json, .nvmrc, .node-version, amplify.yml, Dockerfile</li>
+                        <li><strong>Conflict Detection</strong> - Identifies version mismatches</li>
+                        <li><strong>Compatibility Check</strong> - Validates against Amplify's supported Node versions</li>
+                        <li><strong>One-Click Fixes</strong> - Create .nvmrc, update amplify.yml</li>
+                        <li><strong>Deprecation Warnings</strong> - Alerts for Node 14/16 deprecation</li>
+                    </ul>
+
+                    <h2 id="v0116">v0.1.16 <span class="text-muted">(February 2026)</span></h2>
+                    
+                    <h3>🔔 Build Notifications</h3>
+                    <p>Get instant alerts when builds complete:</p>
+                    <ul>
+                        <li><strong>Slack Integration</strong> - Rich formatted messages with build details</li>
+                        <li><strong>Microsoft Teams</strong> - Adaptive cards with action buttons</li>
+                        <li><strong>Discord</strong> - Embedded messages in your server</li>
+                        <li><strong>Generic Webhooks</strong> - JSON payloads for custom integrations</li>
+                        <li><strong>Event Selection</strong> - Choose which events to notify</li>
+                        <li><strong>Test Notifications</strong> - Verify webhook setup before going live</li>
+                    </ul>
+
+                    <h2 id="v0115">v0.1.15 <span class="text-muted">(February 2026)</span></h2>
+                    
+                    <h3>🔐 Secrets Manager Integration</h3>
+                    <p>Centralize your secrets management:</p>
+                    <ul>
+                        <li><strong>Browse SSM Parameters</strong> - Search by prefix, view types</li>
+                        <li><strong>Browse Secrets Manager</strong> - List and select secrets</li>
+                        <li><strong>Sync to Amplify</strong> - Push secrets as environment variables</li>
+                        <li><strong>Backup to SSM</strong> - Export Amplify env vars to Parameter Store</li>
+                        <li><strong>Multi-region Support</strong> - Switch regions on the fly</li>
+                    </ul>
+
+                    <h2 id="v0114">v0.1.14 <span class="text-muted">(February 2026)</span></h2>
+                    
+                    <h3>✅ Pre-Deploy Validation</h3>
+                    <p>Catch issues BEFORE they cause failed builds:</p>
+                    <ul>
+                        <li><strong>Git Checks</strong> - Uncommitted changes, unpushed commits</li>
+                        <li><strong>Dependency Checks</strong> - Lock files, version mismatches</li>
+                        <li><strong>Build Validation</strong> - TypeScript errors, missing scripts</li>
+                        <li><strong>Environment Checks</strong> - Secrets in code, .env gitignored</li>
+                        <li><strong>One-Click Deploy</strong> - Deploy directly when all checks pass</li>
+                    </ul>
+
+                    <h2 id="v0113">v0.1.13 <span class="text-muted">(February 2026)</span></h2>
+                    
+                    <h3>🧙 Build Optimization Wizard</h3>
+                    <p>Speed up your Amplify builds:</p>
+                    <ul>
+                        <li><strong>Caching Analysis</strong> - Enable Amplify build cache, Next.js cache</li>
+                        <li><strong>Dependency Checks</strong> - Use npm ci, detect duplicate packages</li>
+                        <li><strong>Build Config</strong> - Enable skipLibCheck, parallel builds</li>
+                        <li><strong>Asset Optimization</strong> - Find large images, font suggestions</li>
+                        <li><strong>Estimated Savings</strong> - See potential build time reduction</li>
+                    </ul>
+
+                    <h2 id="earlier">Earlier Versions</h2>
+                    
+                    <h3>v0.1.12</h3>
+                    <ul>
+                        <li>Bundle Size Analyzer</li>
+                        <li>Build Performance Tracker</li>
+                        <li>Monorepo detection</li>
+                    </ul>
+
+                    <h3>v0.1.11</h3>
+                    <ul>
+                        <li>Gen2 Migration Assistant</li>
+                        <li>Compatibility analysis</li>
+                    </ul>
+
+                    <h3>v0.1.10</h3>
+                    <ul>
+                        <li>Quick Fixes system</li>
+                        <li>16 automated fixes for common issues</li>
+                    </ul>
+
+                    <h3>v0.1.0</h3>
+                    <ul>
+                        <li>Initial release</li>
+                        <li>Portfolio Dashboard</li>
+                        <li>Build Diagnosis</li>
+                        <li>Environment Variables management</li>
+                        <li>Multi-region support</li>
+                    </ul>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Amplify Monitor. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

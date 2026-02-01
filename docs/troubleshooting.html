@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Troubleshooting - Amplify Monitor Documentation</title>
+    <meta name="description" content="Troubleshoot common issues with Amplify Monitor for VS Code. AWS credentials, connection errors, and more.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="getting-started.html">Getting Started</a>
+                <a href="commands.html">Commands</a>
+                <a href="configuration.html">Configuration</a>
+                <a href="troubleshooting.html" class="active">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="container">
+            <div class="doc-layout">
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h4>Common Issues</h4>
+                        <ul>
+                            <li><a href="#no-credentials">No AWS Credentials</a></li>
+                            <li><a href="#no-apps">No Apps Showing</a></li>
+                            <li><a href="#permission-denied">Permission Denied</a></li>
+                            <li><a href="#diagnosis-fails">Diagnosis Not Working</a></li>
+                            <li><a href="#slow-performance">Slow Performance</a></li>
+                            <li><a href="#quick-fix-fails">Quick Fix Fails</a></li>
+                            <li><a href="#notifications-not-working">Notifications Not Working</a></li>
+                            <li><a href="#getting-help">Getting Help</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <main class="doc-content">
+                    <h1>Troubleshooting</h1>
+                    <p class="text-muted">Solutions for common issues with Amplify Monitor.</p>
+
+                    <h2 id="no-credentials">No AWS Credentials Found</h2>
+                    
+                    <h3>Symptoms</h3>
+                    <ul>
+                        <li>Status bar shows "⚠️ No credentials"</li>
+                        <li>Apps tree view is empty</li>
+                        <li>Error: "Unable to locate credentials"</li>
+                    </ul>
+
+                    <h3>Solutions</h3>
+                    
+                    <h4>1. Configure AWS CLI</h4>
+                    <pre><code>aws configure</code></pre>
+                    <p>Enter your Access Key ID, Secret Access Key, and default region.</p>
+
+                    <h4>2. Check Environment Variables</h4>
+                    <pre><code># Windows (PowerShell)
+echo $env:AWS_ACCESS_KEY_ID
+echo $env:AWS_SECRET_ACCESS_KEY
+
+# macOS/Linux
+echo $AWS_ACCESS_KEY_ID
+echo $AWS_SECRET_ACCESS_KEY</code></pre>
+
+                    <h4>3. Verify Profile Exists</h4>
+                    <pre><code>aws configure list-profiles</code></pre>
+                    <p>Make sure the profile you specified in settings exists.</p>
+
+                    <h4>4. Restart VS Code</h4>
+                    <p>After setting environment variables, restart VS Code for changes to take effect.</p>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title"><i class="fas fa-info-circle"></i> Credential Priority</div>
+                        <p>AWS SDK checks credentials in this order:</p>
+                        <ol>
+                            <li>Environment variables</li>
+                            <li>Shared credentials file (~/.aws/credentials)</li>
+                            <li>IAM role (if on EC2/ECS)</li>
+                        </ol>
+                    </div>
+
+                    <h2 id="no-apps">No Apps Showing</h2>
+
+                    <h3>Symptoms</h3>
+                    <ul>
+                        <li>Apps tree view says "No apps found"</li>
+                        <li>Dashboard is empty</li>
+                    </ul>
+
+                    <h3>Solutions</h3>
+
+                    <h4>1. Check Region</h4>
+                    <p>Amplify Monitor searches all regions, but verify your apps exist:</p>
+                    <pre><code>aws amplify list-apps --region us-east-1</code></pre>
+
+                    <h4>2. Verify Permissions</h4>
+                    <p>Your IAM user/role needs <code>amplify:ListApps</code> permission:</p>
+                    <pre><code>{
+  "Effect": "Allow",
+  "Action": [
+    "amplify:ListApps",
+    "amplify:GetApp",
+    "amplify:ListBranches"
+  ],
+  "Resource": "*"
+}</code></pre>
+
+                    <h4>3. Refresh Manually</h4>
+                    <p>Click the refresh button in the Apps tree view header, or run:</p>
+                    <pre><code>Amplify Monitor: List Apps</code></pre>
+
+                    <h2 id="permission-denied">Permission Denied Errors</h2>
+
+                    <h3>Symptoms</h3>
+                    <ul>
+                        <li>Error: "AccessDeniedException"</li>
+                        <li>Error: "User is not authorized to perform"</li>
+                    </ul>
+
+                    <h3>Solutions</h3>
+
+                    <h4>Minimum Required Permissions</h4>
+                    <pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "amplify:ListApps",
+        "amplify:GetApp",
+        "amplify:ListBranches",
+        "amplify:GetBranch",
+        "amplify:ListJobs",
+        "amplify:GetJob"
+      ],
+      "Resource": "*"
+    }
+  ]
+}</code></pre>
+
+                    <h4>For Full Functionality (including builds)</h4>
+                    <pre><code>{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": [
+        "amplify:*"
+      ],
+      "Resource": "*"
+    }
+  ]
+}</code></pre>
+
+                    <div class="callout callout-warning">
+                        <div class="callout-title"><i class="fas fa-exclamation-triangle"></i> Security Note</div>
+                        <p>For production environments, consider restricting permissions to specific app ARNs instead of using "*".</p>
+                    </div>
+
+                    <h2 id="diagnosis-fails">Build Diagnosis Not Working</h2>
+
+                    <h3>Symptoms</h3>
+                    <ul>
+                        <li>Diagnosis shows "No issues found" when build clearly failed</li>
+                        <li>Error when trying to diagnose</li>
+                    </ul>
+
+                    <h3>Solutions</h3>
+
+                    <h4>1. Check for Failed Builds</h4>
+                    <p>Diagnosis only works on FAILED builds. Verify the build status in the AWS Console.</p>
+
+                    <h4>2. Wait for Build to Complete</h4>
+                    <p>Running or pending builds cannot be diagnosed.</p>
+
+                    <h4>3. Check Log Access</h4>
+                    <p>Ensure you have permission to access build logs:</p>
+                    <pre><code>aws amplify get-job --app-id YOUR_APP_ID --branch-name main --job-id LATEST</code></pre>
+
+                    <h4>4. Report Unknown Patterns</h4>
+                    <p>If you see an error pattern that isn't detected, please <a href="https://github.com/saga95/amplify-monitor/issues" target="_blank">report it on GitHub</a>!</p>
+
+                    <h2 id="slow-performance">Slow Performance</h2>
+
+                    <h3>Symptoms</h3>
+                    <ul>
+                        <li>Extension takes a long time to load apps</li>
+                        <li>UI feels sluggish</li>
+                    </ul>
+
+                    <h3>Solutions</h3>
+
+                    <h4>1. Disable Auto-Refresh</h4>
+                    <p>If not needed, disable auto-refresh to reduce API calls:</p>
+                    <pre><code>"amplifyMonitor.autoRefresh": false</code></pre>
+
+                    <h4>2. Increase Refresh Interval</h4>
+                    <pre><code>"amplifyMonitor.autoRefreshInterval": 120</code></pre>
+
+                    <h4>3. Check Network</h4>
+                    <p>Slow network connections to AWS can cause delays. Try from a different network.</p>
+
+                    <h4>4. Reduce Number of Regions</h4>
+                    <p>If you have apps in only specific regions, we're working on a setting to limit region scanning.</p>
+
+                    <h2 id="quick-fix-fails">Quick Fix Not Working</h2>
+
+                    <h3>Symptoms</h3>
+                    <ul>
+                        <li>Quick fix button doesn't do anything</li>
+                        <li>Error applying quick fix</li>
+                        <li>Changes not saved</li>
+                    </ul>
+
+                    <h3>Solutions</h3>
+
+                    <h4>1. Check Workspace Folder</h4>
+                    <p>Quick fixes require an open workspace folder. Open a folder, not just a single file.</p>
+
+                    <h4>2. File Write Permissions</h4>
+                    <p>Ensure VS Code has permission to write to the project files.</p>
+
+                    <h4>3. Git Status</h4>
+                    <p>If files are locked by Git or another process, the fix may fail.</p>
+
+                    <h4>4. Manual Application</h4>
+                    <p>If automated fix fails, the diagnosis provides manual steps you can follow.</p>
+
+                    <h2 id="notifications-not-working">Notifications Not Working</h2>
+
+                    <h3>Symptoms</h3>
+                    <ul>
+                        <li>Test notification succeeds but real notifications don't arrive</li>
+                        <li>Webhook returns error</li>
+                    </ul>
+
+                    <h3>Solutions</h3>
+
+                    <h4>1. Verify Webhook URL</h4>
+                    <p>Double-check the webhook URL is correct and active.</p>
+
+                    <h4>2. Check Event Selection</h4>
+                    <p>Make sure you've selected the events you want to be notified about (started, succeeded, failed).</p>
+
+                    <h4>3. Slack-Specific</h4>
+                    <ul>
+                        <li>Ensure the Slack app is installed in your workspace</li>
+                        <li>Check the webhook hasn't been revoked</li>
+                    </ul>
+
+                    <h4>4. Teams-Specific</h4>
+                    <ul>
+                        <li>Ensure the connector is enabled for the channel</li>
+                        <li>Incoming webhooks may need admin approval</li>
+                    </ul>
+
+                    <h4>5. Firewall/Proxy</h4>
+                    <p>Corporate firewalls may block outgoing webhook requests. Check with your IT team.</p>
+
+                    <h2 id="getting-help">Getting Help</h2>
+
+                    <h3>Enable Debug Logging</h3>
+                    <p>To help diagnose issues, enable VS Code's extension host logs:</p>
+                    <ol>
+                        <li>Open Command Palette (<code>Ctrl+Shift+P</code>)</li>
+                        <li>Run "Developer: Open Extension Logs Folder"</li>
+                        <li>Find the Amplify Monitor logs</li>
+                    </ol>
+
+                    <h3>Report an Issue</h3>
+                    <p>If you've tried these solutions and still have issues:</p>
+                    <ol>
+                        <li>Go to <a href="https://github.com/saga95/amplify-monitor/issues" target="_blank">GitHub Issues</a></li>
+                        <li>Search for existing issues</li>
+                        <li>Create a new issue with:
+                            <ul>
+                                <li>VS Code version</li>
+                                <li>Extension version</li>
+                                <li>Steps to reproduce</li>
+                                <li>Error messages (redact sensitive info)</li>
+                            </ul>
+                        </li>
+                    </ol>
+
+                    <div class="callout callout-success">
+                        <div class="callout-title"><i class="fas fa-lightbulb"></i> Pro Tip</div>
+                        <p>Most issues are related to AWS credentials or permissions. Always verify those first!</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Amplify Monitor. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

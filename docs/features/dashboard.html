@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Amplify Monitor Features</title>
+    <meta name="description" content="Learn about the Amplify Monitor Dashboard feature. Visual overview of all your AWS Amplify apps.">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="../index.html#features">Features</a>
+                <a href="../getting-started.html">Getting Started</a>
+                <a href="../commands.html">Commands</a>
+                <a href="../configuration.html">Configuration</a>
+                <a href="../troubleshooting.html">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="container">
+            <div class="doc-layout">
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h4>Features</h4>
+                        <ul>
+                            <li><a href="dashboard.html" class="active">Dashboard</a></li>
+                            <li><a href="diagnosis.html">Build Diagnosis</a></li>
+                            <li><a href="quick-fixes.html">Quick Fixes</a></li>
+                            <li><a href="optimization.html">Optimization</a></li>
+                            <li><a href="notifications.html">Notifications</a></li>
+                            <li><a href="secrets.html">Secrets Manager</a></li>
+                            <li><a href="node-version.html">Node Version</a></li>
+                            <li><a href="env-vars.html">Env Vars</a></li>
+                            <li><a href="custom-domain.html">Custom Domain</a></li>
+                            <li><a href="pre-deploy.html">Pre-Deploy</a></li>
+                            <li><a href="migration.html">Gen2 Migration</a></li>
+                            <li><a href="monorepo.html">Monorepo</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <main class="doc-content">
+                    <h1>📊 Portfolio Dashboard</h1>
+                    <p class="text-muted">Get a bird's-eye view of your entire Amplify infrastructure in one place.</p>
+
+                    <h2>Overview</h2>
+                    <p>The Dashboard provides a visual overview of all your AWS Amplify apps, branches, and build statuses. No more switching between AWS Console tabs — see everything at a glance.</p>
+
+                    <h2>Opening the Dashboard</h2>
+                    <ol>
+                        <li>Press <code>Ctrl+Shift+P</code> (or <code>Cmd+Shift+P</code> on Mac)</li>
+                        <li>Type "Amplify Monitor: Open Dashboard"</li>
+                        <li>Press Enter</li>
+                    </ol>
+                    <p>Or click the Dashboard icon (📊) in the Amplify Monitor Activity Bar.</p>
+
+                    <h2>Features</h2>
+
+                    <h3>Summary Bar</h3>
+                    <p>The top of the dashboard shows aggregate statistics:</p>
+                    <ul>
+                        <li><strong>Total Apps</strong> - Number of Amplify apps across all regions</li>
+                        <li><strong>Succeeded</strong> - Apps with successful latest builds (green)</li>
+                        <li><strong>Failed</strong> - Apps with failed latest builds (red)</li>
+                        <li><strong>Running</strong> - Currently building apps (blue)</li>
+                    </ul>
+
+                    <h3>App Cards</h3>
+                    <p>Each app is displayed as a card showing:</p>
+                    <ul>
+                        <li>App name and ID</li>
+                        <li>Branch name</li>
+                        <li>Build status (with color coding)</li>
+                        <li>Last build time (relative, e.g., "5m ago")</li>
+                        <li>Quick action buttons</li>
+                    </ul>
+
+                    <h3>Quick Actions</h3>
+                    <p>Each card includes action buttons:</p>
+                    <ul>
+                        <li><strong>▶️ Start Build</strong> - Trigger a new deployment</li>
+                        <li><strong>⏹️ Stop Build</strong> - Cancel a running build</li>
+                        <li><strong>🔍 Diagnose</strong> - Analyze a failed build</li>
+                        <li><strong>🌐 Open Console</strong> - Jump to AWS Console</li>
+                    </ul>
+
+                    <h3>Filtering & Search</h3>
+                    <p>Use the filter bar to:</p>
+                    <ul>
+                        <li>Search by app name</li>
+                        <li>Filter by status (All, Succeeded, Failed, Running)</li>
+                        <li>Sort by name, status, or last build time</li>
+                    </ul>
+
+                    <h3>Auto-Refresh</h3>
+                    <p>Enable auto-refresh in settings to keep the dashboard updated:</p>
+                    <pre><code>{
+  "amplifyMonitor.autoRefresh": true,
+  "amplifyMonitor.autoRefreshInterval": 60
+}</code></pre>
+
+                    <h2>Tips</h2>
+                    <div class="callout callout-success">
+                        <div class="callout-title"><i class="fas fa-lightbulb"></i> Pro Tips</div>
+                        <ul>
+                            <li>Click any card to expand details and see recent build history</li>
+                            <li>Use keyboard shortcuts: <code>R</code> to refresh, <code>F</code> to filter</li>
+                            <li>Right-click a card for context menu options</li>
+                        </ul>
+                    </div>
+
+                    <h2>Related Commands</h2>
+                    <ul>
+                        <li><code>Amplify Monitor: Open Dashboard</code></li>
+                        <li><code>Amplify Monitor: List Apps</code></li>
+                        <li><code>Amplify Monitor: Start Build</code></li>
+                    </ul>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Amplify Monitor. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>

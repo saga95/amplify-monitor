@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Configuration - Amplify Monitor Documentation</title>
+    <meta name="description" content="Configure Amplify Monitor settings for VS Code. AWS profiles, auto-refresh, default apps, and more.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="getting-started.html">Getting Started</a>
+                <a href="commands.html">Commands</a>
+                <a href="configuration.html" class="active">Configuration</a>
+                <a href="troubleshooting.html">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="container">
+            <div class="doc-layout">
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h4>Settings</h4>
+                        <ul>
+                            <li><a href="#accessing-settings">Accessing Settings</a></li>
+                            <li><a href="#aws-settings">AWS Settings</a></li>
+                            <li><a href="#app-settings">App Defaults</a></li>
+                            <li><a href="#refresh-settings">Auto-Refresh</a></li>
+                            <li><a href="#notification-settings">Notifications</a></li>
+                            <li><a href="#workspace-settings">Workspace vs User</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <main class="doc-content">
+                    <h1>Configuration</h1>
+                    <p class="text-muted">Customize Amplify Monitor to fit your workflow.</p>
+
+                    <h2 id="accessing-settings">Accessing Settings</h2>
+                    <p>There are several ways to access Amplify Monitor settings:</p>
+
+                    <h3>Method 1: Command Palette</h3>
+                    <ol>
+                        <li>Press <code>Ctrl+Shift+P</code> (or <code>Cmd+Shift+P</code> on Mac)</li>
+                        <li>Type "Amplify Monitor: Open Settings"</li>
+                        <li>Press Enter</li>
+                    </ol>
+
+                    <h3>Method 2: VS Code Settings</h3>
+                    <ol>
+                        <li>Press <code>Ctrl+,</code> (or <code>Cmd+,</code> on Mac)</li>
+                        <li>Search for "amplify"</li>
+                        <li>Modify settings as needed</li>
+                    </ol>
+
+                    <h3>Method 3: settings.json</h3>
+                    <p>Add settings directly to your <code>settings.json</code> file:</p>
+                    <pre><code>{
+  "amplifyMonitor.awsProfile": "my-profile",
+  "amplifyMonitor.autoRefresh": true,
+  "amplifyMonitor.autoRefreshInterval": 60
+}</code></pre>
+
+                    <h2 id="aws-settings">AWS Settings</h2>
+                    
+                    <h3>amplifyMonitor.awsProfile</h3>
+                    <table>
+                        <tr>
+                            <td><strong>Type</strong></td>
+                            <td>string</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Default</strong></td>
+                            <td><em>empty</em> (uses default profile)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description</strong></td>
+                            <td>AWS CLI profile name for authentication</td>
+                        </tr>
+                    </table>
+                    <pre><code>"amplifyMonitor.awsProfile": "production"</code></pre>
+                    <p>Use this when you have multiple AWS accounts and want to specify which profile to use.</p>
+
+                    <h3>amplifyMonitor.defaultRegion</h3>
+                    <table>
+                        <tr>
+                            <td><strong>Type</strong></td>
+                            <td>string</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Default</strong></td>
+                            <td>"us-east-1"</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description</strong></td>
+                            <td>Default AWS region for operations</td>
+                        </tr>
+                    </table>
+                    <pre><code>"amplifyMonitor.defaultRegion": "eu-west-1"</code></pre>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title"><i class="fas fa-info-circle"></i> Multi-Region Support</div>
+                        <p>Amplify Monitor automatically discovers apps across ALL regions, regardless of the default region setting. The default region is used for new operations and the AWS Console links.</p>
+                    </div>
+
+                    <h2 id="app-settings">App Defaults</h2>
+
+                    <h3>amplifyMonitor.defaultAppId</h3>
+                    <table>
+                        <tr>
+                            <td><strong>Type</strong></td>
+                            <td>string</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Default</strong></td>
+                            <td><em>empty</em></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description</strong></td>
+                            <td>Default Amplify app ID for commands</td>
+                        </tr>
+                    </table>
+                    <pre><code>"amplifyMonitor.defaultAppId": "d1234abcdef"</code></pre>
+                    <p>Set this to skip the app selection prompt when running commands.</p>
+
+                    <h3>amplifyMonitor.defaultBranch</h3>
+                    <table>
+                        <tr>
+                            <td><strong>Type</strong></td>
+                            <td>string</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Default</strong></td>
+                            <td>"main"</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description</strong></td>
+                            <td>Default branch name for commands</td>
+                        </tr>
+                    </table>
+                    <pre><code>"amplifyMonitor.defaultBranch": "develop"</code></pre>
+
+                    <h2 id="refresh-settings">Auto-Refresh Settings</h2>
+
+                    <h3>amplifyMonitor.autoRefresh</h3>
+                    <table>
+                        <tr>
+                            <td><strong>Type</strong></td>
+                            <td>boolean</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Default</strong></td>
+                            <td>false</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description</strong></td>
+                            <td>Enable automatic refresh of app and build data</td>
+                        </tr>
+                    </table>
+                    <pre><code>"amplifyMonitor.autoRefresh": true</code></pre>
+
+                    <h3>amplifyMonitor.autoRefreshInterval</h3>
+                    <table>
+                        <tr>
+                            <td><strong>Type</strong></td>
+                            <td>number</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Default</strong></td>
+                            <td>60</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description</strong></td>
+                            <td>Auto-refresh interval in seconds (minimum: 30)</td>
+                        </tr>
+                    </table>
+                    <pre><code>"amplifyMonitor.autoRefreshInterval": 120</code></pre>
+
+                    <div class="callout callout-warning">
+                        <div class="callout-title"><i class="fas fa-exclamation-triangle"></i> API Rate Limits</div>
+                        <p>Setting very short refresh intervals may hit AWS API rate limits. We recommend keeping the interval at 60 seconds or higher.</p>
+                    </div>
+
+                    <h2 id="notification-settings">Notification Settings</h2>
+                    <p>Notification webhooks are configured through the Notifications panel, not settings.json. However, you can export/import configurations:</p>
+
+                    <h3>amplifyMonitor.notifications</h3>
+                    <table>
+                        <tr>
+                            <td><strong>Type</strong></td>
+                            <td>object</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Default</strong></td>
+                            <td>{}</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Description</strong></td>
+                            <td>Webhook configurations for build notifications</td>
+                        </tr>
+                    </table>
+                    <pre><code>"amplifyMonitor.notifications": {
+  "slack": {
+    "enabled": true,
+    "webhookUrl": "https://hooks.slack.com/...",
+    "events": ["failed", "succeeded"]
+  },
+  "teams": {
+    "enabled": false,
+    "webhookUrl": ""
+  }
+}</code></pre>
+
+                    <h2 id="workspace-settings">Workspace vs User Settings</h2>
+                    <p>VS Code supports two levels of settings:</p>
+
+                    <h3>User Settings (Global)</h3>
+                    <p>Apply to all projects. Good for:</p>
+                    <ul>
+                        <li>AWS profile (if you use the same account everywhere)</li>
+                        <li>Auto-refresh preferences</li>
+                        <li>Default region</li>
+                    </ul>
+
+                    <h3>Workspace Settings (Per-Project)</h3>
+                    <p>Apply only to the current workspace. Good for:</p>
+                    <ul>
+                        <li>Default app ID (specific to the project)</li>
+                        <li>Default branch (specific to the project)</li>
+                        <li>AWS profile (if different projects use different accounts)</li>
+                    </ul>
+
+                    <h3>Creating Workspace Settings</h3>
+                    <ol>
+                        <li>Create a <code>.vscode</code> folder in your project root</li>
+                        <li>Create a <code>settings.json</code> file inside it</li>
+                        <li>Add your project-specific settings</li>
+                    </ol>
+
+                    <pre><code>// .vscode/settings.json
+{
+  "amplifyMonitor.defaultAppId": "d1234abcdef",
+  "amplifyMonitor.defaultBranch": "main",
+  "amplifyMonitor.awsProfile": "client-production"
+}</code></pre>
+
+                    <h2>Example Configurations</h2>
+
+                    <h3>Solo Developer</h3>
+                    <pre><code>{
+  "amplifyMonitor.autoRefresh": true,
+  "amplifyMonitor.autoRefreshInterval": 60,
+  "amplifyMonitor.defaultBranch": "main"
+}</code></pre>
+
+                    <h3>Team with Multiple Environments</h3>
+                    <pre><code>{
+  "amplifyMonitor.awsProfile": "team-staging",
+  "amplifyMonitor.defaultRegion": "us-west-2",
+  "amplifyMonitor.autoRefresh": true,
+  "amplifyMonitor.autoRefreshInterval": 30
+}</code></pre>
+
+                    <h3>Consultant with Multiple Clients</h3>
+                    <pre><code>// Use workspace settings for each client project
+// Client A: .vscode/settings.json
+{
+  "amplifyMonitor.awsProfile": "client-a-prod",
+  "amplifyMonitor.defaultAppId": "abc123"
+}
+
+// Client B: .vscode/settings.json
+{
+  "amplifyMonitor.awsProfile": "client-b-prod", 
+  "amplifyMonitor.defaultAppId": "xyz789"
+}</code></pre>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Amplify Monitor. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started - Amplify Monitor Documentation</title>
+    <meta name="description" content="Learn how to install and configure Amplify Monitor for VS Code. Step-by-step guide for monitoring AWS Amplify builds.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="getting-started.html" class="active">Getting Started</a>
+                <a href="commands.html">Commands</a>
+                <a href="configuration.html">Configuration</a>
+                <a href="troubleshooting.html">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="container">
+            <div class="doc-layout">
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h4>On This Page</h4>
+                        <ul>
+                            <li><a href="#installation">Installation</a></li>
+                            <li><a href="#prerequisites">Prerequisites</a></li>
+                            <li><a href="#aws-credentials">AWS Credentials</a></li>
+                            <li><a href="#first-steps">First Steps</a></li>
+                            <li><a href="#using-dashboard">Using the Dashboard</a></li>
+                            <li><a href="#diagnosing-builds">Diagnosing Builds</a></li>
+                            <li><a href="#quick-fixes">Applying Quick Fixes</a></li>
+                            <li><a href="#next-steps">Next Steps</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <main class="doc-content">
+                    <h1>Getting Started</h1>
+                    <p class="text-muted">Get up and running with Amplify Monitor in under 5 minutes.</p>
+
+                    <h2 id="installation">Installation</h2>
+                    <p>Install Amplify Monitor directly from VS Code:</p>
+                    
+                    <h3>Option 1: VS Code Marketplace</h3>
+                    <ol>
+                        <li>Open VS Code</li>
+                        <li>Press <code>Ctrl+Shift+X</code> (or <code>Cmd+Shift+X</code> on Mac) to open Extensions</li>
+                        <li>Search for "Amplify Monitor"</li>
+                        <li>Click <strong>Install</strong></li>
+                    </ol>
+
+                    <h3>Option 2: Command Line</h3>
+                    <pre><code>code --install-extension SagaraHarasgama.amplify-monitor</code></pre>
+
+                    <h3>Option 3: Direct Link</h3>
+                    <p>
+                        <a href="vscode:extension/SagaraHarasgama.amplify-monitor" class="btn btn-primary">
+                            <i class="fas fa-download"></i> Install Extension
+                        </a>
+                    </p>
+
+                    <h2 id="prerequisites">Prerequisites</h2>
+                    
+                    <div class="callout callout-info">
+                        <div class="callout-title"><i class="fas fa-info-circle"></i> Requirements</div>
+                        <ul>
+                            <li>VS Code 1.85.0 or later</li>
+                            <li>AWS account with Amplify apps</li>
+                            <li>AWS credentials configured (see below)</li>
+                        </ul>
+                    </div>
+
+                    <h2 id="aws-credentials">Configuring AWS Credentials</h2>
+                    <p>Amplify Monitor needs AWS credentials to access your Amplify apps. Choose one of these methods:</p>
+
+                    <h3>Method 1: AWS CLI Profile (Recommended)</h3>
+                    <p>If you have the AWS CLI installed, configure a profile:</p>
+                    <pre><code># Configure default profile
+aws configure
+
+# Or configure a named profile
+aws configure --profile my-amplify-profile</code></pre>
+                    
+                    <p>Then set the profile in VS Code settings:</p>
+                    <pre><code>{
+  "amplifyMonitor.awsProfile": "my-amplify-profile"
+}</code></pre>
+
+                    <h3>Method 2: Environment Variables</h3>
+                    <p>Set these environment variables before launching VS Code:</p>
+                    <pre><code># Windows (PowerShell)
+$env:AWS_ACCESS_KEY_ID = "your-access-key"
+$env:AWS_SECRET_ACCESS_KEY = "your-secret-key"
+$env:AWS_REGION = "us-east-1"
+
+# macOS/Linux
+export AWS_ACCESS_KEY_ID="your-access-key"
+export AWS_SECRET_ACCESS_KEY="your-secret-key"
+export AWS_REGION="us-east-1"</code></pre>
+
+                    <h3>Method 3: IAM Role (EC2/ECS)</h3>
+                    <p>If running on AWS infrastructure, the extension automatically uses the attached IAM role.</p>
+
+                    <div class="callout callout-warning">
+                        <div class="callout-title"><i class="fas fa-exclamation-triangle"></i> Required Permissions</div>
+                        <p>Your AWS credentials need these permissions:</p>
+                        <ul>
+                            <li><code>amplify:ListApps</code></li>
+                            <li><code>amplify:GetApp</code></li>
+                            <li><code>amplify:ListBranches</code></li>
+                            <li><code>amplify:ListJobs</code></li>
+                            <li><code>amplify:GetJob</code></li>
+                            <li><code>amplify:StartJob</code> (for triggering builds)</li>
+                            <li><code>amplify:StopJob</code> (for cancelling builds)</li>
+                        </ul>
+                    </div>
+
+                    <h2 id="first-steps">First Steps</h2>
+                    
+                    <h3>1. Open the Activity Bar</h3>
+                    <p>Look for the <strong>Amplify Monitor</strong> icon (⚡) in the Activity Bar on the left side of VS Code.</p>
+                    
+                    <h3>2. Check Connection Status</h3>
+                    <p>The status bar at the bottom shows your connection status:</p>
+                    <ul>
+                        <li>✅ <strong>Connected</strong> - AWS credentials are valid</li>
+                        <li>⚠️ <strong>No credentials</strong> - Configure AWS credentials</li>
+                        <li>❌ <strong>Error</strong> - Check your credentials/permissions</li>
+                    </ul>
+
+                    <h3>3. View Your Apps</h3>
+                    <p>Once connected, the <strong>Apps</strong> tree view shows all your Amplify apps across all regions.</p>
+
+                    <h2 id="using-dashboard">Using the Dashboard</h2>
+                    <p>The Dashboard provides a visual overview of your entire Amplify portfolio.</p>
+
+                    <h3>Opening the Dashboard</h3>
+                    <ol>
+                        <li>Press <code>Ctrl+Shift+P</code> (or <code>Cmd+Shift+P</code> on Mac)</li>
+                        <li>Type "Amplify Monitor: Open Dashboard"</li>
+                        <li>Press Enter</li>
+                    </ol>
+
+                    <h3>Dashboard Features</h3>
+                    <ul>
+                        <li><strong>Summary Bar</strong> - Total apps, succeeded, failed, and running builds</li>
+                        <li><strong>App Cards</strong> - Visual grid showing all apps and their status</li>
+                        <li><strong>Quick Actions</strong> - Start build, stop build, view logs, open console</li>
+                        <li><strong>Auto-refresh</strong> - Optionally refresh data automatically</li>
+                    </ul>
+
+                    <h2 id="diagnosing-builds">Diagnosing Failed Builds</h2>
+                    <p>When a build fails, Amplify Monitor can automatically diagnose the issue.</p>
+
+                    <h3>Method 1: From the Dashboard</h3>
+                    <ol>
+                        <li>Find the failed build (shown with ❌)</li>
+                        <li>Click the <strong>Diagnose</strong> button</li>
+                        <li>View the diagnosis in the panel</li>
+                    </ol>
+
+                    <h3>Method 2: Using Command Palette</h3>
+                    <ol>
+                        <li>Press <code>Ctrl+Shift+P</code></li>
+                        <li>Type "Amplify Monitor: Diagnose Latest Failed Build"</li>
+                        <li>Select the app and branch</li>
+                    </ol>
+
+                    <h3>Understanding Diagnosis Results</h3>
+                    <p>The diagnosis shows:</p>
+                    <ul>
+                        <li><strong>Pattern</strong> - What type of error was detected</li>
+                        <li><strong>Root Cause</strong> - Why the error occurred</li>
+                        <li><strong>Suggested Fixes</strong> - Steps to resolve the issue</li>
+                        <li><strong>Quick Fix</strong> - One-click automated fix (if available)</li>
+                    </ul>
+
+                    <h2 id="quick-fixes">Applying Quick Fixes</h2>
+                    <p>Many common issues can be fixed with a single click.</p>
+
+                    <h3>Available Quick Fixes</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Issue</th>
+                                <th>Quick Fix</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Lock file mismatch</td>
+                                <td>Switch package manager, delete conflicting lock files</td>
+                            </tr>
+                            <tr>
+                                <td>Node version mismatch</td>
+                                <td>Create .nvmrc, update amplify.yml</td>
+                            </tr>
+                            <tr>
+                                <td>npm install failed</td>
+                                <td>Clear cache, use legacy peer deps</td>
+                            </tr>
+                            <tr>
+                                <td>Out of memory</td>
+                                <td>Increase Node heap size</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h3>Applying a Fix</h3>
+                    <ol>
+                        <li>After diagnosing a build, look for the ⚡ icon next to fixable issues</li>
+                        <li>Click the icon to see available fixes</li>
+                        <li>Select a fix to apply it automatically</li>
+                        <li>Commit the changes and push to trigger a new build</li>
+                    </ol>
+
+                    <h2 id="next-steps">Next Steps</h2>
+                    <p>Now that you're set up, explore these powerful features:</p>
+                    <ul>
+                        <li><a href="features/optimization.html">Build Optimization Wizard</a> - Speed up your builds</li>
+                        <li><a href="features/notifications.html">Build Notifications</a> - Get alerts on Slack/Teams/Discord</li>
+                        <li><a href="features/secrets.html">Secrets Manager</a> - Sync env vars from AWS SSM</li>
+                        <li><a href="features/custom-domain.html">Custom Domain Validator</a> - Fix DNS issues</li>
+                        <li><a href="commands.html">All Commands</a> - Complete command reference</li>
+                    </ul>
+
+                    <div class="callout callout-success">
+                        <div class="callout-title"><i class="fas fa-rocket"></i> Pro Tip</div>
+                        <p>Enable auto-refresh in settings to always see the latest build status without manually refreshing!</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Amplify Monitor. MIT License.</p>
+                <p>Not affiliated with Amazon Web Services.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Commands Reference - Amplify Monitor Documentation</title>
+    <meta name="description" content="Complete list of Amplify Monitor commands for VS Code. Learn all available commands and keyboard shortcuts.">
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="index.html#features">Features</a>
+                <a href="getting-started.html">Getting Started</a>
+                <a href="commands.html" class="active">Commands</a>
+                <a href="configuration.html">Configuration</a>
+                <a href="troubleshooting.html">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="container">
+            <div class="doc-layout">
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h4>Command Categories</h4>
+                        <ul>
+                            <li><a href="#dashboard">Dashboard</a></li>
+                            <li><a href="#diagnosis">Diagnosis</a></li>
+                            <li><a href="#troubleshooting">Troubleshooting</a></li>
+                            <li><a href="#optimization">Optimization</a></li>
+                            <li><a href="#notifications">Notifications</a></li>
+                            <li><a href="#secrets">Secrets</a></li>
+                            <li><a href="#builds">Build Management</a></li>
+                            <li><a href="#environment">Environment</a></li>
+                            <li><a href="#migration">Migration</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <main class="doc-content">
+                    <h1>Commands Reference</h1>
+                    <p class="text-muted">Complete list of all Amplify Monitor commands. Access via Command Palette (<code>Ctrl+Shift+P</code>).</p>
+
+                    <h2 id="dashboard">Dashboard & Overview</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Open Dashboard</code></td>
+                                <td>Opens the visual portfolio dashboard showing all apps, branches, and build statuses</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: List Apps</code></td>
+                                <td>Refreshes the apps list in the sidebar tree view</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Switch AWS Profile</code></td>
+                                <td>Change the AWS profile used for authentication</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 id="diagnosis">Build Diagnosis</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Diagnose Latest Failed Build</code></td>
+                                <td>Analyzes the most recent failed job and identifies root causes with suggested fixes</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Apply Quick Fix</code></td>
+                                <td>Shows all available quick fixes and applies the selected one</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 id="troubleshooting">Troubleshooting Tools</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Troubleshoot Environment Variables</code></td>
+                                <td>Scans code for env var usage, detects missing/exposed vars, finds hardcoded secrets</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Detect Node Version Issues</code></td>
+                                <td>Finds Node.js version mismatches between local, package.json, and Amplify</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Validate Custom Domain</code></td>
+                                <td>Validates DNS records, SSL certificates, and Amplify configuration for custom domains</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Pre-Deploy Validation</code></td>
+                                <td>Runs pre-deployment checks: git status, dependencies, build validation, env checks</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 id="optimization">Build Optimization</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Build Optimization Wizard</code></td>
+                                <td>Guided wizard to optimize build speed with caching, dependency, and config improvements</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Analyze Bundle Size</code></td>
+                                <td>Analyzes build output size vs Amplify's 230MB limit with recommendations</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Show Build Performance</code></td>
+                                <td>Displays historical build time trends and performance metrics</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Detect Monorepo Structure</code></td>
+                                <td>Auto-detects monorepo setup and generates appropriate amplify.yml configuration</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 id="notifications">Notifications</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Configure Notifications</code></td>
+                                <td>Set up webhook notifications for Slack, Microsoft Teams, Discord, or custom endpoints</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 id="secrets">Secrets Management</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Manage Secrets</code></td>
+                                <td>Browse AWS SSM Parameters and Secrets Manager, sync to Amplify env vars</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 id="builds">Build Management</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Start Build</code></td>
+                                <td>Triggers a new deployment for the selected app and branch</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Stop Build</code></td>
+                                <td>Cancels a running deployment</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Open in AWS Console</code></td>
+                                <td>Opens the app in the AWS Amplify Console in your browser</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 id="environment">Environment Variables</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Add Environment Variable</code></td>
+                                <td>Adds a new environment variable to a branch</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Edit Environment Variable</code></td>
+                                <td>Modifies an existing environment variable</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Delete Environment Variable</code></td>
+                                <td>Removes an environment variable from a branch</td>
+                            </tr>
+                            <tr>
+                                <td><code>Amplify Monitor: Reveal Environment Variable</code></td>
+                                <td>Shows the masked value of an environment variable</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2 id="migration">Gen2 Migration</h2>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>Amplify Monitor: Analyze Gen1 → Gen2 Migration</code></td>
+                                <td>Analyzes your Gen1 project for Gen2 compatibility and provides migration guidance</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <h2>Keyboard Shortcuts</h2>
+                    <p>You can assign custom keyboard shortcuts to any command:</p>
+                    <ol>
+                        <li>Open Keyboard Shortcuts (<code>Ctrl+K Ctrl+S</code>)</li>
+                        <li>Search for "Amplify Monitor"</li>
+                        <li>Click the + icon to add a keybinding</li>
+                    </ol>
+
+                    <h3>Suggested Shortcuts</h3>
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Command</th>
+                                <th>Suggested Shortcut</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Open Dashboard</td>
+                                <td><code>Ctrl+Alt+A D</code></td>
+                            </tr>
+                            <tr>
+                                <td>Diagnose Latest Failed Build</td>
+                                <td><code>Ctrl+Alt+A F</code></td>
+                            </tr>
+                            <tr>
+                                <td>Start Build</td>
+                                <td><code>Ctrl+Alt+A S</code></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="callout callout-info">
+                        <div class="callout-title"><i class="fas fa-keyboard"></i> Quick Access</div>
+                        <p>All commands are also available from the context menu when right-clicking in the Amplify Monitor tree views.</p>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Amplify Monitor. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+</body>
+</html>

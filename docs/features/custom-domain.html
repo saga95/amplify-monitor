@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Domain Validator - Amplify Monitor Features</title>
+    <meta name="description" content="Validate DNS, SSL, and Amplify configuration for your custom domains.">
+    <link rel="stylesheet" href="../css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <span class="logo-icon">⚡</span>
+                <span>Amplify Monitor</span>
+            </a>
+            <div class="nav-links">
+                <a href="../index.html#features">Features</a>
+                <a href="../getting-started.html">Getting Started</a>
+                <a href="../commands.html">Commands</a>
+                <a href="../configuration.html">Configuration</a>
+                <a href="../troubleshooting.html">Troubleshooting</a>
+                <a href="https://github.com/saga95/amplify-monitor" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            <button class="mobile-menu-btn" aria-label="Toggle menu">
+                <i class="fas fa-bars"></i>
+            </button>
+        </div>
+    </nav>
+
+    <div class="doc-page">
+        <div class="container">
+            <div class="doc-layout">
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h4>Features</h4>
+                        <ul>
+                            <li><a href="dashboard.html">Dashboard</a></li>
+                            <li><a href="diagnosis.html">Build Diagnosis</a></li>
+                            <li><a href="quick-fixes.html">Quick Fixes</a></li>
+                            <li><a href="optimization.html">Optimization</a></li>
+                            <li><a href="notifications.html">Notifications</a></li>
+                            <li><a href="secrets.html">Secrets Manager</a></li>
+                            <li><a href="node-version.html">Node Version</a></li>
+                            <li><a href="env-vars.html">Env Vars</a></li>
+                            <li><a href="custom-domain.html" class="active">Custom Domain</a></li>
+                            <li><a href="pre-deploy.html">Pre-Deploy</a></li>
+                            <li><a href="migration.html">Gen2 Migration</a></li>
+                            <li><a href="monorepo.html">Monorepo</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <main class="doc-content">
+                    <h1>🌐 Custom Domain Validator</h1>
+                    <p class="text-muted">Validate DNS records, SSL certificates, and Amplify configuration for your custom domains.</p>
+
+                    <h2>Overview</h2>
+                    <p>Custom domains with AWS Amplify can be tricky to configure correctly. The Custom Domain Validator helps you identify and fix issues before they become problems.</p>
+
+                    <h2>Opening the Validator</h2>
+                    <ol>
+                        <li>Press <code>Ctrl+Shift+P</code></li>
+                        <li>Type "Amplify Monitor: Validate Custom Domain"</li>
+                        <li>Enter your domain name (e.g., <code>app.example.com</code>)</li>
+                    </ol>
+
+                    <h2>What It Checks</h2>
+
+                    <h3>DNS Records</h3>
+                    <ul>
+                        <li><strong>CNAME Records</strong> - Verifies subdomain CNAME points to Amplify/CloudFront</li>
+                        <li><strong>A Records</strong> - Checks apex domain configuration</li>
+                        <li><strong>TXT Records</strong> - Validates domain ownership records</li>
+                        <li><strong>CAA Records</strong> - Ensures certificate authorities aren't blocked</li>
+                    </ul>
+
+                    <h3>SSL Certificate</h3>
+                    <ul>
+                        <li><strong>Validity</strong> - Is the certificate valid?</li>
+                        <li><strong>Expiration</strong> - When does it expire? (warns if &lt; 30 days)</li>
+                        <li><strong>Issuer</strong> - Is it from Amazon/Let's Encrypt (expected for Amplify)?</li>
+                    </ul>
+
+                    <h3>Amplify Configuration</h3>
+                    <ul>
+                        <li><strong>CNAME Target</strong> - Does it point to the correct CloudFront distribution?</li>
+                        <li><strong>Propagation</strong> - Have DNS changes propagated globally?</li>
+                        <li><strong>WWW/Non-WWW</strong> - Are both versions configured?</li>
+                    </ul>
+
+                    <h3>Common Issues</h3>
+                    <ul>
+                        <li><strong>CDN Proxy</strong> - Detects if Cloudflare orange-cloud is enabled (can cause issues)</li>
+                        <li><strong>Conflicting Records</strong> - Warns about CNAME + A record conflicts</li>
+                        <li><strong>Missing Records</strong> - Identifies what's missing</li>
+                    </ul>
+
+                    <h2>Apex vs Subdomain</h2>
+                    <p>The validator automatically detects whether you're configuring an apex domain (example.com) or subdomain (app.example.com) and provides appropriate guidance:</p>
+
+                    <h3>Subdomain Configuration</h3>
+                    <pre><code>Type: CNAME
+Name: app
+Value: [your-app-id].cloudfront.net</code></pre>
+
+                    <h3>Apex Domain Configuration</h3>
+                    <p>Apex domains cannot use CNAME records. You need:</p>
+                    <ul>
+                        <li><strong>Route 53</strong> - Use ALIAS record</li>
+                        <li><strong>Other DNS</strong> - Use ANAME/ALIAS if supported, or...</li>
+                        <li><strong>A Record</strong> - Point to CloudFront IP addresses (not recommended)</li>
+                    </ul>
+
+                    <div class="callout callout-warning">
+                        <div class="callout-title"><i class="fas fa-exclamation-triangle"></i> Apex Domain Limitation</div>
+                        <p>If your DNS provider doesn't support ALIAS/ANAME records, consider using Route 53 or redirecting the apex domain to www.</p>
+                    </div>
+
+                    <h2>Understanding Results</h2>
+                    <p>Each check shows one of four statuses:</p>
+                    <ul>
+                        <li>✅ <strong>Success</strong> - Configuration is correct</li>
+                        <li>⚠️ <strong>Warning</strong> - Works but could be improved</li>
+                        <li>❌ <strong>Error</strong> - Needs to be fixed</li>
+                        <li>💡 <strong>Info</strong> - Additional information</li>
+                    </ul>
+
+                    <h2>Fixing Issues</h2>
+                    <p>For each error, the validator provides:</p>
+                    <ol>
+                        <li>What's wrong</li>
+                        <li>Why it matters</li>
+                        <li>How to fix it</li>
+                        <li>The exact values to use</li>
+                    </ol>
+
+                    <h3>Example: Missing CNAME</h3>
+                    <pre><code>❌ CNAME Record
+   No CNAME record found for subdomain
+   
+   Fix: Add CNAME record in your DNS provider
+   
+   Type: CNAME
+   Name: app
+   Value: d1234abcd.cloudfront.net
+   TTL: 300</code></pre>
+
+                    <h2>Common Scenarios</h2>
+
+                    <h3>"Custom domain stopped working"</h3>
+                    <p>Usually caused by:</p>
+                    <ul>
+                        <li>SSL certificate expired (Amplify should auto-renew)</li>
+                        <li>DNS records changed or deleted</li>
+                        <li>CloudFront distribution changed</li>
+                    </ul>
+
+                    <h3>"Domain setup failing after enabling CloudFront CDN"</h3>
+                    <p>When you enable CDN in Amplify:</p>
+                    <ul>
+                        <li>The CNAME target changes from <code>.amplifyapp.com</code> to <code>.cloudfront.net</code></li>
+                        <li>You need to update your DNS records</li>
+                        <li>Allow up to 48 hours for propagation</li>
+                    </ul>
+
+                    <h3>"SSL certificate not provisioned"</h3>
+                    <p>Check:</p>
+                    <ul>
+                        <li>Domain ownership is verified (TXT record)</li>
+                        <li>CAA records allow amazon.com or letsencrypt.org</li>
+                        <li>Wait up to 24 hours for certificate issuance</li>
+                    </ul>
+
+                    <div class="callout callout-success">
+                        <div class="callout-title"><i class="fas fa-lightbulb"></i> Pro Tip</div>
+                        <p>Always validate your domain configuration BEFORE making DNS changes. This helps you know exactly what records to add.</p>
+                    </div>
+
+                    <h2>Related Commands</h2>
+                    <ul>
+                        <li><code>Amplify Monitor: Validate Custom Domain</code></li>
+                        <li><code>Amplify Monitor: Open in AWS Console</code></li>
+                    </ul>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024-2026 Amplify Monitor. MIT License.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../js/main.js"></script>
+</body>
+</html>
