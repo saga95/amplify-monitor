@@ -129,7 +129,11 @@ export function activate(context: vscode.ExtensionContext) {
             vscode.window.showInformationMessage(`Selected app: ${appId}${regionInfo}${profileInfo}`);
         }),
 
-        vscode.commands.registerCommand('amplify-monitor.selectBranch', async (branch: string) => {
+        vscode.commands.registerCommand('amplify-monitor.selectBranch', async (branch: string, appId?: string, region?: string, profile?: string) => {
+            // If appId/region/profile provided, update the selection (e.g., from tree view)
+            if (appId) {
+                cli.setSelectedApp(appId, region, profile);
+            }
             cli.setSelectedBranch(branch);
             await Promise.all([jobsProvider.refresh(), envVarsProvider.refresh()]);
         }),

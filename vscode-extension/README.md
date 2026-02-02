@@ -64,14 +64,15 @@ Define your own error detection patterns:
 
 ### 👥 **Multi-Account AWS Profile Manager**
 Seamlessly work across multiple AWS accounts:
+- **Unified Apps Panel** - View all Amplify apps from all configured AWS profiles in one place
+- **Profile Badges** - Each app shows which AWS profile it belongs to
 - **Profile Discovery** - Auto-discovers profiles from ~/.aws/credentials and config
-- **Quick Switch** - Change profiles with one click from status bar or command
-- **Validation** - Test credentials and see account ID, user/role for each profile
-- **Visual Status** - Active profile clearly marked with orange badge
+- **Cross-Account Operations** - Manage branches, jobs, and env vars across all accounts
+- **Visual Status** - Active profile clearly marked in the sidebar
 - **Add Profiles** - Create new profiles directly in VS Code
-- **Edit Files** - Quick access to credentials and config files
 - **SSO Support** - Works with AWS SSO profiles and assumed roles
-- **AWS Console** - One-click launch to AWS Console with correct region
+
+![Multi-Account Apps Panel](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/images/apps-panel-multi-account.png)
 
 ### 📊 **Portfolio Dashboard**
 Get a bird's-eye view of your entire Amplify infrastructure:

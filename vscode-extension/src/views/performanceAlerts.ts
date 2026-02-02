@@ -79,8 +79,9 @@ export class PerformanceAlertsPanel {
                             message.appId, message.branch, message.jobId);
                         break;
                     case 'showHistory':
+                        // selectBranch expects: branch, appId, region, profile
                         vscode.commands.executeCommand('amplify-monitor.selectBranch', 
-                            message.appId, message.branch);
+                            message.branch, message.appId, message.region);
                         break;
                 }
             },

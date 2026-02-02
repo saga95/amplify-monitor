@@ -137,7 +137,7 @@ export class AppTreeItem extends vscode.TreeItem {
             this.command = {
                 command: 'amplify-monitor.selectBranch',
                 title: 'Select Branch',
-                arguments: [branchName]
+                arguments: [branchName, appId, region, profile]
             };
         }
     }

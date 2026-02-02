@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.35] - 2026-02-02
+
+### Fixed
+- **Jobs not loading when clicking branch** - Fixed "App not found" error when clicking on a branch in the Apps panel
+  - Branch selection now properly passes appId, region, and profile to the selectBranch command
+  - Jobs tree provider now uses the selectedProfile when fetching jobs
+  - Fixed parameter order bug in performanceAlerts selectBranch call
+
 ## [0.1.34] - 2026-02-01
 
 ### Fixed
