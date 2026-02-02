@@ -11,15 +11,11 @@
 
 ---
 
-## 🚀 What's New in v0.1.24
+## 🚀 What's New in v0.1.36
 
-- 🚀 **Gen1 → Gen2 Migration Helper** - Complete wizard for migrating to Amplify Gen2
-  - Project analysis with compatibility report
-  - Step-by-step migration wizard (5 stages)
-  - Auto-generated Gen2 code for Auth, API, Storage, Functions
-  - Category-by-category migration guidance
-  - Integration with `npm create amplify@latest`
-  - Links to official documentation
+- 👥 **Multi-Account Support Enhanced** - Fixed branch/job loading across AWS profiles
+- 🖼️ **New Logo & Screenshots** - Fresh branding and documentation images
+- 🧹 **Simplified Extension** - Removed redundant build watcher (use webhook notifications instead)
 
 ---
 
@@ -34,17 +30,7 @@ Complete wizard for migrating your Amplify project to Gen2:
 - **CDK Indicators** - Identifies features requiring AWS CDK for migration
 - **Documentation Links** - Quick access to official migration guides
 
-### 👁️ **Post-Push Build Watcher**
-Never miss a build failure after pushing code:
-- **Auto-Detection** - Automatically starts watching after `git push`
-- **Real-Time Status** - Status bar shows build progress (spinning indicator)
-- **Smart Notifications** - Success (✅) or failure (❌) alerts with duration
-- **Auto-Diagnosis** - Failures are immediately analyzed for root cause
-- **Quick Actions** - View diagnosis, logs, or open in AWS Console directly from notification
-- **Manual Watch** - Start/stop watching any branch manually
-- **MCP Integration** - AI assistants can monitor builds and get failure analysis
-
-### 🔄 **Build Comparison**
+###  **Build Comparison**
 Compare any two builds to understand what changed:
 - **Side-by-Side Selection** - Pick two builds from the last 20
 - **Status Comparison** - See if builds went from success to failure or vice versa
