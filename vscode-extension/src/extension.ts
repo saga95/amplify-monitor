@@ -956,14 +956,38 @@ async function autoDetectAndInitialize(
         }
     }
 
-    // Try to fetch apps to check AWS connection
+    // Try to fetch apps to check AWS connection - use multi-account logic if enabled
     try {
-        const apps = await cli.listApps(true);
+        const config = vscode.workspace.getConfiguration('amplifyMonitor');
+        const isMultiAccountMode = config.get<boolean>('multiAccount.enabled', false);
+        const configuredProfiles = config.get<string[]>('multiAccount.profiles', []);
+        const defaultProfile = cli.getAwsProfile() || 'default';
+        
+        let totalApps: number;
+        
+        if (isMultiAccountMode && configuredProfiles.length > 0) {
+            // Multi-account mode: count apps from all configured profiles
+            const profilesToFetch = [...new Set([...configuredProfiles, defaultProfile])];
+            let count = 0;
+            for (const profile of profilesToFetch) {
+                try {
+                    const apps = await cli.listAppsForProfile(profile, true);
+                    count += apps.length;
+                } catch {
+                    // Skip failed profiles
+                }
+            }
+            totalApps = count;
+        } else {
+            // Single account mode
+            const apps = await cli.listApps(true);
+            totalApps = apps.length;
+        }
         
         // Show notification if Amplify project found
         if (hasAmplifyProject) {
             const action = await vscode.window.showInformationMessage(
-                `🚀 Amplify project detected! Found ${apps.length} app${apps.length !== 1 ? 's' : ''} in your AWS account.`,
+                `🚀 Amplify project detected! Found ${totalApps} app${totalApps !== 1 ? 's' : ''} in your AWS account.`,
                 'Analyze Migration',
                 'View Apps'
             );
@@ -985,10 +1009,10 @@ async function autoDetectAndInitialize(
             } else if (action === 'View Apps') {
                 vscode.commands.executeCommand('amplifyApps.focus');
             }
-        } else if (apps.length > 0) {
+        } else if (totalApps > 0) {
             // No local project but apps found in AWS
             vscode.window.showInformationMessage(
-                `Found ${apps.length} Amplify app${apps.length !== 1 ? 's' : ''} in your AWS account.`,
+                `Found ${totalApps} Amplify app${totalApps !== 1 ? 's' : ''} in your AWS account.`,
                 'View Apps'
             ).then(action => {
                 if (action === 'View Apps') {

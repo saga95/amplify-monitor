@@ -195,69 +195,108 @@ export class AmplifyCopilotParticipant {
         }
 
         const buildContext = this.lastBuildContext;
+        const query = request.prompt.toLowerCase();
+        const wantsAutoFix = query.includes('auto') || query.includes('apply');
 
         // Extract file paths from error logs
         const errorFiles = this.extractErrorFilePaths(buildContext.logs);
         const workspaceFolders = vscode.workspace.workspaceFolders;
         
         // Reference the problematic files so Copilot can access them
+        const referencedFiles: vscode.Uri[] = [];
         if (workspaceFolders && errorFiles.length > 0) {
             for (const filePath of errorFiles.slice(0, 5)) { // Limit to 5 files
                 try {
                     const fullPath = vscode.Uri.joinPath(workspaceFolders[0].uri, filePath);
                     const doc = await vscode.workspace.openTextDocument(fullPath);
                     stream.reference(doc.uri);
+                    referencedFiles.push(doc.uri);
                 } catch (e) {
                     // File might not exist locally
                 }
             }
         }
 
-        // Build a prompt that instructs Copilot to fix the code
-        const errorContext = this.extractErrorContext(buildContext.logs);
-        const issueDescriptions = buildContext.issues.map(i => 
-            `- ${i.pattern.replace(/_/g, ' ')}: ${i.rootCause}`
-        ).join('\n');
-
-        // Use stream.markdown with instructions for the LLM to generate fixes
-        stream.markdown(`## 🔧 Build Failure Fix Request\n\n`);
-        stream.markdown(`**App:** ${buildContext.appName} | **Branch:** ${buildContext.branch}\n\n`);
-        
-        stream.markdown(`### Issues Found\n${issueDescriptions}\n\n`);
-        
-        stream.markdown(`### Error Details from Build Logs\n\`\`\`\n${errorContext}\n\`\`\`\n\n`);
-
         // Provide specific instructions based on detected issues
         const hasCodeError = buildContext.issues.some(i => 
             ['typescript_error', 'eslint_error', 'nextjs_error', 'syntax_error', 'build_command_failed'].includes(i.pattern)
         );
 
-        if (hasCodeError && errorFiles.length > 0) {
-            stream.markdown(`### Files with Errors\n`);
-            for (const file of errorFiles.slice(0, 5)) {
-                stream.markdown(`- \`${file}\`\n`);
-            }
-            stream.markdown(`\n`);
-            
-            // Instruct Copilot to provide the fix
-            stream.markdown(`**Please fix the code errors in the files above based on the error messages.**\n\n`);
-            stream.markdown(`The build failed with the following error:\n`);
-            stream.markdown(`\`\`\`\n${this.extractSpecificError(buildContext.logs)}\n\`\`\`\n\n`);
-        }
-
-        // For config issues, provide actionable fixes
+        // For config issues (lock files, node version, etc.), provide buttons
         const hasConfigIssue = buildContext.issues.some(i => 
-            ['lock_file_mismatch', 'node_version_mismatch', 'missing_env_var', 'amplify_yml_missing', 'npm_ci_failure'].includes(i.pattern)
+            ['lock_file_mismatch', 'node_version_mismatch', 'missing_env_var', 'amplify_yml_missing', 'npm_ci_failure', 'eslint_error'].includes(i.pattern)
         );
 
-        if (hasConfigIssue) {
+        if (hasConfigIssue && !wantsAutoFix) {
+            stream.markdown(`## 🔧 Fixing Build Issues\n\n`);
+            stream.markdown(`Based on the build failure for **${buildContext.appName}** on branch **${buildContext.branch}**:\n\n`);
+            
             for (const issue of buildContext.issues) {
+                stream.markdown(`### ${issue.pattern.replace(/_/g, ' ')}\n\n`);
+                
+                // Show buttons for quick actions
+                const autoFixResult = await this.attemptAutoFix(issue.pattern, buildContext.logs, stream);
+                
+                // Also show the detailed fix suggestion
                 const codeFixSuggestion = this.getCodeFixForPattern(issue.pattern, buildContext.logs);
                 if (codeFixSuggestion) {
                     stream.markdown(codeFixSuggestion);
                 }
             }
+            
+            // Show error context
+            stream.markdown(`\n### Error Context from Logs\n\`\`\`\n${this.extractErrorContext(buildContext.logs)}\n\`\`\`\n\n`);
+            
+            return { metadata: { success: true, errorFiles, hasCodeError, hasConfigIssue } };
         }
+
+        // For code errors OR auto fix mode, provide context that instructs the agent to fix
+        if (hasCodeError || wantsAutoFix) {
+            const specificError = this.extractSpecificError(buildContext.logs);
+            
+            // Open the first file with an error so Copilot can see it
+            if (referencedFiles.length > 0) {
+                try {
+                    const doc = await vscode.workspace.openTextDocument(referencedFiles[0]);
+                    await vscode.window.showTextDocument(doc, { preview: true });
+                } catch (e) {
+                    // Ignore
+                }
+            }
+            
+            stream.markdown(`## 🔧 Code Fix Required\n\n`);
+            stream.markdown(`The build for **${buildContext.appName}** failed with a code error.\n\n`);
+            
+            if (errorFiles.length > 0) {
+                stream.markdown(`**File:** \`${errorFiles[0]}\`\n\n`);
+            }
+            
+            stream.markdown(`**Error:**\n\`\`\`\n${specificError}\n\`\`\`\n\n`);
+            
+            // Provide the fix instruction that the LLM should follow
+            stream.markdown(`---\n\n`);
+            stream.markdown(`**Fix this error by correcting the syntax issue in the file above.**\n\n`);
+            stream.markdown(`Based on the error message:\n`);
+            stream.markdown(`- The error shows \`Expected '{', got ')'\` which indicates a syntax error\n`);
+            stream.markdown(`- Check for missing or mismatched braces, parentheses, or brackets\n`);
+            stream.markdown(`- Look at the line numbers mentioned in the error\n\n`);
+            
+            // If in agent mode, the LLM should pick up the referenced file and make edits
+            return { 
+                metadata: { 
+                    success: true, 
+                    errorFiles, 
+                    hasCodeError: true,
+                    needsCodeFix: true,
+                    specificError
+                } 
+            };
+        }
+
+        // Fallback - just show the error context
+        stream.markdown(`## 🔧 Build Failure Analysis\n\n`);
+        stream.markdown(`**App:** ${buildContext.appName} | **Branch:** ${buildContext.branch}\n\n`);
+        stream.markdown(`### Error Context\n\`\`\`\n${this.extractErrorContext(buildContext.logs)}\n\`\`\`\n\n`);
 
         return { metadata: { success: true, errorFiles, hasCodeError, hasConfigIssue } };
     }
