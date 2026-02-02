@@ -7,8 +7,6 @@
 
 **The ultimate AWS Amplify development toolkit for VS Code.** Monitor builds, diagnose failures with AI-powered analysis, migrate to Gen2, and manage your entire Amplify portfolio — all without leaving your editor.
 
-![Amplify Monitor Dashboard](https://raw.githubusercontent.com/saga95/amplify-monitor/main/docs/dashboard.png)
-
 ---
 
 ## 🚀 What's New in v0.1.36
