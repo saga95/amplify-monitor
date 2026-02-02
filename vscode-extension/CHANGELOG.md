@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.36] - 2026-02-02
+
+### Removed
+- **Post-Push Build Watcher** - Removed the build watcher functionality
+  - Redundant with webhook notifications feature
+  - Removed `watchBuild`, `stopWatching`, `showWatchedBuilds`, `showBuildWatcherLogs` commands
+  - Removed `autoWatchBuilds` and `buildPollInterval` settings
+  - Cleaner extension with less background polling
+
 ## [0.1.35] - 2026-02-02
 
 ### Fixed
