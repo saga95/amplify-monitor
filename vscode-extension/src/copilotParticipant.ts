@@ -195,45 +195,140 @@ export class AmplifyCopilotParticipant {
         }
 
         const buildContext = this.lastBuildContext;
-        const query = request.prompt.toLowerCase();
 
-        stream.markdown(`## 🔧 Fixing Build Issues\n\n`);
-        stream.markdown(`Based on the build failure for **${buildContext.appName}** on branch **${buildContext.branch}**:\n\n`);
-
-        // Check if user wants auto-fix
-        const wantsAutoFix = query.includes('auto') || query.includes('apply') || query.includes('do it') || query.includes('make the change');
-
-        // Analyze issues and provide/apply fixes
-        for (const issue of buildContext.issues) {
-            stream.markdown(`### ${issue.pattern.replace(/_/g, ' ')}\n\n`);
-            
-            // Try to auto-fix if requested
-            if (wantsAutoFix) {
-                const autoFixResult = await this.attemptAutoFix(issue.pattern, buildContext.logs, stream);
-                if (autoFixResult.fixed) {
-                    stream.markdown(`\n✅ **Auto-fixed:** ${autoFixResult.message}\n\n`);
-                    continue;
+        // Extract file paths from error logs
+        const errorFiles = this.extractErrorFilePaths(buildContext.logs);
+        const workspaceFolders = vscode.workspace.workspaceFolders;
+        
+        // Reference the problematic files so Copilot can access them
+        if (workspaceFolders && errorFiles.length > 0) {
+            for (const filePath of errorFiles.slice(0, 5)) { // Limit to 5 files
+                try {
+                    const fullPath = vscode.Uri.joinPath(workspaceFolders[0].uri, filePath);
+                    const doc = await vscode.workspace.openTextDocument(fullPath);
+                    stream.reference(doc.uri);
+                } catch (e) {
+                    // File might not exist locally
                 }
             }
+        }
+
+        // Build a prompt that instructs Copilot to fix the code
+        const errorContext = this.extractErrorContext(buildContext.logs);
+        const issueDescriptions = buildContext.issues.map(i => 
+            `- ${i.pattern.replace(/_/g, ' ')}: ${i.rootCause}`
+        ).join('\n');
+
+        // Use stream.markdown with instructions for the LLM to generate fixes
+        stream.markdown(`## 🔧 Build Failure Fix Request\n\n`);
+        stream.markdown(`**App:** ${buildContext.appName} | **Branch:** ${buildContext.branch}\n\n`);
+        
+        stream.markdown(`### Issues Found\n${issueDescriptions}\n\n`);
+        
+        stream.markdown(`### Error Details from Build Logs\n\`\`\`\n${errorContext}\n\`\`\`\n\n`);
+
+        // Provide specific instructions based on detected issues
+        const hasCodeError = buildContext.issues.some(i => 
+            ['typescript_error', 'eslint_error', 'nextjs_error', 'syntax_error', 'build_command_failed'].includes(i.pattern)
+        );
+
+        if (hasCodeError && errorFiles.length > 0) {
+            stream.markdown(`### Files with Errors\n`);
+            for (const file of errorFiles.slice(0, 5)) {
+                stream.markdown(`- \`${file}\`\n`);
+            }
+            stream.markdown(`\n`);
             
-            // Provide specific code fixes based on pattern
-            const codeFixSuggestion = this.getCodeFixForPattern(issue.pattern, buildContext.logs);
-            if (codeFixSuggestion) {
-                stream.markdown(codeFixSuggestion);
+            // Instruct Copilot to provide the fix
+            stream.markdown(`**Please fix the code errors in the files above based on the error messages.**\n\n`);
+            stream.markdown(`The build failed with the following error:\n`);
+            stream.markdown(`\`\`\`\n${this.extractSpecificError(buildContext.logs)}\n\`\`\`\n\n`);
+        }
+
+        // For config issues, provide actionable fixes
+        const hasConfigIssue = buildContext.issues.some(i => 
+            ['lock_file_mismatch', 'node_version_mismatch', 'missing_env_var', 'amplify_yml_missing', 'npm_ci_failure'].includes(i.pattern)
+        );
+
+        if (hasConfigIssue) {
+            for (const issue of buildContext.issues) {
+                const codeFixSuggestion = this.getCodeFixForPattern(issue.pattern, buildContext.logs);
+                if (codeFixSuggestion) {
+                    stream.markdown(codeFixSuggestion);
+                }
             }
         }
 
-        // Include the raw error context for Copilot to work with
-        stream.markdown(`\n### Error Context from Logs\n\n`);
-        stream.markdown('```\n');
-        stream.markdown(this.extractErrorContext(buildContext.logs));
-        stream.markdown('\n```\n\n');
+        return { metadata: { success: true, errorFiles, hasCodeError, hasConfigIssue } };
+    }
 
-        if (!wantsAutoFix) {
-            stream.markdown(`\n💡 *Say "auto fix" or "apply the fix" to have me make changes directly.*`);
+    /**
+     * Extract file paths from error logs
+     */
+    private extractErrorFilePaths(logs: string): string[] {
+        const filePaths = new Set<string>();
+        
+        // Common patterns for file paths in error messages
+        const patterns = [
+            // ./src/path/to/file.tsx
+            /\.\/([^\s:]+\.[tj]sx?)/g,
+            // src/path/to/file.tsx:line:col
+            /(?:^|\s)(src\/[^\s:]+\.[tj]sx?)(?::\d+)?/gm,
+            // /codebuild/.../src/path/file.tsx
+            /\/(?:codebuild|build)[^\s]*\/(src\/[^\s:]+\.[tj]sx?)/g,
+            // Module not found: './path/file'
+            /(?:Cannot find|Module not found)[^']*'([^']+)'/g,
+            // in ./pages/file.tsx
+            /in\s+\.\/([^\s:]+\.[tj]sx?)/g,
+            // at path/file.tsx:line
+            /at\s+([^\s:]+\.[tj]sx?):\d+/g,
+        ];
+
+        for (const pattern of patterns) {
+            let match;
+            while ((match = pattern.exec(logs)) !== null) {
+                let path = match[1];
+                // Clean up the path
+                path = path.replace(/^\.\//, '');
+                // Skip node_modules
+                if (!path.includes('node_modules') && !path.startsWith('/')) {
+                    filePaths.add(path);
+                }
+            }
         }
 
-        return { metadata: { success: true, autoFixAvailable: true } };
+        return Array.from(filePaths);
+    }
+
+    /**
+     * Extract the specific error message from logs
+     */
+    private extractSpecificError(logs: string): string {
+        const lines = logs.split('\n');
+        const errorLines: string[] = [];
+        let capturing = false;
+        let captureCount = 0;
+
+        for (const line of lines) {
+            // Start capturing at error indicators
+            if (/Error:|SyntaxError|TypeError|Expected|Unexpected|Failed to compile/i.test(line)) {
+                capturing = true;
+                captureCount = 0;
+            }
+
+            if (capturing) {
+                errorLines.push(line);
+                captureCount++;
+                
+                // Stop after capturing enough context
+                if (captureCount > 15) {
+                    capturing = false;
+                }
+            }
+        }
+
+        // Return unique error blocks
+        return errorLines.slice(0, 20).join('\n');
     }
 
     private async attemptAutoFix(
@@ -812,7 +907,7 @@ npx tsc --noEmit
 
         if (result.metadata?.buildContext) {
             followups.push({
-                prompt: 'Fix the build errors',
+                prompt: 'Fix the build errors in my code',
                 label: '🔧 Fix Issues',
                 command: ''
             });
@@ -821,9 +916,11 @@ npx tsc --noEmit
                 label: '📋 View Logs',
                 command: ''
             });
+        } else if (result.metadata?.hasCodeError && result.metadata?.errorFiles?.length > 0) {
+            // After fix request with code errors, suggest applying fixes
             followups.push({
-                prompt: 'What changes should I make to my code?',
-                label: '💡 Get Code Changes',
+                prompt: `Please fix the syntax error in ${result.metadata.errorFiles[0]}`,
+                label: '✏️ Apply Fix',
                 command: ''
             });
         } else if (result.metadata?.noFailures) {
