@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.1.38] - 2026-02-02
+
+### Fixed
+- **Extension Icon** - Updated extension icon to use the new logo (visible in marketplace and VS Code sidebar)
+
 ## [0.1.37] - 2026-02-02
 
 ### Added
