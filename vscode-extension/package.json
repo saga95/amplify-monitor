@@ -642,6 +642,18 @@
           "description": "Automatically diagnose build failures and show root cause",
           "order": 8
         },
+        "amplifyMonitor.notifications.buildFailed": {
+          "type": "boolean",
+          "default": true,
+          "description": "Show VS Code notification when a build fails",
+          "order": 9
+        },
+        "amplifyMonitor.notifications.buildSucceeded": {
+          "type": "boolean",
+          "default": false,
+          "description": "Show VS Code notification when a build succeeds",
+          "order": 10
+        },
         "amplifyMonitor.webhook.enabled": {
           "type": "boolean",
           "default": false,

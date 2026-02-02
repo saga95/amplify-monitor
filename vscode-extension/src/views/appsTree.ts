@@ -128,7 +128,7 @@ export class AppTreeItem extends vscode.TreeItem {
             this.command = {
                 command: 'amplify-monitor.selectApp',
                 title: 'Select App',
-                arguments: [appId, region, profile]
+                arguments: [appId, region, profile, label]
             };
         } else {
             this.contextValue = 'amplifyBranch';

@@ -91,6 +91,7 @@ export interface MigrationAnalysis {
 
 export class AmplifyMonitorCli {
     private selectedApp: string | undefined;
+    private selectedAppName: string | undefined;
     private selectedBranch: string | undefined;
     private selectedRegion: string | undefined;
     private selectedProfile: string | undefined;
@@ -100,14 +101,19 @@ export class AmplifyMonitorCli {
         return config.get<string>('cliPath') || 'amplify-monitor';
     }
 
-    setSelectedApp(appId: string, region?: string, profile?: string) {
+    setSelectedApp(appId: string, region?: string, profile?: string, appName?: string) {
         this.selectedApp = appId;
         this.selectedRegion = region;
         this.selectedProfile = profile;
+        this.selectedAppName = appName;
     }
 
     getSelectedApp(): string | undefined {
         return this.selectedApp;
+    }
+
+    getSelectedAppName(): string | undefined {
+        return this.selectedAppName;
     }
 
     getSelectedRegion(): string | undefined {
