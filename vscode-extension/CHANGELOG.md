@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.37] - 2026-02-02
+
+### Added
+- **Documentation Images** - Added dashboard screenshots and new logo
+  - Main dashboard screenshot
+  - Dashboard view screenshot
+  - Multi-account apps panel screenshot
+  - New extension logo
+
+### Updated
+- **README** - Updated What's New section, removed deprecated watcher documentation
+
 ## [0.1.36] - 2026-02-02
 
 ### Removed
