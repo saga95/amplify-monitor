@@ -131,3 +131,115 @@ fn extract_from_gzip(gzip_bytes: &[u8]) -> Result<String> {
         .context("Failed to decompress gzip log")?;
     Ok(content)
 }
+
+/// Result of downloading outputs file
+#[derive(Debug)]
+pub struct DownloadOutputsResult {
+    pub file_path: String,
+    pub content: String,
+}
+
+/// Download amplify_outputs.json from job artifacts and save to specified path
+///
+/// Downloads artifacts from successful build and extracts amplify_outputs.json
+pub async fn download_outputs_file(
+    client: &Client,
+    app_id: &str,
+    branch_name: &str,
+    job_id: &str,
+    output_path: &std::path::Path,
+) -> Result<DownloadOutputsResult> {
+    // Get artifact URLs from the job
+    let artifact_urls = amplify::get_artifact_urls(client, app_id, branch_name, job_id).await?;
+
+    if artifact_urls.is_empty() {
+        return Err(anyhow!("No artifacts found for job {}", job_id));
+    }
+
+    // Try to find amplify_outputs.json in the artifacts
+    for (step_name, url) in artifact_urls {
+        match download_and_find_outputs(&url).await {
+            Ok(Some(content)) => {
+                // Save the file
+                std::fs::write(output_path, &content)
+                    .with_context(|| format!("Failed to write to {}", output_path.display()))?;
+
+                return Ok(DownloadOutputsResult {
+                    file_path: output_path.display().to_string(),
+                    content,
+                });
+            }
+            Ok(None) => {
+                // amplify_outputs.json not found in this artifact, continue
+                continue;
+            }
+            Err(e) => {
+                // Log warning but continue trying other artifacts
+                eprintln!("Warning: Failed to process artifact from {}: {}", step_name, e);
+                continue;
+            }
+        }
+    }
+
+    Err(anyhow!(
+        "amplify_outputs.json not found in job artifacts. Make sure the build produces this file."
+    ))
+}
+
+/// Download artifact and find amplify_outputs.json content
+async fn download_and_find_outputs(url: &str) -> Result<Option<String>> {
+    let response = reqwest::get(url)
+        .await
+        .with_context(|| format!("Failed to download artifact from {}", url))?;
+
+    if !response.status().is_success() {
+        return Err(anyhow!(
+            "Failed to download artifact: HTTP {}",
+            response.status()
+        ));
+    }
+
+    let bytes = response
+        .bytes()
+        .await
+        .context("Failed to read artifact response body")?
+        .to_vec();
+
+    // Try to extract from ZIP (most common format for artifacts)
+    if bytes.len() >= 4 && bytes[0] == 0x50 && bytes[1] == 0x4B {
+        return extract_outputs_from_zip(&bytes);
+    }
+
+    // Check if it's the JSON file directly
+    if let Ok(content) = String::from_utf8(bytes.clone()) {
+        if content.contains("\"version\"") && content.contains("\"auth\"") || content.contains("\"data\"") {
+            // Looks like amplify_outputs.json content
+            return Ok(Some(content));
+        }
+    }
+
+    Ok(None)
+}
+
+/// Extract amplify_outputs.json from a ZIP archive
+fn extract_outputs_from_zip(zip_bytes: &[u8]) -> Result<Option<String>> {
+    let cursor = Cursor::new(zip_bytes);
+    let mut archive = ZipArchive::new(cursor).context("Failed to read ZIP archive")?;
+
+    // Look for amplify_outputs.json in the archive
+    for i in 0..archive.len() {
+        let mut file = archive
+            .by_index(i)
+            .with_context(|| format!("Failed to read file at index {}", i))?;
+
+        let file_name = file.name().to_lowercase();
+        if file_name.contains("amplify_outputs.json") || file_name.ends_with("amplify_outputs.json") {
+            let mut content = String::new();
+            file.read_to_string(&mut content)
+                .with_context(|| format!("Failed to read content of {}", file.name()))?;
+            return Ok(Some(content));
+        }
+    }
+
+    Ok(None)
+}

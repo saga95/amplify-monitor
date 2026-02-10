@@ -200,6 +200,25 @@ enum Commands {
         path: Option<String>,
     },
 
+    /// Download amplify_outputs.json after a successful deployment
+    DownloadOutputs {
+        /// The Amplify app ID (uses config default if not specified)
+        #[arg(long)]
+        app_id: Option<String>,
+
+        /// The branch name (uses config default if not specified)
+        #[arg(long)]
+        branch: Option<String>,
+
+        /// The job ID (optional, defaults to latest successful)
+        #[arg(long)]
+        job_id: Option<String>,
+
+        /// Output file path (defaults to ./amplify_outputs.json)
+        #[arg(long, short)]
+        output: Option<String>,
+    },
+
     /// Initialize a config file with sample settings
     Init,
 }
@@ -432,6 +451,45 @@ async fn main() -> Result<()> {
             output(&analysis, format)?;
         }
 
+        Commands::DownloadOutputs {
+            app_id,
+            branch,
+            job_id,
+            output: output_path,
+        } => {
+            let app_id = resolve_app_id(app_id, &config)?;
+            let branch = resolve_branch(branch, &config)?;
+
+            // Get the job (specified or latest successful)
+            let job = match job_id {
+                Some(id) => amplify::get_job(&client, &app_id, &branch, &id).await?,
+                None => amplify::latest_successful_job(&client, &app_id, &branch).await?,
+            };
+
+            // Determine output path
+            let output_file = output_path.unwrap_or_else(|| "amplify_outputs.json".to_string());
+            let output_path = std::path::Path::new(&output_file);
+
+            // Download and save the outputs file
+            let result = logs::download_outputs_file(
+                &client,
+                &app_id,
+                &branch,
+                &job.job_id,
+                output_path,
+            )
+            .await?;
+
+            let download_result = DownloadOutputsResult {
+                app_id,
+                branch,
+                job_id: job.job_id,
+                file_path: result.file_path,
+                success: true,
+            };
+            output(&download_result, format)?;
+        }
+
         Commands::Init => unreachable!(), // Handled above
     }
 
@@ -506,6 +564,16 @@ struct DeleteEnvResult {
     app_id: String,
     branch: String,
     name: String,
+    success: bool,
+}
+
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct DownloadOutputsResult {
+    app_id: String,
+    branch: String,
+    job_id: String,
+    file_path: String,
     success: bool,
 }
 
@@ -744,6 +812,15 @@ impl TextOutput for amplify::StopJobResult {
 impl TextOutput for migration::MigrationAnalysis {
     fn to_text(&self) -> String {
         migration::generate_report(self)
+    }
+}
+
+impl TextOutput for DownloadOutputsResult {
+    fn to_text(&self) -> String {
+        format!(
+            "✓ Downloaded amplify_outputs.json\n  App: {}\n  Branch: {}\n  Job: {}\n  Saved to: {}\n",
+            self.app_id, self.branch, self.job_id, self.file_path
+        )
     }
 }
 

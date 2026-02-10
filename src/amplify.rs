@@ -348,3 +348,45 @@ pub async fn stop_job(
         status: summary.status.as_str().to_string(),
     })
 }
+
+/// Find the most recent successful job for a branch
+pub async fn latest_successful_job(
+    client: &Client,
+    app_id: &str,
+    branch_name: &str,
+) -> Result<JobSummary> {
+    let jobs = list_jobs(client, app_id, branch_name).await?;
+
+    jobs.into_iter()
+        .find(|job| job.status == "SUCCEED")
+        .ok_or_else(|| anyhow!("No successful jobs found for {}/{}", app_id, branch_name))
+}
+
+/// Get artifact URLs from job steps
+pub async fn get_artifact_urls(
+    client: &Client,
+    app_id: &str,
+    branch_name: &str,
+    job_id: &str,
+) -> Result<Vec<(String, String)>> {
+    let response = client
+        .get_job()
+        .app_id(app_id)
+        .branch_name(branch_name)
+        .job_id(job_id)
+        .send()
+        .await
+        .with_context(|| format!("Failed to get job details for {}", job_id))?;
+
+    let job = response.job.ok_or_else(|| anyhow!("Job not found"))?;
+
+    let mut urls = Vec::new();
+    for step in job.steps {
+        if let Some(url) = step.artifacts_url {
+            let step_name = step.step_name.as_str().to_string();
+            urls.push((step_name, url));
+        }
+    }
+
+    Ok(urls)
+}
