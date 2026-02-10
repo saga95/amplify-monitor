@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.46] - 2026-02-10
+
+### Added
+- **Download Outputs Command** - New CLI command `download-outputs` to download `amplify_outputs.json` after successful deployments
+  - Automatically finds latest successful job or specify a specific job ID
+  - Downloads from job artifacts and extracts the configuration file
+  - Saves to project root by default or custom path with `--output` option
+  - Useful for syncing backend configuration with local development
+
 ## [0.1.38] - 2026-02-02
 
 ### Fixed
