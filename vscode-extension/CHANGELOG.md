@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.47] - 2026-02-10
+
+### Fixed
+- **Full Build Logs** - Diagnosis now returns complete build and deploy logs instead of truncated versions
+  - Added `View Full Build Logs` action in diagnosis tree to open logs in a new editor
+  - Copilot chat now shows full logs when explicitly requested
+  - Increased log excerpt size from 40 to 100 lines for better error context
+
 ## [0.1.46] - 2026-02-10
 
 ### Added

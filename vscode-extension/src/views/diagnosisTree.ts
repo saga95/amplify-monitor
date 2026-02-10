@@ -7,9 +7,16 @@ export class DiagnosisTreeProvider implements vscode.TreeDataProvider<DiagnosisT
     private _onDidChangeTreeData = new vscode.EventEmitter<DiagnosisTreeItem | undefined | null | void>();
     readonly onDidChangeTreeData = this._onDidChangeTreeData.event;
 
-    private result: DiagnosisResult | null = null;
+    private result: (DiagnosisResult & { rawLogs?: string }) | null = null;
 
     constructor(private cli: AmplifyMonitorCli) {}
+
+    /**
+     * Get the raw logs from the last diagnosis (for viewing full logs)
+     */
+    getRawLogs(): string | null {
+        return this.result?.rawLogs || null;
+    }
 
     /**
      * Get the current diagnosis result (for sharing)
@@ -20,7 +27,8 @@ export class DiagnosisTreeProvider implements vscode.TreeDataProvider<DiagnosisT
 
     async runDiagnosis(appId: string, branch: string, jobId?: string): Promise<void> {
         try {
-            this.result = await this.cli.diagnose(appId, branch, jobId);
+            // Use diagnoseWithLogs to get full build/deploy logs
+            this.result = await this.cli.diagnoseWithLogs(appId, branch, jobId);
             this._onDidChangeTreeData.fire();
 
             if (this.result.issues.length === 0) {
@@ -83,6 +91,20 @@ export class DiagnosisTreeProvider implements vscode.TreeDataProvider<DiagnosisT
                         issue
                     ));
                 }
+            }
+
+            // Add "View Full Logs" action if logs are available
+            if (this.result.rawLogs) {
+                const viewLogsItem = new DiagnosisTreeItem(
+                    '📋 View Full Build Logs',
+                    'view-logs',
+                    vscode.TreeItemCollapsibleState.None
+                );
+                viewLogsItem.command = {
+                    command: 'amplify-monitor.viewFullLogs',
+                    title: 'View Full Logs'
+                };
+                items.push(viewLogsItem);
             }
 
             return items;
@@ -174,7 +196,7 @@ export class DiagnosisTreeProvider implements vscode.TreeDataProvider<DiagnosisT
 export class DiagnosisTreeItem extends vscode.TreeItem {
     constructor(
         public readonly label: string,
-        public readonly type: 'header' | 'issue' | 'cause' | 'fixes-header' | 'fix' | 'success' | 'info' | 'quick-fix',
+        public readonly type: 'header' | 'issue' | 'cause' | 'fixes-header' | 'fix' | 'success' | 'info' | 'quick-fix' | 'view-logs',
         public readonly collapsibleState: vscode.TreeItemCollapsibleState,
         public readonly issue?: DiagnosisIssue,
         public readonly description?: string,
@@ -215,6 +237,10 @@ export class DiagnosisTreeItem extends vscode.TreeItem {
                 break;
             case 'info':
                 this.iconPath = new vscode.ThemeIcon('info');
+                break;
+            case 'view-logs':
+                this.iconPath = new vscode.ThemeIcon('file-text');
+                this.tooltip = 'Click to view full build and deploy logs';
                 break;
         }
     }

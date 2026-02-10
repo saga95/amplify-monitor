@@ -169,10 +169,8 @@ export class AmplifyCopilotParticipant {
         stream.markdown(`## 📋 Build Logs - Job #${buildContext.jobId}\n\n`);
         stream.markdown(`**App:** ${buildContext.appName} | **Branch:** ${buildContext.branch}\n\n`);
         stream.markdown('```\n');
-        stream.markdown(buildContext.logs.substring(0, 8000)); // Limit log size
-        if (buildContext.logs.length > 8000) {
-            stream.markdown('\n... (logs truncated, showing first 8000 chars)');
-        }
+        // Show full logs - no truncation for explicit log requests
+        stream.markdown(buildContext.logs);
         stream.markdown('\n```\n');
 
         return { metadata: { success: true } };
@@ -748,8 +746,8 @@ export class AmplifyCopilotParticipant {
         let contextBefore: string[] = [];
 
         for (const line of lines) {
-            // Keep a rolling buffer of context
-            if (contextBefore.length > 10) {
+            // Keep a rolling buffer of context (increased from 10 to 20)
+            if (contextBefore.length > 20) {
                 contextBefore.shift();
             }
             contextBefore.push(line);
@@ -757,23 +755,24 @@ export class AmplifyCopilotParticipant {
             // Check if this line contains an error indicator
             if (errorIndicators.some(indicator => line.toLowerCase().includes(indicator.toLowerCase()))) {
                 if (!foundError) {
-                    // Include context before first error
-                    relevantLines.push(...contextBefore.slice(-5));
+                    // Include context before first error (increased from 5 to 10)
+                    relevantLines.push(...contextBefore.slice(-10));
                     foundError = true;
                 }
                 relevantLines.push(line);
-            } else if (foundError && relevantLines.length < 50) {
-                // Include lines after error for context
+            } else if (foundError && relevantLines.length < 150) {
+                // Include lines after error for context (increased from 50 to 150)
                 relevantLines.push(line);
             }
         }
 
-        // If no errors found, return last 30 lines
+        // If no errors found, return last 50 lines (increased from 30)
         if (relevantLines.length === 0) {
-            relevantLines = lines.slice(-30);
+            relevantLines = lines.slice(-50);
         }
 
-        return relevantLines.slice(0, 40).join('\n');
+        // Return up to 100 lines (increased from 40)
+        return relevantLines.slice(0, 100).join('\n');
     }
 
     private extractErrorContext(logs: string): string {

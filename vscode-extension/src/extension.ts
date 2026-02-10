@@ -179,6 +179,22 @@ export function activate(context: vscode.ExtensionContext) {
             }
         }),
 
+        // View full build/deploy logs command
+        vscode.commands.registerCommand('amplify-monitor.viewFullLogs', async () => {
+            const rawLogs = diagnosisProvider.getRawLogs();
+            if (!rawLogs) {
+                vscode.window.showWarningMessage('No logs available. Run diagnosis first.');
+                return;
+            }
+
+            // Create a new untitled document with the full logs
+            const doc = await vscode.workspace.openTextDocument({
+                content: rawLogs,
+                language: 'log'
+            });
+            await vscode.window.showTextDocument(doc, { preview: false });
+        }),
+
         // Quick Fix command
         vscode.commands.registerCommand('amplify-monitor.applyQuickFix', async (pattern?: string, fixId?: string) => {
             const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
