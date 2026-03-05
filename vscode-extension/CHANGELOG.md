@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.48] - 2026-03-05
+
+### Fixed
+- **Cross-Account Diagnosis via Copilot** - Fixed `@amplify diagnose` and other Copilot chat commands not using the correct AWS profile in multi-account mode
+  - Copilot participant now reads the selected profile and passes it through all CLI calls (diagnose, logs, status)
+  - When no app is selected, the participant scans all configured multi-account profiles to find failed builds
+  - `handleStatusRequest` now shows apps from all configured profiles, not just the default
+  - Added `profile` parameter to `diagnose()`, `diagnoseWithLogs()`, `getBuildLogs()`, `getLatestFailedJob()`, `startBuild()`, `stopBuild()`, `setEnvVariable()`, and `deleteEnvVariable()` CLI methods
+  - Diagnosis tree view now passes the selected region and profile when running diagnosis
+
 ## [0.1.47] - 2026-02-10
 
 ### Fixed

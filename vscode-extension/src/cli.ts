@@ -259,7 +259,7 @@ export class AmplifyMonitorCli {
         return this.runCommand<AmplifyJob[]>(['jobs', '--app-id', validAppId, '--branch', validBranch], region, profile);
     }
 
-    async diagnose(appId: string, branch: string, jobId?: string, region?: string): Promise<DiagnosisResult> {
+    async diagnose(appId: string, branch: string, jobId?: string, region?: string, profile?: string): Promise<DiagnosisResult> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
         const args = ['diagnose', '--app-id', validAppId, '--branch', validBranch];
@@ -267,14 +267,14 @@ export class AmplifyMonitorCli {
             const validJobId = this.validateStringParam('jobId', jobId);
             args.push('--job-id', validJobId);
         }
-        return this.runCommand<DiagnosisResult>(args, region);
+        return this.runCommand<DiagnosisResult>(args, region, profile);
     }
 
-    async getLatestFailedJob(appId: string, branch: string, region?: string): Promise<AmplifyJob | null> {
+    async getLatestFailedJob(appId: string, branch: string, region?: string, profile?: string): Promise<AmplifyJob | null> {
         try {
             const validAppId = this.validateStringParam('appId', appId);
             const validBranch = this.validateStringParam('branch', branch);
-            return await this.runCommand<AmplifyJob>(['latest-failed', '--app-id', validAppId, '--branch', validBranch], region);
+            return await this.runCommand<AmplifyJob>(['latest-failed', '--app-id', validAppId, '--branch', validBranch], region, profile);
         } catch {
             return null;
         }
@@ -286,31 +286,31 @@ export class AmplifyMonitorCli {
         return this.runCommand<EnvVariable[]>(['env-vars', '--app-id', validAppId, '--branch', validBranch], region, profile);
     }
 
-    async setEnvVariable(appId: string, branch: string, name: string, value: string, region?: string): Promise<void> {
+    async setEnvVariable(appId: string, branch: string, name: string, value: string, region?: string, profile?: string): Promise<void> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
         const validName = this.validateStringParam('name', name);
-        await this.runCommand(['set-env', '--app-id', validAppId, '--branch', validBranch, '--name', validName, '--value', value], region);
+        await this.runCommand(['set-env', '--app-id', validAppId, '--branch', validBranch, '--name', validName, '--value', value], region, profile);
     }
 
-    async deleteEnvVariable(appId: string, branch: string, name: string, region?: string): Promise<void> {
+    async deleteEnvVariable(appId: string, branch: string, name: string, region?: string, profile?: string): Promise<void> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
         const validName = this.validateStringParam('name', name);
-        await this.runCommand(['delete-env', '--app-id', validAppId, '--branch', validBranch, '--name', validName], region);
+        await this.runCommand(['delete-env', '--app-id', validAppId, '--branch', validBranch, '--name', validName], region, profile);
     }
 
-    async startBuild(appId: string, branch: string, region?: string): Promise<StartJobResult> {
+    async startBuild(appId: string, branch: string, region?: string, profile?: string): Promise<StartJobResult> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
-        return this.runCommand<StartJobResult>(['start-build', '--app-id', validAppId, '--branch', validBranch], region);
+        return this.runCommand<StartJobResult>(['start-build', '--app-id', validAppId, '--branch', validBranch], region, profile);
     }
 
-    async stopBuild(appId: string, branch: string, jobId: string, region?: string): Promise<StopJobResult> {
+    async stopBuild(appId: string, branch: string, jobId: string, region?: string, profile?: string): Promise<StopJobResult> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
         const validJobId = this.validateStringParam('jobId', jobId);
-        return this.runCommand<StopJobResult>(['stop-build', '--app-id', validAppId, '--branch', validBranch, '--job-id', validJobId], region);
+        return this.runCommand<StopJobResult>(['stop-build', '--app-id', validAppId, '--branch', validBranch, '--job-id', validJobId], region, profile);
     }
 
     async analyzeMigration(projectPath: string): Promise<MigrationAnalysis> {
@@ -318,22 +318,22 @@ export class AmplifyMonitorCli {
         return this.runCommand<MigrationAnalysis>(['migration-analysis', '--path', validPath]);
     }
 
-    async getBuildLogs(appId: string, branch: string, jobId: string, region?: string): Promise<string> {
+    async getBuildLogs(appId: string, branch: string, jobId: string, region?: string, profile?: string): Promise<string> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
         const validJobId = this.validateStringParam('jobId', jobId);
         
         try {
-            const result = await this.runCommand<{ logs: string }>(['logs', '--app-id', validAppId, '--branch', validBranch, '--job-id', validJobId], region);
+            const result = await this.runCommand<{ logs: string }>(['logs', '--app-id', validAppId, '--branch', validBranch, '--job-id', validJobId], region, profile);
             return result.logs || '';
         } catch {
             // Fallback: try to get logs from diagnosis
-            const diagnosis = await this.diagnose(validAppId, validBranch, validJobId, region);
+            const diagnosis = await this.diagnose(validAppId, validBranch, validJobId, region, profile);
             return diagnosis.rawLogs || '';
         }
     }
 
-    async diagnoseWithLogs(appId: string, branch: string, jobId?: string, region?: string): Promise<DiagnosisResult & { rawLogs: string }> {
+    async diagnoseWithLogs(appId: string, branch: string, jobId?: string, region?: string, profile?: string): Promise<DiagnosisResult & { rawLogs: string }> {
         const validAppId = this.validateStringParam('appId', appId);
         const validBranch = this.validateStringParam('branch', branch);
         const args = ['diagnose', '--app-id', validAppId, '--branch', validBranch, '--include-logs'];
@@ -341,6 +341,6 @@ export class AmplifyMonitorCli {
             const validJobId = this.validateStringParam('jobId', jobId);
             args.push('--job-id', validJobId);
         }
-        return this.runCommand<DiagnosisResult & { rawLogs: string }>(args, region);
+        return this.runCommand<DiagnosisResult & { rawLogs: string }>(args, region, profile);
     }
 }

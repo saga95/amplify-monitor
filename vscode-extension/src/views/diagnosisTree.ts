@@ -27,8 +27,10 @@ export class DiagnosisTreeProvider implements vscode.TreeDataProvider<DiagnosisT
 
     async runDiagnosis(appId: string, branch: string, jobId?: string): Promise<void> {
         try {
+            const region = this.cli.getSelectedRegion();
+            const profile = this.cli.getSelectedProfile();
             // Use diagnoseWithLogs to get full build/deploy logs
-            this.result = await this.cli.diagnoseWithLogs(appId, branch, jobId);
+            this.result = await this.cli.diagnoseWithLogs(appId, branch, jobId, region, profile);
             this._onDidChangeTreeData.fire();
 
             if (this.result.issues.length === 0) {

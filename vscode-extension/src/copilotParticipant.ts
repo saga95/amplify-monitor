@@ -10,6 +10,8 @@ interface BuildLogContext {
     startTime?: string;
     endTime?: string;
     logs: string;
+    region?: string;
+    profile?: string;
     issues: Array<{
         pattern: string;
         rootCause: string;
@@ -105,6 +107,9 @@ export class AmplifyCopilotParticipant {
         stream.markdown(`**App:** ${buildContext.appName} (\`${buildContext.appId}\`)\n`);
         stream.markdown(`**Branch:** \`${buildContext.branch}\`\n`);
         stream.markdown(`**Job:** #${buildContext.jobId}\n`);
+        if (buildContext.profile) {
+            stream.markdown(`**Profile:** ${buildContext.profile}\n`);
+        }
         if (buildContext.startTime) {
             stream.markdown(`**Time:** ${buildContext.startTime}\n`);
         }
@@ -590,26 +595,50 @@ export class AmplifyCopilotParticipant {
         stream.progress('Fetching Amplify status...');
 
         try {
-            const appsResult = await this.cli.listApps();
+            const config = vscode.workspace.getConfiguration('amplifyMonitor');
+            const isMultiAccount = config.get<boolean>('multiAccount.enabled', false);
+            const configuredProfiles = config.get<string[]>('multiAccount.profiles', []);
+            const defaultProfile = this.cli.getAwsProfile() || 'default';
+
+            interface AppWithProfile { app: { appId: string; name: string; region?: string }; profile: string }
+            let allApps: AppWithProfile[] = [];
+
+            if (isMultiAccount && configuredProfiles.length > 0) {
+                const profilesToFetch = [...new Set([...configuredProfiles, defaultProfile])];
+                for (const p of profilesToFetch) {
+                    try {
+                        const apps = await this.cli.listAppsForProfile(p, true);
+                        allApps.push(...apps.map(app => ({ app, profile: p })));
+                    } catch {
+                        // Skip profiles that fail
+                    }
+                }
+            } else {
+                const apps = await this.cli.listApps();
+                allApps = apps.map(app => ({ app, profile: defaultProfile }));
+            }
             
-            if (!appsResult || appsResult.length === 0) {
+            if (allApps.length === 0) {
                 stream.markdown('No Amplify apps found. Make sure your AWS credentials are configured.');
                 return { metadata: { success: true } };
             }
 
             stream.markdown(`## 📊 Amplify Apps Status\n\n`);
 
-            for (const app of appsResult.slice(0, 5)) { // Limit to 5 apps
+            for (const { app, profile } of allApps.slice(0, 10)) {
                 stream.markdown(`### ${app.name}\n`);
                 stream.markdown(`- **App ID:** \`${app.appId}\`\n`);
                 stream.markdown(`- **Region:** ${app.region || 'N/A'}\n`);
+                if (isMultiAccount) {
+                    stream.markdown(`- **Profile:** ${profile}\n`);
+                }
                 
-                // Try to get latest build status
+                // Try to get latest build status using correct profile
                 try {
-                    const branches = await this.cli.listBranches(app.appId);
+                    const branches = await this.cli.listBranches(app.appId, app.region, profile);
                     if (branches && branches.length > 0) {
                         for (const branch of branches.slice(0, 3)) {
-                            const jobs = await this.cli.listJobs(app.appId, branch.branchName);
+                            const jobs = await this.cli.listJobs(app.appId, branch.branchName, app.region, profile);
                             if (jobs && jobs.length > 0) {
                                 const latest = jobs[0];
                                 const statusIcon = latest.status === 'SUCCEED' ? '✅' : 
@@ -659,22 +688,47 @@ export class AmplifyCopilotParticipant {
             let appId = this.cli.getSelectedApp();
             let branch = this.cli.getSelectedBranch();
             let region = this.cli.getSelectedRegion();
+            let profile = this.cli.getSelectedProfile();
 
-            // If no selection, try to find a failed build across apps
+            // If no selection, try to find a failed build across apps (including multi-account)
             if (!appId) {
-                const apps = await this.cli.listApps();
-                if (!apps || apps.length === 0) return null;
+                const config = vscode.workspace.getConfiguration('amplifyMonitor');
+                const isMultiAccount = config.get<boolean>('multiAccount.enabled', false);
+                const configuredProfiles = config.get<string[]>('multiAccount.profiles', []);
+                const defaultProfile = this.cli.getAwsProfile() || 'default';
 
-                for (const app of apps) {
-                    const branches = await this.cli.listBranches(app.appId, app.region);
+                interface AppWithProfile { app: { appId: string; name: string; region?: string }; profile: string }
+                let allApps: AppWithProfile[] = [];
+
+                if (isMultiAccount && configuredProfiles.length > 0) {
+                    // Multi-account: fetch apps from all profiles
+                    const profilesToFetch = [...new Set([...configuredProfiles, defaultProfile])];
+                    for (const p of profilesToFetch) {
+                        try {
+                            const apps = await this.cli.listAppsForProfile(p, true);
+                            allApps.push(...apps.map(app => ({ app, profile: p })));
+                        } catch {
+                            // Skip profiles that fail
+                        }
+                    }
+                } else {
+                    const apps = await this.cli.listApps();
+                    allApps = apps.map(app => ({ app, profile: defaultProfile }));
+                }
+
+                if (allApps.length === 0) return null;
+
+                for (const { app, profile: appProfile } of allApps) {
+                    const branches = await this.cli.listBranches(app.appId, app.region, appProfile);
                     if (!branches) continue;
 
                     for (const br of branches) {
-                        const jobs = await this.cli.listJobs(app.appId, br.branchName, app.region);
+                        const jobs = await this.cli.listJobs(app.appId, br.branchName, app.region, appProfile);
                         if (jobs && jobs.length > 0 && jobs[0].status === 'FAILED') {
                             appId = app.appId;
                             branch = br.branchName;
                             region = app.region;
+                            profile = appProfile;
                             break;
                         }
                     }
@@ -684,37 +738,47 @@ export class AmplifyCopilotParticipant {
 
             if (!appId || !branch) return null;
 
-            // Get app info
-            const apps = await this.cli.listApps();
-            const appInfo = apps?.find(a => a.appId === appId);
-            if (appInfo?.region) {
-                region = appInfo.region;
+            // Get app info - use the correct profile
+            let appName = appId;
+            try {
+                const apps = profile 
+                    ? await this.cli.listAppsForProfile(profile, true) 
+                    : await this.cli.listApps();
+                const appInfo = apps?.find(a => a.appId === appId);
+                if (appInfo?.region) {
+                    region = appInfo.region;
+                }
+                if (appInfo?.name) {
+                    appName = appInfo.name;
+                }
+            } catch {
+                // Continue with what we have
             }
 
-            // Get latest job
-            const jobs = await this.cli.listJobs(appId, branch, region);
+            // Get latest job using the correct profile
+            const jobs = await this.cli.listJobs(appId, branch, region, profile);
             if (!jobs || jobs.length === 0) return null;
 
             const latestJob = jobs.find(j => j.status === 'FAILED') || jobs[0];
             
-            // Run diagnosis with logs to get full context
+            // Run diagnosis with logs to get full context - pass profile
             let diagnosisResult;
             let rawLogs = '';
             
             try {
                 // Try to get diagnosis with logs
-                diagnosisResult = await this.cli.diagnoseWithLogs(appId, branch, latestJob.jobId, region);
+                diagnosisResult = await this.cli.diagnoseWithLogs(appId, branch, latestJob.jobId, region, profile);
                 rawLogs = diagnosisResult?.rawLogs || '';
             } catch (e) {
                 console.error('diagnoseWithLogs failed, falling back:', e);
                 // Fallback to regular diagnosis
-                diagnosisResult = await this.cli.diagnose(appId, branch, latestJob.jobId, region);
+                diagnosisResult = await this.cli.diagnose(appId, branch, latestJob.jobId, region, profile);
             }
             
             // If still no logs, try fetching them directly
             if (!rawLogs) {
                 try {
-                    rawLogs = await this.cli.getBuildLogs(appId, branch, latestJob.jobId, region);
+                    rawLogs = await this.cli.getBuildLogs(appId, branch, latestJob.jobId, region, profile);
                 } catch (e) {
                     console.error('Failed to fetch build logs:', e);
                 }
@@ -722,13 +786,15 @@ export class AmplifyCopilotParticipant {
             
             return {
                 appId,
-                appName: appInfo?.name || appId,
+                appName,
                 branch,
                 jobId: latestJob.jobId,
                 status: latestJob.status,
                 startTime: latestJob.startTime,
                 endTime: latestJob.endTime,
                 logs: rawLogs,
+                region,
+                profile,
                 issues: diagnosisResult?.issues || []
             };
         } catch (error) {
