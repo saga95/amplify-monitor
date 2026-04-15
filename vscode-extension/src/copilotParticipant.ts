@@ -74,16 +74,17 @@ export class AmplifyCopilotParticipant {
         token: vscode.CancellationToken
     ): Promise<vscode.ChatResult> {
         const query = request.prompt.toLowerCase();
+        const command = request.command; // Slash command: /diagnose, /fix, /logs, /status
 
         try {
-            // Handle different intents
-            if (query.includes('diagnose') || query.includes('what failed') || query.includes('build error') || query.includes('why did') || query.includes('analyze')) {
+            // Route by slash command first, then fallback to keyword matching
+            if (command === 'diagnose' || query.includes('diagnose') || query.includes('what failed') || query.includes('build error') || query.includes('why did') || query.includes('analyze')) {
                 return await this.handleDiagnoseRequest(request, stream, token);
-            } else if (query.includes('fix') || query.includes('resolve') || query.includes('solve')) {
+            } else if (command === 'fix' || query.includes('fix') || query.includes('resolve') || query.includes('solve')) {
                 return await this.handleFixRequest(request, stream, token);
-            } else if (query.includes('logs') || query.includes('show log') || query.includes('get log')) {
+            } else if (command === 'logs' || query.includes('logs') || query.includes('show log') || query.includes('get log')) {
                 return await this.handleLogsRequest(request, stream, token);
-            } else if (query.includes('status') || query.includes('builds') || query.includes('jobs')) {
+            } else if (command === 'status' || query.includes('status') || query.includes('builds') || query.includes('jobs')) {
                 return await this.handleStatusRequest(request, stream, token);
             } else {
                 // Default: try to be helpful with context
@@ -205,9 +206,13 @@ export class AmplifyCopilotParticipant {
         stream: vscode.ChatResponseStream,
         token: vscode.CancellationToken
     ): Promise<vscode.ChatResult> {
-        stream.progress('Fetching build logs...');
-
-        const buildContext = await this.fetchLatestFailedBuildLogs();
+        // Reuse existing context from a previous diagnose call if available
+        let buildContext = this.lastBuildContext;
+        
+        if (!buildContext) {
+            stream.progress('Fetching build logs...');
+            buildContext = await this.fetchLatestFailedBuildLogs();
+        }
         
         if (!buildContext) {
             stream.markdown('No recent failed builds found.');
@@ -783,7 +788,7 @@ export class AmplifyCopilotParticipant {
             let region = this.cli.getSelectedRegion();
             let profile = this.cli.getSelectedProfile();
 
-            // If no selection, try to find a failed build across apps (including multi-account)
+            // If no selection, try to find the most recently failed build across apps
             if (!appId) {
                 const config = vscode.workspace.getConfiguration('amplifyMonitor');
                 const isMultiAccount = config.get<boolean>('multiAccount.enabled', false);
@@ -811,21 +816,43 @@ export class AmplifyCopilotParticipant {
 
                 if (allApps.length === 0) return null;
 
-                for (const { app, profile: appProfile } of allApps) {
-                    const branches = await this.cli.listBranches(app.appId, app.region, appProfile);
-                    if (!branches) continue;
+                // Find the most recently failed job across ALL apps and branches
+                let mostRecentFailure: { appId: string; branch: string; region?: string; profile: string; time: string } | null = null;
 
-                    for (const br of branches) {
-                        const jobs = await this.cli.listJobs(app.appId, br.branchName, app.region, appProfile);
-                        if (jobs && jobs.length > 0 && jobs[0].status === 'FAILED') {
-                            appId = app.appId;
-                            branch = br.branchName;
-                            region = app.region;
-                            profile = appProfile;
-                            break;
+                for (const { app, profile: appProfile } of allApps) {
+                    try {
+                        const branches = await this.cli.listBranches(app.appId, app.region, appProfile);
+                        if (!branches) continue;
+
+                        for (const br of branches) {
+                            try {
+                                const jobs = await this.cli.listJobs(app.appId, br.branchName, app.region, appProfile);
+                                if (jobs && jobs.length > 0 && jobs[0].status === 'FAILED') {
+                                    const jobTime = jobs[0].startTime || '';
+                                    if (!mostRecentFailure || jobTime > mostRecentFailure.time) {
+                                        mostRecentFailure = {
+                                            appId: app.appId,
+                                            branch: br.branchName,
+                                            region: app.region,
+                                            profile: appProfile,
+                                            time: jobTime,
+                                        };
+                                    }
+                                }
+                            } catch {
+                                // Skip branches that fail
+                            }
                         }
+                    } catch {
+                        // Skip apps that fail
                     }
-                    if (appId && branch) break;
+                }
+
+                if (mostRecentFailure) {
+                    appId = mostRecentFailure.appId;
+                    branch = mostRecentFailure.branch;
+                    region = mostRecentFailure.region;
+                    profile = mostRecentFailure.profile;
                 }
             }
 

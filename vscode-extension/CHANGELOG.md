@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.51] - 2026-04-15
+
+### Fixed
+- **Slash commands now work** — `@amplify /diagnose`, `/fix`, `/logs`, `/status` are now properly routed via `request.command` instead of relying solely on keyword matching in the prompt text
+- **Correct app detection** — When no app is selected in the tree view, the extension now finds the **most recently failed** build across all apps/profiles instead of picking the first app with any failed job (which could be years old)
+- **"Show logs" no longer hangs** — `@amplify /logs` reuses the context from a previous `@amplify /diagnose` call instead of re-fetching everything from AWS
+
 ## [0.1.50] - 2026-04-15
 
 ### Fixed
