@@ -2,7 +2,7 @@ import * as vscode from 'vscode';
 import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
-import { AmplifyMonitorCli } from './cli';
+import { AmplifyMonitorCli, DiagnosisResult } from './cli';
 
 interface BuildLogContext {
     appId: string;
@@ -775,42 +775,6 @@ export class AmplifyCopilotParticipant {
         return { metadata: { success: true } };
     }
 
-    /**
-     * Save build/deploy logs as temporary files and return their URIs
-     * so Copilot can reference/read them as context documents.
-     */
-    private async saveLogFiles(
-        appId: string,
-        jobId: string,
-        buildLog: string,
-        deployLog: string
-    ): Promise<{ buildUri?: vscode.Uri; deployUri?: vscode.Uri }> {
-        const result: { buildUri?: vscode.Uri; deployUri?: vscode.Uri } = {};
-        const tmpDir = path.join(os.tmpdir(), 'amplify-monitor-logs');
-
-        try {
-            if (!fs.existsSync(tmpDir)) {
-                fs.mkdirSync(tmpDir, { recursive: true });
-            }
-
-            if (buildLog) {
-                const buildPath = path.join(tmpDir, `${appId}-${jobId}-BUILD.txt`);
-                fs.writeFileSync(buildPath, buildLog, 'utf-8');
-                result.buildUri = vscode.Uri.file(buildPath);
-            }
-
-            if (deployLog) {
-                const deployPath = path.join(tmpDir, `${appId}-${jobId}-DEPLOY.txt`);
-                fs.writeFileSync(deployPath, deployLog, 'utf-8');
-                result.deployUri = vscode.Uri.file(deployPath);
-            }
-        } catch (e) {
-            console.warn('Failed to save log files to temp dir:', e);
-        }
-
-        return result;
-    }
-
     private async fetchLatestFailedBuildLogs(): Promise<BuildLogContext | null> {
         try {
             // Get selected app/branch or find latest failed
@@ -890,42 +854,47 @@ export class AmplifyCopilotParticipant {
 
             const latestJob = jobs.find(j => j.status === 'FAILED') || jobs[0];
             
-            // Run diagnosis with logs to get full context - pass profile
-            let diagnosisResult;
-            let rawLogs = '';
+            // Use diagnoseAndSaveLogs: CLI writes logs directly to disk (avoids stdout buffer limits)
+            // then returns diagnosis result with matchedLines + file paths
+            const logDir = path.join(os.tmpdir(), 'amplify-monitor-logs', `${appId}-${latestJob.jobId}`);
+            let diagnosisResult: DiagnosisResult | undefined;
             let buildLog = '';
             let deployLog = '';
-            
+            let rawLogs = '';
+
             try {
-                // Try to get diagnosis with embedded logs
-                diagnosisResult = await this.cli.diagnoseWithLogs(appId, branch, latestJob.jobId, region, profile);
-                rawLogs = diagnosisResult?.rawLogs || '';
-                buildLog = diagnosisResult?.buildLog || '';
-                deployLog = diagnosisResult?.deployLog || '';
+                diagnosisResult = await this.cli.diagnoseAndSaveLogs(appId, branch, logDir, latestJob.jobId, region, profile);
+
+                // Read log files that the CLI saved to disk
+                const buildLogPath = diagnosisResult?.buildLogPath;
+                const deployLogPath = diagnosisResult?.deployLogPath;
+
+                if (buildLogPath && fs.existsSync(buildLogPath)) {
+                    buildLog = fs.readFileSync(buildLogPath, 'utf-8');
+                }
+                if (deployLogPath && fs.existsSync(deployLogPath)) {
+                    deployLog = fs.readFileSync(deployLogPath, 'utf-8');
+                }
+                rawLogs = [buildLog, deployLog].filter(Boolean).join('\n\n--- DEPLOY LOG ---\n\n');
             } catch (e) {
-                console.warn('diagnoseWithLogs failed (possibly large output), falling back to diagnosis without logs:', e);
+                console.warn('diagnoseAndSaveLogs failed, falling back to diagnose:', e);
                 try {
-                    // Fallback to diagnosis without logs — still gets issues with matchedLines
                     diagnosisResult = await this.cli.diagnose(appId, branch, latestJob.jobId, region, profile);
                 } catch (e2) {
                     console.error('diagnose also failed:', e2);
                 }
             }
-            
-            // If still no logs, try fetching them separately
-            if (!rawLogs && !buildLog) {
-                try {
-                    const logsResult = await this.cli.getBuildLogs(appId, branch, latestJob.jobId, region, profile);
-                    rawLogs = logsResult.logs;
-                    buildLog = logsResult.buildLog;
-                    deployLog = logsResult.deployLog;
-                } catch (e) {
-                    console.warn('getBuildLogs failed — issues will show matched lines only:', e);
-                }
-            }
 
-            // Save build/deploy logs as temp files so Copilot can reference them
-            const logFileUris = await this.saveLogFiles(appId, latestJob.jobId, buildLog, deployLog);
+            // Build file URIs for Copilot references
+            const logFileUris: { buildUri?: vscode.Uri; deployUri?: vscode.Uri } = {};
+            const buildFilePath = path.join(logDir, 'BUILD.txt');
+            const deployFilePath = path.join(logDir, 'DEPLOY.txt');
+            if (fs.existsSync(buildFilePath)) {
+                logFileUris.buildUri = vscode.Uri.file(buildFilePath);
+            }
+            if (fs.existsSync(deployFilePath)) {
+                logFileUris.deployUri = vscode.Uri.file(deployFilePath);
+            }
             
             return {
                 appId,

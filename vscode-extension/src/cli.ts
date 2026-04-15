@@ -41,6 +41,8 @@ export interface DiagnosisResult {
     rawLogs?: string;
     buildLog?: string;
     deployLog?: string;
+    buildLogPath?: string;
+    deployLogPath?: string;
 }
 
 export interface EnvVariable {
@@ -345,5 +347,20 @@ export class AmplifyMonitorCli {
             args.push('--job-id', validJobId);
         }
         return this.runCommand<DiagnosisResult & { rawLogs: string; buildLog: string; deployLog: string }>(args, region, profile);
+    }
+
+    /**
+     * Run diagnosis and save log files directly to disk (avoids stdout buffer limits).
+     * Returns diagnosis result with file paths to BUILD.txt and DEPLOY.txt.
+     */
+    async diagnoseAndSaveLogs(appId: string, branch: string, logOutputDir: string, jobId?: string, region?: string, profile?: string): Promise<DiagnosisResult> {
+        const validAppId = this.validateStringParam('appId', appId);
+        const validBranch = this.validateStringParam('branch', branch);
+        const args = ['diagnose', '--app-id', validAppId, '--branch', validBranch, '--log-output-dir', logOutputDir];
+        if (jobId) {
+            const validJobId = this.validateStringParam('jobId', jobId);
+            args.push('--job-id', validJobId);
+        }
+        return this.runCommand<DiagnosisResult>(args, region, profile);
     }
 }

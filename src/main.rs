@@ -105,6 +105,10 @@ enum Commands {
         /// Include raw build logs in output
         #[arg(long)]
         include_logs: bool,
+
+        /// Directory to save BUILD.txt and DEPLOY.txt log files (avoids large stdout)
+        #[arg(long)]
+        log_output_dir: Option<String>,
     },
 
     /// Get raw build logs for a job
@@ -314,6 +318,7 @@ async fn main() -> Result<()> {
             branch,
             job_id,
             include_logs,
+            log_output_dir,
         } => {
             let app_id = resolve_app_id(app_id, &config)?;
             let branch = resolve_branch(branch, &config)?;
@@ -331,6 +336,29 @@ async fn main() -> Result<()> {
             // Parse logs for failure patterns
             let issues = parser::analyze_logs(&log_content);
 
+            // Save log files to disk if output dir specified
+            let (build_log_path, deploy_log_path) = if let Some(ref dir) = log_output_dir {
+                let dir_path = std::path::Path::new(dir);
+                std::fs::create_dir_all(dir_path)?;
+
+                let build_path = dir_path.join("BUILD.txt");
+                let deploy_path = dir_path.join("DEPLOY.txt");
+
+                if !log_content.build_log.is_empty() {
+                    std::fs::write(&build_path, &log_content.build_log)?;
+                }
+                if !log_content.deploy_log.is_empty() {
+                    std::fs::write(&deploy_path, &log_content.deploy_log)?;
+                }
+
+                (
+                    if !log_content.build_log.is_empty() { Some(build_path.to_string_lossy().to_string()) } else { None },
+                    if !log_content.deploy_log.is_empty() { Some(deploy_path.to_string_lossy().to_string()) } else { None },
+                )
+            } else {
+                (None, None)
+            };
+
             // Build diagnosis output
             let diagnosis = DiagnosisResultWithLogs {
                 app_id,
@@ -341,6 +369,8 @@ async fn main() -> Result<()> {
                 raw_logs: if include_logs { Some(log_content.raw_content.clone()) } else { None },
                 build_log: if include_logs { Some(log_content.build_log.clone()) } else { None },
                 deploy_log: if include_logs { Some(log_content.deploy_log.clone()) } else { None },
+                build_log_path,
+                deploy_log_path,
             };
 
             output(&diagnosis, format)?;
@@ -546,6 +576,10 @@ struct DiagnosisResultWithLogs {
     build_log: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     deploy_log: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    build_log_path: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    deploy_log_path: Option<String>,
 }
 
 #[derive(Serialize)]

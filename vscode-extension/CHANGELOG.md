@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.50] - 2026-04-15
+
+### Fixed
+- **Log Fetching via File I/O** — Build/deploy logs are now saved directly to disk by the Rust CLI (`--log-output-dir`) instead of piped through stdout JSON, fixing failures when logs exceed buffer limits
+- **Rust CLI Binary** — Rebuilt with `matched_lines` support so detected issues show actual log lines from the build
+
 ## [0.1.49] - 2026-04-15
 
 ### Fixed

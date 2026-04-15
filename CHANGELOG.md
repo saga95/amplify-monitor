@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.50] - 2026-04-15
+
+### Added
+- `--log-output-dir <dir>` flag on `diagnose` command — writes BUILD.txt and DEPLOY.txt directly to disk, returns file paths in JSON output. Avoids stdout buffer overflow for large build logs.
+- `buildLogPath` and `deployLogPath` fields in diagnosis JSON output when `--log-output-dir` is used
+
 ## [0.1.49] - 2026-04-15
 
 ### Changed
