@@ -14,6 +14,9 @@ pub struct Issue {
     pub pattern: String,
     pub root_cause: String,
     pub suggested_fixes: Vec<String>,
+    /// Actual log lines that matched this pattern (for user context)
+    #[serde(skip_serializing_if = "Vec::is_empty")]
+    pub matched_lines: Vec<String>,
 }
 
 /// Helper to check if any pattern matches (case-sensitive)
@@ -38,6 +41,36 @@ fn matches_with_indicator(content: &str, patterns: &[&str], indicators: &[&str])
             .any(|i| lower.contains(&i.to_lowercase()))
 }
 
+/// Extract lines from content that match any of the given patterns (case-insensitive),
+/// including 1 line of context before and after each match. Returns up to `max_lines` lines.
+fn extract_matched_lines(content: &str, patterns: &[&str], max_lines: usize) -> Vec<String> {
+    let lines: Vec<&str> = content.lines().collect();
+    let lower_content_lines: Vec<String> = lines.iter().map(|l| l.to_lowercase()).collect();
+    let mut matched_indices = std::collections::BTreeSet::new();
+
+    for (i, lower_line) in lower_content_lines.iter().enumerate() {
+        for pat in patterns {
+            if lower_line.contains(&pat.to_lowercase()) {
+                // Add the matched line and 1 line of context
+                if i > 0 {
+                    matched_indices.insert(i - 1);
+                }
+                matched_indices.insert(i);
+                if i + 1 < lines.len() {
+                    matched_indices.insert(i + 1);
+                }
+                break;
+            }
+        }
+    }
+
+    matched_indices
+        .into_iter()
+        .take(max_lines)
+        .map(|i| lines[i].to_string())
+        .collect()
+}
+
 /// Macro to reduce boilerplate for simple pattern checkers
 macro_rules! define_checker {
     (
@@ -50,10 +83,12 @@ macro_rules! define_checker {
         fn $fn_name(content: &str) -> Option<Issue> {
             let patterns = [$($p),+];
             if matches_any_ci(content, &patterns) {
+                let matched = extract_matched_lines(content, &patterns, 15);
                 return Some(Issue {
                     pattern: $pattern.to_string(),
                     root_cause: $root_cause.to_string(),
                     suggested_fixes: vec![$($fix.to_string()),+],
+                    matched_lines: matched,
                 });
             }
             None
@@ -71,10 +106,14 @@ macro_rules! define_checker {
             let patterns = [$($p),+];
             let indicators = [$($i),+];
             if matches_with_indicator(content, &patterns, &indicators) {
+                // Combine patterns and indicators for line extraction
+                let all_patterns: Vec<&str> = patterns.iter().chain(indicators.iter()).copied().collect();
+                let matched = extract_matched_lines(content, &all_patterns, 15);
                 return Some(Issue {
                     pattern: $pattern.to_string(),
                     root_cause: $root_cause.to_string(),
                     suggested_fixes: vec![$($fix.to_string()),+],
+                    matched_lines: matched,
                 });
             }
             None
@@ -430,6 +469,8 @@ fn check_lockfile_mismatch(content: &str) -> Option<Issue> {
     let has_yarn_lock = content.contains("yarn.lock");
 
     if has_npm_lock_error && (has_pnpm_lock || has_yarn_lock) {
+        let lock_patterns: &[&str] = &["package-lock.json", "pnpm-lock.yaml", "yarn.lock", "npm WARN"];
+        let matched = extract_matched_lines(content, lock_patterns, 15);
         return Some(Issue {
             pattern: "lockfile_mismatch".to_string(),
             root_cause: "Multiple lock files detected or package manager mismatch".to_string(),
@@ -438,6 +479,7 @@ fn check_lockfile_mismatch(content: &str) -> Option<Issue> {
                 "Update amplify.yml to use the correct package manager".to_string(),
                 "Run 'npm ci' with package-lock.json OR 'pnpm install --frozen-lockfile' with pnpm-lock.yaml".to_string(),
             ],
+            matched_lines: matched,
         });
     }
 
@@ -456,6 +498,8 @@ fn check_package_manager_conflict(content: &str) -> Option<Issue> {
         .count();
 
     if count > 1 {
+        let pm_patterns: &[&str] = &["npm install", "npm ci", "pnpm install", "yarn install"];
+        let matched = extract_matched_lines(content, pm_patterns, 15);
         return Some(Issue {
             pattern: "package_manager_conflict".to_string(),
             root_cause: "Multiple package managers detected in build".to_string(),
@@ -464,6 +508,7 @@ fn check_package_manager_conflict(content: &str) -> Option<Issue> {
                 "Update amplify.yml preBuild and build commands".to_string(),
                 "Ensure CI environment matches local development".to_string(),
             ],
+            matched_lines: matched,
         });
     }
 
@@ -488,6 +533,8 @@ fn check_missing_env_vars(content: &str) -> Option<Issue> {
         if content.contains(pattern) {
             for indicator in error_indicators {
                 if content.to_lowercase().contains(indicator) {
+                    let env_patterns: Vec<&str> = patterns.iter().chain(error_indicators.iter()).copied().collect();
+                    let matched = extract_matched_lines(content, &env_patterns, 15);
                     return Some(Issue {
                         pattern: "missing_env_vars".to_string(),
                         root_cause: "Required environment variables are not configured".to_string(),
@@ -497,6 +544,7 @@ fn check_missing_env_vars(content: &str) -> Option<Issue> {
                             "Ensure variables are set for the correct branch/environment"
                                 .to_string(),
                         ],
+                        matched_lines: matched,
                     });
                 }
             }
@@ -522,6 +570,8 @@ fn check_artifact_path_error(content: &str) -> Option<Issue> {
         if content.contains(pattern) {
             for ctx in error_context {
                 if content.contains(ctx) {
+                    let all_patterns: Vec<&str> = patterns.iter().chain(error_context.iter()).copied().collect();
+                    let matched = extract_matched_lines(content, &all_patterns, 15);
                     return Some(Issue {
                         pattern: "artifact_path_error".to_string(),
                         root_cause: "Build artifacts directory not found or misconfigured"
@@ -532,6 +582,7 @@ fn check_artifact_path_error(content: &str) -> Option<Issue> {
                             "Common paths: 'dist', 'build', '.next', 'out'".to_string(),
                             "Ensure build command actually generates output".to_string(),
                         ],
+                        matched_lines: matched,
                     });
                 }
             }

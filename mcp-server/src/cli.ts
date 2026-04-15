@@ -71,6 +71,7 @@ export interface DiagnosisIssue {
     pattern: string;
     rootCause: string;
     suggestedFixes: string[];
+    matchedLines?: string[];
 }
 
 export interface DiagnosisResult {

@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.1.49] - 2026-04-15
+
+### Fixed
+- **Copilot Chat: Actual Build Logs in Context** - Build and deploy logs are now saved as temp files and attached to Copilot chat via `stream.reference()`, so Copilot can read and reason about the actual error content
+- **Copilot Chat: Fix Request Rewrite** - Removed hardcoded fix instructions (e.g. `Expected '{', got ')'`); Copilot now analyzes the real build log and referenced source files to produce correct, context-aware fixes
+- **Copilot Chat: Split BUILD/DEPLOY Logs** - `@amplify logs` now shows BUILD and DEPLOY logs with separate headers instead of a single raw dump
+- **Copilot Chat: Log File References on Diagnose** - `@amplify diagnose` attaches build/deploy log files so follow-up questions have full context
+
+### Added
+- `matched_lines` field on diagnosis issues — shows the actual log lines that matched each failure pattern
+- `buildLog` and `deployLog` fields exposed from Rust CLI through to the VS Code extension
+- `saveLogFiles()` helper to persist logs as temp files for Copilot context
+
+### Removed
+- `getCodeFixForPattern()` — canned fix strings replaced by actual log-based Copilot reasoning
+
 ## [0.1.48] - 2026-03-05
 
 ### Fixed

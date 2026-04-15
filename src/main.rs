@@ -339,6 +339,8 @@ async fn main() -> Result<()> {
                 status: job.status,
                 issues,
                 raw_logs: if include_logs { Some(log_content.raw_content.clone()) } else { None },
+                build_log: if include_logs { Some(log_content.build_log.clone()) } else { None },
+                deploy_log: if include_logs { Some(log_content.deploy_log.clone()) } else { None },
             };
 
             output(&diagnosis, format)?;
@@ -360,6 +362,8 @@ async fn main() -> Result<()> {
                 branch,
                 job_id,
                 logs: log_content.raw_content,
+                build_log: log_content.build_log,
+                deploy_log: log_content.deploy_log,
             };
 
             output(&result, format)?;
@@ -538,6 +542,10 @@ struct DiagnosisResultWithLogs {
     issues: Vec<parser::Issue>,
     #[serde(skip_serializing_if = "Option::is_none")]
     raw_logs: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    build_log: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    deploy_log: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -547,6 +555,8 @@ struct LogsResult {
     branch: String,
     job_id: String,
     logs: String,
+    build_log: String,
+    deploy_log: String,
 }
 
 #[derive(Serialize)]

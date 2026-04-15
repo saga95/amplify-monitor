@@ -1,4 +1,7 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
+import * as os from 'os';
+import * as fs from 'fs';
 import { AmplifyMonitorCli } from './cli';
 
 interface BuildLogContext {
@@ -10,13 +13,18 @@ interface BuildLogContext {
     startTime?: string;
     endTime?: string;
     logs: string;
+    buildLog: string;
+    deployLog: string;
     region?: string;
     profile?: string;
     issues: Array<{
         pattern: string;
         rootCause: string;
         suggestedFixes: string[];
+        matchedLines?: string[];
     }>;
+    /** URIs to saved BUILD.txt and DEPLOY.txt temp files */
+    logFileUris?: { buildUri?: vscode.Uri; deployUri?: vscode.Uri };
 }
 
 export class AmplifyCopilotParticipant {
@@ -103,17 +111,34 @@ export class AmplifyCopilotParticipant {
 
         this.lastBuildContext = buildContext;
 
+        // Reference build/deploy log files so Copilot can read them for follow-up questions
+        if (buildContext.logFileUris?.buildUri) {
+            stream.reference(buildContext.logFileUris.buildUri);
+        }
+        if (buildContext.logFileUris?.deployUri) {
+            stream.reference(buildContext.logFileUris.deployUri);
+        }
+
+        // Header with build info
+        const consoleUrl = buildContext.region 
+            ? `https://${buildContext.region}.console.aws.amazon.com/amplify/home#/${buildContext.appId}/${buildContext.branch}/${buildContext.jobId}`
+            : undefined;
+
         stream.markdown(`## 🔴 Build Failure Analysis\n\n`);
-        stream.markdown(`**App:** ${buildContext.appName} (\`${buildContext.appId}\`)\n`);
-        stream.markdown(`**Branch:** \`${buildContext.branch}\`\n`);
-        stream.markdown(`**Job:** #${buildContext.jobId}\n`);
+        stream.markdown(`| | |\n|---|---|\n`);
+        stream.markdown(`| **App** | ${buildContext.appName} (\`${buildContext.appId}\`) |\n`);
+        stream.markdown(`| **Branch** | \`${buildContext.branch}\` |\n`);
+        stream.markdown(`| **Job** | #${buildContext.jobId} |\n`);
         if (buildContext.profile) {
-            stream.markdown(`**Profile:** ${buildContext.profile}\n`);
+            stream.markdown(`| **Profile** | ${buildContext.profile} |\n`);
         }
         if (buildContext.startTime) {
-            stream.markdown(`**Time:** ${buildContext.startTime}\n`);
+            stream.markdown(`| **Time** | ${buildContext.startTime} |\n`);
         }
-        stream.markdown(`\n---\n\n`);
+        if (consoleUrl) {
+            stream.markdown(`| **Console** | [Open in AWS Console](${consoleUrl}) |\n`);
+        }
+        stream.markdown(`\n`);
 
         if (buildContext.issues.length > 0) {
             stream.markdown(`### Issues Detected (${buildContext.issues.length})\n\n`);
@@ -122,25 +147,45 @@ export class AmplifyCopilotParticipant {
                 const issue = buildContext.issues[i];
                 stream.markdown(`#### ${i + 1}. ${issue.pattern.replace(/_/g, ' ')}\n\n`);
                 stream.markdown(`**Root Cause:** ${issue.rootCause}\n\n`);
+
+                // Show actual matched log lines inline with the issue
+                if (issue.matchedLines && issue.matchedLines.length > 0) {
+                    stream.markdown(`**From build log:**\n`);
+                    stream.markdown('```\n');
+                    stream.markdown(issue.matchedLines.join('\n'));
+                    stream.markdown('\n```\n\n');
+                }
+
                 stream.markdown(`**Suggested Fixes:**\n`);
                 for (const fix of issue.suggestedFixes) {
                     stream.markdown(`- ${fix}\n`);
                 }
                 stream.markdown(`\n`);
             }
+        } else {
+            stream.markdown(`> No specific failure patterns detected. Check the build logs below for details.\n\n`);
         }
 
-        // Include relevant log excerpt
-        stream.markdown(`### Build Log Excerpt\n\n`);
-        stream.markdown('```\n');
-        
-        // Extract the most relevant part of the logs (around errors)
-        const relevantLogs = this.extractRelevantLogSection(buildContext.logs);
-        stream.markdown(relevantLogs);
-        stream.markdown('\n```\n\n');
+        // Show build log excerpt — only when logs are available
+        if (buildContext.logs && buildContext.logs.trim().length > 0) {
+            const relevantLogs = this.extractRelevantLogSection(buildContext.logs);
+            if (relevantLogs.trim().length > 0) {
+                stream.markdown(`### Build Log Excerpt\n\n`);
+                stream.markdown('```\n');
+                stream.markdown(relevantLogs);
+                stream.markdown('\n```\n\n');
+            }
+        } else if (buildContext.issues.length > 0 && 
+                   !buildContext.issues.some(i => i.matchedLines && i.matchedLines.length > 0)) {
+            // Logs are empty AND no matched lines on issues — warn the user
+            stream.markdown(`> ⚠️ Could not retrieve raw build logs. The issues above were detected from the CLI diagnosis. `);
+            if (consoleUrl) {
+                stream.markdown(`[View full logs in AWS Console](${consoleUrl})`);
+            }
+            stream.markdown(`\n\n`);
+        }
 
-        // Provide the full context for Copilot to work with
-        stream.markdown(`*I've analyzed the build logs. Ask me to "fix this" and I'll help you resolve the issues.*`);
+        stream.markdown(`*Ask me to **"fix this"** and I'll help you resolve the issues, or **"show logs"** for the full build output.*`);
 
         return { 
             metadata: { 
@@ -171,12 +216,61 @@ export class AmplifyCopilotParticipant {
 
         this.lastBuildContext = buildContext;
 
+        // Reference log files so Copilot can use them for follow-ups
+        if (buildContext.logFileUris?.buildUri) {
+            stream.reference(buildContext.logFileUris.buildUri);
+        }
+        if (buildContext.logFileUris?.deployUri) {
+            stream.reference(buildContext.logFileUris.deployUri);
+        }
+
         stream.markdown(`## 📋 Build Logs - Job #${buildContext.jobId}\n\n`);
         stream.markdown(`**App:** ${buildContext.appName} | **Branch:** ${buildContext.branch}\n\n`);
-        stream.markdown('```\n');
-        // Show full logs - no truncation for explicit log requests
-        stream.markdown(buildContext.logs);
-        stream.markdown('\n```\n');
+
+        const hasBuildLog = buildContext.buildLog && buildContext.buildLog.trim().length > 0;
+        const hasDeployLog = buildContext.deployLog && buildContext.deployLog.trim().length > 0;
+        const hasRawLogs = buildContext.logs && buildContext.logs.trim().length > 0;
+
+        if (hasBuildLog || hasDeployLog) {
+            // Show split logs with clear headers
+            if (hasBuildLog) {
+                stream.markdown(`### BUILD Log\n\n`);
+                stream.markdown('```\n');
+                stream.markdown(buildContext.buildLog);
+                stream.markdown('\n```\n\n');
+            }
+            if (hasDeployLog) {
+                stream.markdown(`### DEPLOY Log\n\n`);
+                stream.markdown('```\n');
+                stream.markdown(buildContext.deployLog);
+                stream.markdown('\n```\n\n');
+            }
+        } else if (hasRawLogs) {
+            // Fallback to combined raw logs
+            stream.markdown('```\n');
+            stream.markdown(buildContext.logs);
+            stream.markdown('\n```\n');
+        } else {
+            stream.markdown(`> ⚠️ Could not retrieve build logs.\n\n`);
+            // Still show matched lines from issues as a useful fallback
+            if (buildContext.issues.length > 0) {
+                stream.markdown(`**Error context from detected issues:**\n\n`);
+                for (const issue of buildContext.issues) {
+                    if (issue.matchedLines && issue.matchedLines.length > 0) {
+                        stream.markdown(`*${issue.pattern.replace(/_/g, ' ')}:*\n`);
+                        stream.markdown('```\n');
+                        stream.markdown(issue.matchedLines.join('\n'));
+                        stream.markdown('\n```\n\n');
+                    }
+                }
+            }
+            const consoleUrl = buildContext.region
+                ? `https://${buildContext.region}.console.aws.amazon.com/amplify/home#/${buildContext.appId}/${buildContext.branch}/${buildContext.jobId}`
+                : undefined;
+            if (consoleUrl) {
+                stream.markdown(`[View full logs in AWS Console](${consoleUrl})\n`);
+            }
+        }
 
         return { metadata: { success: true } };
     }
@@ -198,110 +292,109 @@ export class AmplifyCopilotParticipant {
         }
 
         const buildContext = this.lastBuildContext;
-        const query = request.prompt.toLowerCase();
-        const wantsAutoFix = query.includes('auto') || query.includes('apply');
 
-        // Extract file paths from error logs
-        const errorFiles = this.extractErrorFilePaths(buildContext.logs);
+        // Reference the actual build/deploy log files so Copilot has full context
+        if (buildContext.logFileUris?.buildUri) {
+            stream.reference(buildContext.logFileUris.buildUri);
+        }
+        if (buildContext.logFileUris?.deployUri) {
+            stream.reference(buildContext.logFileUris.deployUri);
+        }
+
+        // Extract and reference local source files mentioned in errors
+        const errorFiles = this.extractErrorFilePaths(buildContext.logs || buildContext.buildLog || '');
         const workspaceFolders = vscode.workspace.workspaceFolders;
-        
-        // Reference the problematic files so Copilot can access them
         const referencedFiles: vscode.Uri[] = [];
+        
         if (workspaceFolders && errorFiles.length > 0) {
-            for (const filePath of errorFiles.slice(0, 5)) { // Limit to 5 files
+            for (const filePath of errorFiles.slice(0, 5)) {
                 try {
                     const fullPath = vscode.Uri.joinPath(workspaceFolders[0].uri, filePath);
                     const doc = await vscode.workspace.openTextDocument(fullPath);
                     stream.reference(doc.uri);
                     referencedFiles.push(doc.uri);
-                } catch (e) {
+                } catch {
                     // File might not exist locally
                 }
             }
         }
 
-        // Provide specific instructions based on detected issues
+        // Categorize issues
         const hasCodeError = buildContext.issues.some(i => 
             ['typescript_error', 'eslint_error', 'nextjs_error', 'syntax_error', 'build_command_failed'].includes(i.pattern)
         );
-
-        // For config issues (lock files, node version, etc.), provide buttons
         const hasConfigIssue = buildContext.issues.some(i => 
-            ['lock_file_mismatch', 'node_version_mismatch', 'missing_env_var', 'amplify_yml_missing', 'npm_ci_failure', 'eslint_error'].includes(i.pattern)
+            ['lock_file_mismatch', 'node_version_mismatch', 'missing_env_var', 'amplify_yml_missing', 'npm_ci_failure'].includes(i.pattern)
         );
 
-        if (hasConfigIssue && !wantsAutoFix) {
-            stream.markdown(`## 🔧 Fixing Build Issues\n\n`);
-            stream.markdown(`Based on the build failure for **${buildContext.appName}** on branch **${buildContext.branch}**:\n\n`);
-            
-            for (const issue of buildContext.issues) {
+        stream.markdown(`## 🔧 Fixing Build Issues\n\n`);
+        stream.markdown(`**App:** ${buildContext.appName} | **Branch:** ${buildContext.branch} | **Job:** #${buildContext.jobId}\n\n`);
+
+        // For config issues, provide quick-action buttons
+        if (hasConfigIssue) {
+            for (const issue of buildContext.issues.filter(i => 
+                ['lock_file_mismatch', 'node_version_mismatch', 'missing_env_var', 'amplify_yml_missing', 'npm_ci_failure', 'eslint_error'].includes(i.pattern)
+            )) {
                 stream.markdown(`### ${issue.pattern.replace(/_/g, ' ')}\n\n`);
-                
-                // Show buttons for quick actions
-                const autoFixResult = await this.attemptAutoFix(issue.pattern, buildContext.logs, stream);
-                
-                // Also show the detailed fix suggestion
-                const codeFixSuggestion = this.getCodeFixForPattern(issue.pattern, buildContext.logs);
-                if (codeFixSuggestion) {
-                    stream.markdown(codeFixSuggestion);
-                }
+                await this.attemptAutoFix(issue.pattern, buildContext.logs || '', stream);
             }
-            
-            // Show error context
-            stream.markdown(`\n### Error Context from Logs\n\`\`\`\n${this.extractErrorContext(buildContext.logs)}\n\`\`\`\n\n`);
-            
-            return { metadata: { success: true, errorFiles, hasCodeError, hasConfigIssue } };
         }
 
-        // For code errors OR auto fix mode, provide context that instructs the agent to fix
-        if (hasCodeError || wantsAutoFix) {
-            const specificError = this.extractSpecificError(buildContext.logs);
-            
-            // Open the first file with an error so Copilot can see it
-            if (referencedFiles.length > 0) {
-                try {
-                    const doc = await vscode.workspace.openTextDocument(referencedFiles[0]);
-                    await vscode.window.showTextDocument(doc, { preview: true });
-                } catch (e) {
-                    // Ignore
+        // Show the actual build error from logs — this is what Copilot needs to reason about
+        const buildLogContent = buildContext.buildLog || buildContext.logs || '';
+        if (buildLogContent) {
+            const errorSection = this.extractSpecificError(buildLogContent);
+            if (errorSection.trim()) {
+                stream.markdown(`### Build Error\n\n`);
+                stream.markdown('```\n');
+                stream.markdown(errorSection);
+                stream.markdown('\n```\n\n');
+            }
+        }
+
+        // Show matched log lines from each issue for additional context
+        if (buildContext.issues.length > 0) {
+            const issuesWithLines = buildContext.issues.filter(i => i.matchedLines && i.matchedLines.length > 0);
+            if (issuesWithLines.length > 0) {
+                stream.markdown(`### Detected Issues\n\n`);
+                for (const issue of issuesWithLines) {
+                    stream.markdown(`**${issue.pattern.replace(/_/g, ' ')}** — ${issue.rootCause}\n\n`);
+                    stream.markdown('```\n');
+                    stream.markdown(issue.matchedLines!.join('\n'));
+                    stream.markdown('\n```\n\n');
                 }
             }
-            
-            stream.markdown(`## 🔧 Code Fix Required\n\n`);
-            stream.markdown(`The build for **${buildContext.appName}** failed with a code error.\n\n`);
-            
-            if (errorFiles.length > 0) {
-                stream.markdown(`**File:** \`${errorFiles[0]}\`\n\n`);
-            }
-            
-            stream.markdown(`**Error:**\n\`\`\`\n${specificError}\n\`\`\`\n\n`);
-            
-            // Provide the fix instruction that the LLM should follow
+        }
+
+        // Tell Copilot what to do — it has the referenced log files + local source files
+        if (hasCodeError && referencedFiles.length > 0) {
             stream.markdown(`---\n\n`);
-            stream.markdown(`**Fix this error by correcting the syntax issue in the file above.**\n\n`);
-            stream.markdown(`Based on the error message:\n`);
-            stream.markdown(`- The error shows \`Expected '{', got ')'\` which indicates a syntax error\n`);
-            stream.markdown(`- Check for missing or mismatched braces, parentheses, or brackets\n`);
-            stream.markdown(`- Look at the line numbers mentioned in the error\n\n`);
-            
-            // If in agent mode, the LLM should pick up the referenced file and make edits
-            return { 
-                metadata: { 
-                    success: true, 
-                    errorFiles, 
-                    hasCodeError: true,
-                    needsCodeFix: true,
-                    specificError
-                } 
-            };
+            stream.markdown(`The build/deploy log files and the source files mentioned in the errors are attached above. `);
+            stream.markdown(`Please analyze the actual error in the build log, find the root cause in the referenced source files, and apply the fix.\n\n`);
+        } else if (hasCodeError) {
+            stream.markdown(`---\n\n`);
+            stream.markdown(`The build/deploy log files are attached above. `);
+            stream.markdown(`Please analyze the error and suggest the fix for the source files mentioned in the logs.\n\n`);
+        } else if (!hasConfigIssue) {
+            // Fallback — show error context
+            const errorCtx = this.extractErrorContext(buildContext.logs || buildContext.buildLog || '');
+            if (errorCtx.trim()) {
+                stream.markdown(`### Error Context\n\n`);
+                stream.markdown('```\n');
+                stream.markdown(errorCtx);
+                stream.markdown('\n```\n\n');
+            }
         }
 
-        // Fallback - just show the error context
-        stream.markdown(`## 🔧 Build Failure Analysis\n\n`);
-        stream.markdown(`**App:** ${buildContext.appName} | **Branch:** ${buildContext.branch}\n\n`);
-        stream.markdown(`### Error Context\n\`\`\`\n${this.extractErrorContext(buildContext.logs)}\n\`\`\`\n\n`);
-
-        return { metadata: { success: true, errorFiles, hasCodeError, hasConfigIssue } };
+        return { 
+            metadata: { 
+                success: true, 
+                errorFiles, 
+                hasCodeError, 
+                hasConfigIssue,
+                needsCodeFix: hasCodeError && referencedFiles.length > 0
+            } 
+        };
     }
 
     /**
@@ -682,6 +775,42 @@ export class AmplifyCopilotParticipant {
         return { metadata: { success: true } };
     }
 
+    /**
+     * Save build/deploy logs as temporary files and return their URIs
+     * so Copilot can reference/read them as context documents.
+     */
+    private async saveLogFiles(
+        appId: string,
+        jobId: string,
+        buildLog: string,
+        deployLog: string
+    ): Promise<{ buildUri?: vscode.Uri; deployUri?: vscode.Uri }> {
+        const result: { buildUri?: vscode.Uri; deployUri?: vscode.Uri } = {};
+        const tmpDir = path.join(os.tmpdir(), 'amplify-monitor-logs');
+
+        try {
+            if (!fs.existsSync(tmpDir)) {
+                fs.mkdirSync(tmpDir, { recursive: true });
+            }
+
+            if (buildLog) {
+                const buildPath = path.join(tmpDir, `${appId}-${jobId}-BUILD.txt`);
+                fs.writeFileSync(buildPath, buildLog, 'utf-8');
+                result.buildUri = vscode.Uri.file(buildPath);
+            }
+
+            if (deployLog) {
+                const deployPath = path.join(tmpDir, `${appId}-${jobId}-DEPLOY.txt`);
+                fs.writeFileSync(deployPath, deployLog, 'utf-8');
+                result.deployUri = vscode.Uri.file(deployPath);
+            }
+        } catch (e) {
+            console.warn('Failed to save log files to temp dir:', e);
+        }
+
+        return result;
+    }
+
     private async fetchLatestFailedBuildLogs(): Promise<BuildLogContext | null> {
         try {
             // Get selected app/branch or find latest failed
@@ -764,25 +893,39 @@ export class AmplifyCopilotParticipant {
             // Run diagnosis with logs to get full context - pass profile
             let diagnosisResult;
             let rawLogs = '';
+            let buildLog = '';
+            let deployLog = '';
             
             try {
-                // Try to get diagnosis with logs
+                // Try to get diagnosis with embedded logs
                 diagnosisResult = await this.cli.diagnoseWithLogs(appId, branch, latestJob.jobId, region, profile);
                 rawLogs = diagnosisResult?.rawLogs || '';
+                buildLog = diagnosisResult?.buildLog || '';
+                deployLog = diagnosisResult?.deployLog || '';
             } catch (e) {
-                console.error('diagnoseWithLogs failed, falling back:', e);
-                // Fallback to regular diagnosis
-                diagnosisResult = await this.cli.diagnose(appId, branch, latestJob.jobId, region, profile);
-            }
-            
-            // If still no logs, try fetching them directly
-            if (!rawLogs) {
+                console.warn('diagnoseWithLogs failed (possibly large output), falling back to diagnosis without logs:', e);
                 try {
-                    rawLogs = await this.cli.getBuildLogs(appId, branch, latestJob.jobId, region, profile);
-                } catch (e) {
-                    console.error('Failed to fetch build logs:', e);
+                    // Fallback to diagnosis without logs — still gets issues with matchedLines
+                    diagnosisResult = await this.cli.diagnose(appId, branch, latestJob.jobId, region, profile);
+                } catch (e2) {
+                    console.error('diagnose also failed:', e2);
                 }
             }
+            
+            // If still no logs, try fetching them separately
+            if (!rawLogs && !buildLog) {
+                try {
+                    const logsResult = await this.cli.getBuildLogs(appId, branch, latestJob.jobId, region, profile);
+                    rawLogs = logsResult.logs;
+                    buildLog = logsResult.buildLog;
+                    deployLog = logsResult.deployLog;
+                } catch (e) {
+                    console.warn('getBuildLogs failed — issues will show matched lines only:', e);
+                }
+            }
+
+            // Save build/deploy logs as temp files so Copilot can reference them
+            const logFileUris = await this.saveLogFiles(appId, latestJob.jobId, buildLog, deployLog);
             
             return {
                 appId,
@@ -793,9 +936,12 @@ export class AmplifyCopilotParticipant {
                 startTime: latestJob.startTime,
                 endTime: latestJob.endTime,
                 logs: rawLogs,
+                buildLog,
+                deployLog,
                 region,
                 profile,
-                issues: diagnosisResult?.issues || []
+                issues: diagnosisResult?.issues || [],
+                logFileUris,
             };
         } catch (error) {
             console.error('Failed to fetch build logs:', error);
@@ -872,134 +1018,6 @@ export class AmplifyCopilotParticipant {
         }
 
         return errorLines.slice(0, 5).join('\n\n---\n\n');
-    }
-
-    private getCodeFixForPattern(pattern: string, logs: string): string | null {
-        const fixes: { [key: string]: string } = {
-            'eslint_error': `
-**ESLint Fix:**
-
-1. Run locally to see all errors:
-\`\`\`bash
-npm run lint
-\`\`\`
-
-2. Auto-fix what's possible:
-\`\`\`bash
-npm run lint -- --fix
-\`\`\`
-
-3. Or skip lint in CI by adding to \`amplify.yml\`:
-\`\`\`yaml
-build:
-  commands:
-    - CI=false npm run build
-\`\`\`
-`,
-            'node_version_mismatch': `
-**Node.js Version Fix:**
-
-Add to your \`amplify.yml\`:
-\`\`\`yaml
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - nvm use 18
-        - npm ci
-\`\`\`
-
-Or create \`.nvmrc\` in your repo root:
-\`\`\`
-18
-\`\`\`
-`,
-            'lock_file_mismatch': `
-**Lock File Fix:**
-
-Choose ONE package manager and commit only its lock file:
-
-**For npm:**
-\`\`\`bash
-rm -f yarn.lock pnpm-lock.yaml
-npm install
-git add package-lock.json
-git commit -m "Use npm with package-lock.json"
-\`\`\`
-
-**For pnpm:**
-\`\`\`bash
-rm -f package-lock.json yarn.lock
-pnpm install
-git add pnpm-lock.yaml
-git commit -m "Use pnpm with pnpm-lock.yaml"
-\`\`\`
-`,
-            'missing_env_var': `
-**Missing Environment Variable Fix:**
-
-1. Open AWS Amplify Console
-2. Go to App settings → Environment variables
-3. Add the missing variable
-
-Or use Amplify Monitor:
-- Run command: \`Amplify Monitor: Add Environment Variable\`
-`,
-            'npm_ci_failure': `
-**npm ci Failure Fix:**
-
-This usually means your \`package-lock.json\` is out of sync:
-
-\`\`\`bash
-rm -rf node_modules package-lock.json
-npm install
-git add package-lock.json
-git commit -m "Regenerate package-lock.json"
-git push
-\`\`\`
-`,
-            'build_command_failed': `
-**Build Command Fix:**
-
-Check your \`amplify.yml\` build commands. Common fixes:
-
-1. Ensure dependencies are installed first:
-\`\`\`yaml
-frontend:
-  phases:
-    preBuild:
-      commands:
-        - npm ci
-    build:
-      commands:
-        - npm run build
-\`\`\`
-
-2. Check if build script exists in \`package.json\`
-`,
-            'typescript_error': `
-**TypeScript Error Fix:**
-
-1. Run locally to see errors:
-\`\`\`bash
-npx tsc --noEmit
-\`\`\`
-
-2. Fix the type errors in your code
-
-3. Or temporarily ignore (not recommended):
-\`\`\`json
-// tsconfig.json
-{
-  "compilerOptions": {
-    "skipLibCheck": true
-  }
-}
-\`\`\`
-`
-        };
-
-        return fixes[pattern] || null;
     }
 
     private provideFollowups(

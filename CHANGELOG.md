@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.49] - 2026-04-15
+
+### Changed
+- `DiagnosisResultWithLogs` now includes `build_log` and `deploy_log` as separate fields
+- `LogsResult` now includes `build_log` and `deploy_log` as separate fields
+- `Issue` struct in parser now includes `matched_lines: Vec<String>` with actual log lines that triggered each pattern
+- All failure pattern checkers (macro and custom) populate `matched_lines` with contextual log excerpts
+- Added `extract_matched_lines()` helper for efficient log line extraction with deduplication
+
 ## [0.1.0] - 2026-01-29
 
 ### Added
