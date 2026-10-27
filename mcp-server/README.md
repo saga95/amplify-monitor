@@ -2,6 +2,10 @@
 
 Model Context Protocol (MCP) server for AWS Amplify build monitoring and diagnosis. This allows AI assistants like Claude to directly interact with your Amplify applications.
 
+> **Just need build status across accounts?** The VS Code extension ships a lighter, read-only `amplify-fleet` MCP server.
+> It serves the multi-account snapshot the extension keeps fresh, so agents never call AWS. Run **Amplify Monitor: Connect AI Agents** in VS Code to set it up.
+> Use this server for actions such as diagnosis, logs, env vars and starting builds.
+
 ## Features
 
 - **List Apps**: Discover all Amplify apps across AWS regions

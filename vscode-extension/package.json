@@ -2,7 +2,7 @@
   "name": "amplify-monitor",
   "displayName": "Amplify Monitor",
   "description": "Monitor AWS Amplify builds and diagnose failures with AI-powered root cause analysis. Detect 20+ common build issues including lock file mismatches, Node.js conflicts, missing env vars, and more.",
-  "version": "0.1.51",
+  "version": "0.1.52",
   "publisher": "SagaraHarasgama",
   "author": {
     "name": "saga95"
@@ -41,7 +41,11 @@
     "cloud",
     "serverless",
     "environment variables",
-    "amplify.yml"
+    "amplify.yml",
+    "multi-account",
+    "mcp",
+    "copilot",
+    "claude"
   ],
   "badges": [
     {
@@ -85,6 +89,10 @@
           {
             "name": "status",
             "description": "Check status of all Amplify apps"
+          },
+          {
+            "name": "fleet",
+            "description": "Status of every Amplify app across all monitored AWS accounts (cached, no AWS calls)"
           }
         ]
       }
@@ -439,6 +447,72 @@
         "title": "Configure AWS Profile",
         "category": "Amplify Monitor",
         "icon": "$(key)"
+      },
+      {
+        "command": "amplify-monitor.fleet.refresh",
+        "title": "Refresh Fleet (All Accounts)",
+        "category": "Amplify Monitor",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "amplify-monitor.fleet.configure",
+        "title": "Configure Fleet Accounts",
+        "category": "Amplify Monitor",
+        "icon": "$(organization)"
+      },
+      {
+        "command": "amplify-monitor.fleet.connectAgents",
+        "title": "Connect AI Agents (Claude Code, Codex, Copilot, Antigravity)",
+        "category": "Amplify Monitor",
+        "icon": "$(sparkle)"
+      },
+      {
+        "command": "amplify-monitor.fleet.openSnapshot",
+        "title": "Open Fleet Status Snapshot",
+        "category": "Amplify Monitor",
+        "icon": "$(markdown)"
+      },
+      {
+        "command": "amplify-monitor.fleet.openConsole",
+        "title": "Open in AWS Console",
+        "category": "Amplify Monitor",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "amplify-monitor.fleet.openSite",
+        "title": "Open Deployed Site",
+        "category": "Amplify Monitor",
+        "icon": "$(globe)"
+      },
+      {
+        "command": "amplify-monitor.fleet.diagnose",
+        "title": "Diagnose Build",
+        "category": "Amplify Monitor",
+        "icon": "$(search-fuzzy)"
+      },
+      {
+        "command": "amplify-monitor.fleet.copyForAI",
+        "title": "Copy Status for AI Chat",
+        "category": "Amplify Monitor",
+        "icon": "$(copy)"
+      },
+      {
+        "command": "amplify-monitor.fleet.runFix",
+        "title": "Fix Credentials",
+        "category": "Amplify Monitor",
+        "icon": "$(key)"
+      },
+      {
+        "command": "amplify-monitor.fleet.showLog",
+        "title": "Show Fleet Log",
+        "category": "Amplify Monitor",
+        "icon": "$(output)"
+      },
+      {
+        "command": "amplify-monitor.fleet.viewLogs",
+        "title": "View Build Logs",
+        "category": "Amplify Monitor",
+        "icon": "$(output)"
       }
     ],
     "viewsContainers": {
@@ -452,6 +526,12 @@
     },
     "views": {
       "amplify-monitor": [
+        {
+          "id": "amplifyFleet",
+          "name": "Fleet (All Accounts)",
+          "icon": "$(organization)",
+          "contextualTitle": "Amplify Fleet"
+        },
         {
           "id": "amplifyApps",
           "name": "Apps",
@@ -486,6 +566,11 @@
     },
     "viewsWelcome": [
       {
+        "view": "amplifyFleet",
+        "contents": "Monitor every Amplify app across all your AWS accounts (one AWS CLI profile per client/account) from one place.\n\n[Choose AWS Profiles](command:amplify-monitor.fleet.configure)\n\nUses the AWS CLI with your named profiles. Status is cached so AI agents (Copilot, Claude Code, Codex, Antigravity) can read it without calling AWS.\n\n[Connect AI Agents](command:amplify-monitor.fleet.connectAgents)",
+        "when": "!amplifyMonitor.fleetConfigured"
+      },
+      {
         "view": "amplifyApps",
         "contents": "No Amplify apps found.\n\nMake sure you have:\n1. AWS credentials configured (AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY)\n2. amplify-monitor CLI installed\n\n[Configure Settings](command:amplify-monitor.openSettings)\n[Refresh Apps](command:amplify-monitor.listApps)\n\n---\n\n**Need to create an app?**\n[Open AWS Amplify Console](https://console.aws.amazon.com/amplify/)"
       },
@@ -508,6 +593,31 @@
     ],
     "menus": {
       "view/title": [
+        {
+          "command": "amplify-monitor.fleet.refresh",
+          "when": "view == amplifyFleet",
+          "group": "navigation@1"
+        },
+        {
+          "command": "amplify-monitor.fleet.configure",
+          "when": "view == amplifyFleet",
+          "group": "navigation@2"
+        },
+        {
+          "command": "amplify-monitor.fleet.connectAgents",
+          "when": "view == amplifyFleet",
+          "group": "navigation@3"
+        },
+        {
+          "command": "amplify-monitor.fleet.openSnapshot",
+          "when": "view == amplifyFleet",
+          "group": "1_fleet@1"
+        },
+        {
+          "command": "amplify-monitor.fleet.showLog",
+          "when": "view == amplifyFleet",
+          "group": "1_fleet@2"
+        },
         {
           "command": "amplify-monitor.openDashboard",
           "when": "view == amplifyApps",
@@ -594,6 +704,77 @@
           "command": "amplify-monitor.stopBuild",
           "when": "viewItem == job-running",
           "group": "inline"
+        },
+        {
+          "command": "amplify-monitor.fleet.diagnose",
+          "when": "view == amplifyFleet && viewItem =~ /^fleet(BranchFailed|JobFailed)$/",
+          "group": "inline@1"
+        },
+        {
+          "command": "amplify-monitor.fleet.openConsole",
+          "when": "view == amplifyFleet && viewItem =~ /^fleet(App|Branch|BranchFailed|Job|JobFailed)$/",
+          "group": "inline@3"
+        },
+        {
+          "command": "amplify-monitor.fleet.runFix",
+          "when": "view == amplifyFleet && viewItem == fleetAccountFixable",
+          "group": "inline@1"
+        },
+        {
+          "command": "amplify-monitor.fleet.diagnose",
+          "when": "view == amplifyFleet && viewItem =~ /^fleet(Branch|BranchFailed|Job|JobFailed)$/",
+          "group": "1_fleet@1"
+        },
+        {
+          "command": "amplify-monitor.fleet.copyForAI",
+          "when": "view == amplifyFleet && viewItem =~ /^fleet(Branch|BranchFailed|Job|JobFailed)$/",
+          "group": "1_fleet@2"
+        },
+        {
+          "command": "amplify-monitor.fleet.openSite",
+          "when": "view == amplifyFleet && viewItem =~ /^fleet(Branch|BranchFailed)$/",
+          "group": "1_fleet@3"
+        },
+        {
+          "command": "amplify-monitor.fleet.openConsole",
+          "when": "view == amplifyFleet && viewItem =~ /^fleet(App|Branch|BranchFailed|Job|JobFailed)$/",
+          "group": "1_fleet@4"
+        },
+        {
+          "command": "amplify-monitor.fleet.viewLogs",
+          "when": "view == amplifyFleet && viewItem =~ /^fleet(BranchFailed|JobFailed)$/",
+          "group": "inline@0"
+        },
+        {
+          "command": "amplify-monitor.fleet.viewLogs",
+          "when": "view == amplifyFleet && viewItem =~ /^fleet(Branch|BranchFailed|Job|JobFailed)$/",
+          "group": "1_fleet@0"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "amplify-monitor.fleet.openConsole",
+          "when": "false"
+        },
+        {
+          "command": "amplify-monitor.fleet.openSite",
+          "when": "false"
+        },
+        {
+          "command": "amplify-monitor.fleet.diagnose",
+          "when": "false"
+        },
+        {
+          "command": "amplify-monitor.fleet.copyForAI",
+          "when": "false"
+        },
+        {
+          "command": "amplify-monitor.fleet.runFix",
+          "when": "false"
+        },
+        {
+          "command": "amplify-monitor.fleet.viewLogs",
+          "when": "false"
         }
       ]
     },
@@ -728,9 +909,306 @@
           "default": [],
           "description": "AWS profiles to show in multi-account mode",
           "order": 20
+        },
+        "amplifyMonitor.fleet.enabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Continuously monitor Amplify apps across all accounts in `#amplifyMonitor.fleet.accounts#` using the AWS CLI, and keep a status snapshot for AI agents.",
+          "order": 21
+        },
+        "amplifyMonitor.fleet.accounts": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "AWS CLI profiles (one per client/account) to monitor. Each entry is a profile name or an object, e.g. `{ \"profile\": \"acme-prod\", \"label\": \"Acme\", \"regions\": [\"us-east-1\"], \"apps\": [\"acme-web\"], \"branches\": [\"main\", \"release/*\"] }`. Without `regions`, regions with Amplify apps are discovered automatically. Falls back to `#amplifyMonitor.multiAccount.profiles#` when empty.",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "AWS profile name"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "profile"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "profile": {
+                    "type": "string",
+                    "description": "AWS CLI profile name"
+                  },
+                  "label": {
+                    "type": "string",
+                    "description": "Friendly name, e.g. the client"
+                  },
+                  "regions": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Regions to poll. Omit to auto-discover."
+                  },
+                  "apps": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Only these apps (app ID or name, * globs allowed)"
+                  },
+                  "branches": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    },
+                    "description": "Only these branches (* globs allowed). The production branch is always included."
+                  }
+                }
+              }
+            ]
+          },
+          "order": 22
+        },
+        "amplifyMonitor.fleet.pollIntervalSeconds": {
+          "type": "number",
+          "default": 60,
+          "minimum": 30,
+          "description": "How often to poll all accounts when nothing is building.",
+          "order": 23
+        },
+        "amplifyMonitor.fleet.activePollIntervalSeconds": {
+          "type": "number",
+          "default": 20,
+          "minimum": 10,
+          "description": "Polling interval while a build is running, and for 15 minutes after a git push from this workspace.",
+          "order": 24
+        },
+        "amplifyMonitor.fleet.maxBranchesPerApp": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "description": "Most recently updated branches tracked per app (the production branch is always included).",
+          "order": 25
+        },
+        "amplifyMonitor.fleet.jobsPerBranch": {
+          "type": "number",
+          "default": 5,
+          "minimum": 1,
+          "maximum": 25,
+          "description": "Recent jobs (commits) kept per branch.",
+          "order": 26
+        },
+        "amplifyMonitor.fleet.concurrency": {
+          "type": "number",
+          "default": 6,
+          "minimum": 1,
+          "maximum": 20,
+          "description": "Maximum AWS CLI processes running at the same time.",
+          "order": 27
+        },
+        "amplifyMonitor.fleet.awsCliPath": {
+          "type": "string",
+          "default": "aws",
+          "description": "Path to the AWS CLI v2 executable used for fleet monitoring.",
+          "order": 28
+        },
+        "amplifyMonitor.fleet.snapshotDirectory": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Where the fleet snapshot (`status.json`, `status.md`) and the bundled MCP server are written. Defaults to `~/.amplify-monitor/fleet`.",
+          "order": 29
+        },
+        "amplifyMonitor.fleet.notifyOnWorkspaceDeploy": {
+          "type": "boolean",
+          "default": true,
+          "description": "Notify when a commit from a git repository open in this window finishes building on Amplify (success or failure).",
+          "order": 30
+        },
+        "amplifyMonitor.fleet.autoFetchFailedLogs": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically download the build/deploy logs of failed builds from the last 7 days, so they are ready for you and your AI agents. Logs are cached for 14 days under the snapshot directory.",
+          "order": 31
         }
       }
-    }
+    },
+    "languageModelTools": [
+      {
+        "name": "amplify_fleet_status",
+        "toolReferenceName": "amplifyFleet",
+        "displayName": "Amplify Fleet Status",
+        "userDescription": "Status of all Amplify apps and branches across every AWS account the developer monitors",
+        "modelDescription": "Current build/deploy status of every AWS Amplify app and branch across all AWS accounts monitored by the Amplify Monitor extension, including latest job status, commit SHA and commit message. Reads a cached snapshot and makes no AWS calls. Use this instead of running `aws amplify` commands.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(cloud)",
+        "tags": [
+          "amplify",
+          "aws",
+          "deploy"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "account": {
+              "type": "string",
+              "description": "Filter by account label or AWS profile (substring)"
+            },
+            "app": {
+              "type": "string",
+              "description": "Filter by app name or app ID (substring)"
+            },
+            "branch": {
+              "type": "string",
+              "description": "Filter by branch name (substring)"
+            },
+            "status": {
+              "type": "string",
+              "enum": [
+                "failing",
+                "building",
+                "ok",
+                "warning",
+                "error",
+                "unknown"
+              ],
+              "description": "Only branches with this health"
+            },
+            "format": {
+              "type": "string",
+              "enum": [
+                "markdown",
+                "json"
+              ]
+            }
+          }
+        }
+      },
+      {
+        "name": "amplify_fleet_attention",
+        "toolReferenceName": "amplifyAttention",
+        "displayName": "Amplify: Needs Attention",
+        "userDescription": "Failed builds, running builds and expired AWS logins",
+        "modelDescription": "Lists only what needs attention across all monitored AWS accounts: failed Amplify builds, builds in progress, and accounts whose credentials expired (with the fix command). Cached, no AWS calls.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(cloud)",
+        "tags": [
+          "amplify",
+          "aws",
+          "deploy"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "amplify_branch_history",
+        "toolReferenceName": "amplifyHistory",
+        "displayName": "Amplify Branch History",
+        "userDescription": "Recent jobs and commits for one Amplify branch",
+        "modelDescription": "Recent Amplify jobs (commit SHA, commit message, status, duration) for one branch. Use it to find which commit broke a build. Cached, no AWS calls.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(cloud)",
+        "tags": [
+          "amplify",
+          "aws",
+          "deploy"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "app",
+            "branch"
+          ],
+          "properties": {
+            "account": {
+              "type": "string",
+              "description": "Filter by account label or AWS profile (substring)"
+            },
+            "app": {
+              "type": "string",
+              "description": "App name or app ID"
+            },
+            "branch": {
+              "type": "string",
+              "description": "Branch name"
+            }
+          }
+        }
+      },
+      {
+        "name": "amplify_workspace_deployments",
+        "toolReferenceName": "amplifyWorkspace",
+        "displayName": "Amplify Workspace Deployments",
+        "userDescription": "Whether the local git HEAD is deployed on Amplify",
+        "modelDescription": "For git repositories open in VS Code: which Amplify branches deploy them and whether the local HEAD commit is deployed, building, failed or not built yet. Cached, no AWS calls.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(cloud)",
+        "tags": [
+          "amplify",
+          "aws",
+          "deploy"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "properties": {}
+        }
+      },
+      {
+        "name": "amplify_get_build_logs",
+        "toolReferenceName": "amplifyLogs",
+        "displayName": "Amplify Build Logs",
+        "userDescription": "Build and deploy output of an Amplify job in any monitored account",
+        "modelDescription": "Build/deploy output of an AWS Amplify job in any account monitored by Amplify Monitor: error lines first, then the end of each step log (BUILD, DEPLOY, ...), plus paths to the full log files. Defaults to the latest job on the branch. Use it to find out why a build failed.",
+        "canBeReferencedInPrompt": true,
+        "icon": "$(output)",
+        "tags": [
+          "amplify",
+          "aws",
+          "logs"
+        ],
+        "inputSchema": {
+          "type": "object",
+          "required": [
+            "app",
+            "branch"
+          ],
+          "properties": {
+            "account": {
+              "type": "string",
+              "description": "Account label or AWS profile (substring)"
+            },
+            "app": {
+              "type": "string",
+              "description": "App name or app ID"
+            },
+            "branch": {
+              "type": "string",
+              "description": "Branch name"
+            },
+            "jobId": {
+              "type": "string",
+              "description": "Job number, defaults to the latest job"
+            },
+            "step": {
+              "type": "string",
+              "description": "BUILD, DEPLOY, VERIFY or ALL"
+            },
+            "tail": {
+              "type": "number",
+              "description": "Lines from the end of each log (default 120)"
+            },
+            "grep": {
+              "type": "string",
+              "description": "Only lines matching this regex"
+            },
+            "refresh": {
+              "type": "boolean",
+              "description": "Re-download even if cached"
+            }
+          }
+        }
+      }
+    ]
   },
   "scripts": {
     "vscode:prepublish": "npm run compile",
@@ -739,7 +1217,8 @@
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
     "test": "node ./out/test/runTest.js",
-    "package": "vsce package"
+    "package": "vsce package",
+    "test:fleet": "npm run compile && node --test test-fleet/"
   },
   "devDependencies": {
     "@types/node": "^20.10.0",

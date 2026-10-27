@@ -3,6 +3,8 @@ import * as path from 'path';
 import * as os from 'os';
 import * as fs from 'fs';
 import { AmplifyMonitorCli, DiagnosisResult } from './cli';
+import type { FleetMonitor } from './fleet/fleetMonitor';
+import { relativeTime, renderMarkdown } from './fleet/snapshotStore';
 
 interface BuildLogContext {
     appId: string;
@@ -32,7 +34,7 @@ export class AmplifyCopilotParticipant {
     private cli: AmplifyMonitorCli;
     private lastBuildContext: BuildLogContext | null = null;
 
-    constructor(cli: AmplifyMonitorCli) {
+    constructor(cli: AmplifyMonitorCli, private readonly fleet?: FleetMonitor) {
         this.cli = cli;
     }
 
@@ -77,6 +79,10 @@ export class AmplifyCopilotParticipant {
         const command = request.command; // Slash command: /diagnose, /fix, /logs, /status
 
         try {
+            // Fleet questions are answered from the cached multi-account snapshot (no AWS calls).
+            if (command === 'fleet' || (!command && this.fleet?.isConfigured() && /\b(fleet|all (apps|accounts|clients)|every (app|account|client))\b/.test(query))) {
+                return await this.handleFleetRequest(request, stream, token);
+            }
             // Route by slash command first, then fallback to keyword matching
             if (command === 'diagnose' || query.includes('diagnose') || query.includes('what failed') || query.includes('build error') || query.includes('why did') || query.includes('analyze')) {
                 return await this.handleDiagnoseRequest(request, stream, token);
@@ -685,11 +691,54 @@ export class AmplifyCopilotParticipant {
         };
     }
 
+    private async handleFleetRequest(
+        request: vscode.ChatRequest,
+        stream: vscode.ChatResponseStream,
+        token: vscode.CancellationToken
+    ): Promise<vscode.ChatResult> {
+        const snapshot = this.fleet?.getSnapshot();
+        if (!this.fleet?.isConfigured() || !snapshot) {
+            stream.markdown(this.fleet?.isConfigured()
+                ? 'The first poll of your AWS accounts is still running. Try again in a moment.\n'
+                : 'Fleet monitoring is not set up yet. Pick the AWS CLI profiles (one per client/account) you want to watch.\n');
+            stream.button({ command: 'amplify-monitor.fleet.configure', title: 'Configure Fleet Accounts' });
+            return { metadata: { success: false } };
+        }
+
+        const context = renderMarkdown(snapshot);
+        const question = request.prompt.trim();
+        const model = (request as vscode.ChatRequest & { model?: vscode.LanguageModelChat }).model;
+
+        if (question && model) {
+            // Let the chat model answer the question using the cached snapshot as context.
+            const messages = [
+                vscode.LanguageModelChatMessage.User(
+                    'You answer questions about AWS Amplify build/deploy status across several AWS accounts. '
+                    + 'Use only the snapshot below; it was produced by the Amplify Monitor extension. Be concise, '
+                    + 'name the account, app and branch, and quote commit SHAs. If something failed, suggest running '
+                    + '"@amplify /diagnose" or the Diagnose action on that branch in the Fleet view.\n\n' + context),
+                vscode.LanguageModelChatMessage.User(question),
+            ];
+            const response = await model.sendRequest(messages, {}, token);
+            for await (const chunk of response.text) {
+                stream.markdown(chunk);
+            }
+        } else {
+            stream.markdown(context);
+        }
+        stream.markdown(`\n\n_Snapshot from ${relativeTime(snapshot.generatedAt)}; no AWS calls were made._`);
+        stream.button({ command: 'amplify-monitor.fleet.refresh', title: 'Refresh Now' });
+        return { metadata: { success: true, fleet: true } };
+    }
+
     private async handleStatusRequest(
         request: vscode.ChatRequest,
         stream: vscode.ChatResponseStream,
         token: vscode.CancellationToken
     ): Promise<vscode.ChatResult> {
+        if (this.fleet?.isConfigured() && this.fleet.getSnapshot()) {
+            return this.handleFleetRequest(request, stream, token);
+        }
         stream.progress('Fetching Amplify status...');
 
         try {

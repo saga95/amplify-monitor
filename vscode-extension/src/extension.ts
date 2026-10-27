@@ -33,6 +33,12 @@ import { PerformanceAlertsPanel } from './views/performanceAlerts';
 import { WebhookNotificationService, configureWebhook } from './webhookNotifications';
 import { MultiAccountPanel } from './views/multiAccountPanel';
 import { configureAwsProfile } from './views/profileConfigWizard';
+import { FleetMonitor, FleetTarget } from './fleet/fleetMonitor';
+import { FleetTreeProvider, targetFromNode } from './fleet/fleetTree';
+import { connectAiAgents, installMcpServer, registerLanguageModelTools } from './fleet/aiIntegration';
+import { callTool } from './fleet/mcpServer';
+import { SNAPSHOT_MD } from './fleet/snapshotStore';
+import { formatJobLogs } from './fleet/buildLogs';
 
 let refreshInterval: NodeJS.Timeout | undefined;
 let buildPerformanceTracker: BuildPerformanceTracker;
@@ -43,8 +49,13 @@ export function activate(context: vscode.ExtensionContext) {
     const cli = new AmplifyMonitorCli();
     buildPerformanceTracker = new BuildPerformanceTracker(context);
     
+    // Multi-account fleet monitor (AWS CLI based, always on)
+    const fleetMonitor = new FleetMonitor();
+    context.subscriptions.push(fleetMonitor);
+    registerFleet(context, cli, fleetMonitor);
+
     // Initialize Copilot Chat Participant
-    const copilotParticipant = new AmplifyCopilotParticipant(cli);
+    const copilotParticipant = new AmplifyCopilotParticipant(cli, fleetMonitor);
     context.subscriptions.push(...copilotParticipant.register(context));
     
     // Create tree data providers
@@ -880,6 +891,207 @@ frontend:
             }
         })
     );
+}
+
+function resolveFleetTarget(arg: unknown): FleetTarget | undefined {
+    if (arg && typeof arg === 'object' && 'kind' in arg) {
+        return targetFromNode(arg as Parameters<typeof targetFromNode>[0]);
+    }
+    return arg && typeof arg === 'object' && 'profile' in arg ? arg as FleetTarget : undefined;
+}
+
+function registerFleet(context: vscode.ExtensionContext, cli: AmplifyMonitorCli, monitor: FleetMonitor) {
+    const tree = new FleetTreeProvider(monitor);
+    const view = vscode.window.createTreeView('amplifyFleet', { treeDataProvider: tree, showCollapseAll: true });
+    context.subscriptions.push(view, ...registerLanguageModelTools(monitor));
+
+    const updateBadge = () => {
+        const s = monitor.getSnapshot()?.summary;
+        const count = s ? s.failing + s.accountErrors : 0;
+        view.badge = count ? { value: count, tooltip: `${count} failing build(s) or account error(s)` } : undefined;
+    };
+    context.subscriptions.push(monitor.onDidChange(updateBadge));
+
+    // Keep the MCP server copy next to the snapshot current after extension updates.
+    if (monitor.isConfigured()) {
+        try {
+            installMcpServer(context, monitor.getFleetDir());
+        } catch (error) {
+            console.warn('Amplify Monitor: could not install fleet MCP server', error);
+        }
+    }
+
+    context.subscriptions.push(
+        vscode.commands.registerCommand('amplify-monitor.fleet.refresh', async () => {
+            if (!monitor.isConfigured()) {
+                await vscode.commands.executeCommand('amplify-monitor.fleet.configure');
+                return;
+            }
+            await vscode.window.withProgress(
+                { location: { viewId: 'amplifyFleet' }, title: 'Refreshing all accounts' },
+                () => monitor.refresh(true));
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.configure', async () => {
+            const profiles = await getAwsProfiles();
+            if (profiles.length === 0) {
+                const action = await vscode.window.showWarningMessage(
+                    'No AWS CLI profiles found in ~/.aws/config or ~/.aws/credentials.', 'Configure Profile');
+                if (action === 'Configure Profile') {
+                    await configureAwsProfile();
+                }
+                return;
+            }
+            const current = new Set(monitor.getAccountConfigs().map(c => c.profile));
+            const picks = await vscode.window.showQuickPick(
+                profiles.map(p => ({ label: p, picked: current.has(p) })),
+                {
+                    canPickMany: true,
+                    title: 'Amplify fleet: AWS profiles to monitor',
+                    placeHolder: 'Pick one profile per client/account. Labels, regions and filters can be set in settings.json.',
+                });
+            if (!picks) {
+                return;
+            }
+            await monitor.setAccountProfiles(picks.map(p => p.label));
+            if (picks.length > 0) {
+                const action = await vscode.window.showInformationMessage(
+                    `Monitoring ${picks.length} AWS account${picks.length === 1 ? '' : 's'}. Let your AI agents read this status instead of calling AWS?`,
+                    'Connect AI Agents', 'Edit Labels');
+                if (action === 'Connect AI Agents') {
+                    await connectAiAgents(context, monitor);
+                } else if (action === 'Edit Labels') {
+                    await vscode.commands.executeCommand('workbench.action.openSettingsJson', { revealSetting: { key: 'amplifyMonitor.fleet.accounts' } });
+                }
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.connectAgents', () => connectAiAgents(context, monitor)),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.openSnapshot', async () => {
+            const file = vscode.Uri.file(path.join(monitor.getFleetDir(), SNAPSHOT_MD));
+            if (!fs.existsSync(file.fsPath)) {
+                vscode.window.showWarningMessage('No fleet snapshot yet. Configure accounts and wait for the first poll.');
+                return;
+            }
+            await vscode.commands.executeCommand('markdown.showPreview', file);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.showLog', () => monitor.output.show()),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.openConsole', async (arg: unknown) => {
+            const target = resolveFleetTarget(arg);
+            if (target?.consoleUrl) {
+                await vscode.env.openExternal(vscode.Uri.parse(target.consoleUrl));
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.openSite', async (arg: unknown) => {
+            const target = resolveFleetTarget(arg);
+            if (target?.url) {
+                await vscode.env.openExternal(vscode.Uri.parse(target.url));
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.diagnose', async (arg: unknown) => {
+            const target = resolveFleetTarget(arg);
+            if (!target?.appId || !target.branch) {
+                return;
+            }
+            // Point the existing single-app views at this account/app/branch, then reuse the normal diagnosis.
+            cli.setSelectedApp(target.appId, target.region, target.profile, target.appName);
+            cli.setSelectedBranch(target.branch);
+            await vscode.commands.executeCommand('amplify-monitor.diagnoseJob', target.appId, target.branch, target.jobId);
+            await vscode.commands.executeCommand('amplifyDiagnosis.focus');
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.viewLogs', async (arg: unknown) => {
+            const target = resolveFleetTarget(arg);
+            if (!target?.appId || !target.branch || !target.jobId || !target.region) {
+                vscode.window.showWarningMessage('This branch has no jobs yet.');
+                return;
+            }
+            try {
+                const logs = await vscode.window.withProgress(
+                    { location: vscode.ProgressLocation.Notification, title: `Fetching logs for ${target.appName ?? target.appId}/${target.branch} #${target.jobId}` },
+                    () => monitor.getJobLogs({
+                        profile: target.profile, region: target.region!, appId: target.appId!, appName: target.appName,
+                        branch: target.branch!, jobId: target.jobId!,
+                    }));
+                const steps = logs.steps.filter(s => s.file);
+                if (steps.length === 0) {
+                    vscode.window.showInformationMessage(`Job #${logs.jobId} produced no step logs (${logs.steps.map(s => `${s.stepName}=${s.status}`).join(', ')}).`);
+                    return;
+                }
+                let chosen = steps[0];
+                if (steps.length > 1) {
+                    const pick = await vscode.window.showQuickPick(
+                        steps.map(s => ({ label: s.stepName, description: `${s.status} · ${s.lines} lines`, step: s })),
+                        { title: `Job #${logs.jobId} logs` });
+                    if (!pick) {
+                        return;
+                    }
+                    chosen = pick.step;
+                }
+                const doc = await vscode.workspace.openTextDocument(vscode.Uri.file(chosen.file!));
+                const editor = await vscode.window.showTextDocument(doc, { preview: false });
+                await vscode.languages.setTextDocumentLanguage(doc, 'log');
+                // Jump to the first error line, if any.
+                const firstError = logs.errorLines.find(l => l.startsWith(`[${chosen.stepName}] `));
+                if (firstError) {
+                    const needle = firstError.slice(chosen.stepName.length + 3);
+                    const index = doc.getText().indexOf(needle);
+                    if (index >= 0) {
+                        const pos = doc.positionAt(index);
+                        editor.selection = new vscode.Selection(pos, pos);
+                        editor.revealRange(new vscode.Range(pos, pos), vscode.TextEditorRevealType.InCenter);
+                    }
+                }
+            } catch (error) {
+                vscode.window.showErrorMessage(`Could not fetch build logs: ${error instanceof Error ? error.message : error}`);
+            }
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.copyForAI', async (arg: unknown) => {
+            const target = resolveFleetTarget(arg);
+            if (!target?.appId || !target.branch) {
+                return;
+            }
+            const history = await callTool('amplify_branch_history', { account: target.profile, app: target.appId, branch: target.branch }, monitor.getFleetDir());
+            let logText = '';
+            if (target.jobId && target.region) {
+                try {
+                    const logs = await monitor.getJobLogs({
+                        profile: target.profile, region: target.region, appId: target.appId, appName: target.appName,
+                        branch: target.branch, jobId: target.jobId,
+                    });
+                    logText = `\n\n${formatJobLogs(logs, { tail: 80 })}`;
+                } catch (error) {
+                    logText = `\n\n(Build logs unavailable: ${error instanceof Error ? error.message : error})`;
+                }
+            }
+            await vscode.env.clipboard.writeText(
+                `AWS Amplify context (from Amplify Monitor; AWS profile \`${target.profile}\`, region \`${target.region}\`, app \`${target.appId}\`):\n\n${history}${logText}\n`);
+            vscode.window.setStatusBarMessage('$(check) Amplify status and build output copied for AI chat', 4000);
+        }),
+
+        vscode.commands.registerCommand('amplify-monitor.fleet.runFix', async (arg: unknown) => {
+            const target = resolveFleetTarget(arg);
+            if (!target?.fixCommand) {
+                return;
+            }
+            const terminal = vscode.window.createTerminal({ name: `AWS login: ${target.profile}` });
+            terminal.show();
+            terminal.sendText(target.fixCommand);
+            const done = await vscode.window.showInformationMessage(
+                `Finish "${target.fixCommand}" in the terminal, then refresh.`, 'Refresh Now');
+            if (done === 'Refresh Now') {
+                await monitor.refresh(false);
+            }
+        }),
+    );
+
+    monitor.start();
 }
 
 async function runDiagnosis(cli: AmplifyMonitorCli, provider: DiagnosisTreeProvider) {

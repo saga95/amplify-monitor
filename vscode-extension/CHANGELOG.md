@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.1.52] - 2026-10-27
+
+### Added
+- **Fleet (All Accounts) view.** Continuously monitors every Amplify app and branch across multiple AWS accounts using the AWS CLI and named profiles (`amplifyMonitor.fleet.accounts`). It shows the latest job, commit and message per branch, discovers regions automatically, and flags expired SSO logins with a one-click fix.
+- **Adaptive polling.** It polls faster while builds run and for 15 minutes after a `git push`. Idle branches skip `list-jobs`, and only one VS Code window polls at a time.
+- **Workspace commit tracking.** Local git repositories are matched to Amplify apps, and the view shows whether HEAD is deployed, building, failed or not built. You're notified when your commit goes live or fails.
+- **Fleet snapshot** at `~/.amplify-monitor/fleet/status.{json,md}`, plus a status bar summary and a view badge.
+- **Bundled `amplify-fleet` MCP server** (zero dependencies, read-only, no AWS calls). Tools: `amplify_fleet_status`, `amplify_fleet_attention`, `amplify_branch_history`, `amplify_workspace_deployments`, `amplify_fleet_events`, `amplify_wait_for_build`.
+- **Build output for developers and agents.** **View Build Logs** opens any job's step logs and jumps to the first error. Logs of recent failures are fetched automatically with `aws amplify get-job` and cached for 14 days. The new `amplify_get_build_logs` tool (MCP and Copilot `#amplifyLogs`) returns error lines, the log tail or grep matches, and file paths. When logs aren't cached, the MCP server asks the running extension to fetch them, limited to configured profiles. **Copy Status for AI Chat** now includes the build output.
+- **Connect AI Agents** command that configures Claude Code, Codex, Antigravity and Cursor, and can add an `AGENTS.md` / `CLAUDE.md` instructions block.
+- **Copilot integration.** Language model tools (`#amplifyFleet`, `#amplifyAttention`, `#amplifyHistory`, `#amplifyWorkspace`) and `@amplify /fleet`. `@amplify /status` now answers from the snapshot when the fleet is configured.
+
 ## [0.1.51] - 2026-04-15
 
 ### Fixed

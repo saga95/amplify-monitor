@@ -9,11 +9,53 @@
 
 ---
 
-## 🚀 What's New in v0.1.36
+## 🚀 What's New
 
-- 👥 **Multi-Account Support Enhanced** - Fixed branch/job loading across AWS profiles
-- 🖼️ **New Logo & Screenshots** - Fresh branding and documentation images
-- 🧹 **Simplified Extension** - Removed redundant build watcher (use webhook notifications instead)
+- 🛰️ **Fleet view** - Live status of every Amplify app across all your AWS accounts, using the AWS CLI and your named profiles
+- 🔁 **Commit tracking** - See whether your local HEAD is deployed, and get notified when your push goes live or fails
+- 🤖 **AI agent bridge** - Copilot, Claude Code, Codex, Antigravity and Cursor read the cached status through a bundled MCP server instead of calling AWS
+
+---
+
+## 🛰️ Fleet: every Amplify app in every AWS account, always on
+
+Maintaining Amplify apps for several clients usually means several AWS accounts and a lot of console logins. The **Fleet (All Accounts)** view watches all of them from VS Code using the AWS CLI and your named profiles, one profile per client or account.
+
+- **One picture of everything.** Each account shows its apps, each app shows its recently active branches, and each branch shows the latest job, commit SHA, commit message and age. Expand a branch to see its last few jobs and find the commit that broke it.
+- **Always up to date.** It polls every 60 seconds, every 20 seconds while a build runs, and faster for 15 minutes after you `git push`. Idle branches are skipped cheaply, and regions that contain apps are discovered automatically.
+- **Knows what you're working on.** It matches the git repositories open in VS Code to Amplify apps. *This workspace* tells you whether your local HEAD commit is deployed, building, failed or not built yet, and you're notified when your commit goes live.
+- **Build output is one click away.** **View Build Logs** opens the BUILD or DEPLOY log of any job in any account and jumps to the first error. Logs of failed builds from the last 7 days are downloaded automatically and cached for 14 days.
+- **Expired logins are obvious.** An expired SSO session is flagged on the account, with a **Fix Credentials** action that runs `aws sso login --profile …` for you.
+- **One poller for all windows.** With several VS Code windows open, one window polls AWS and the others read its snapshot, so AWS calls don't multiply.
+
+**Setup:** run **Amplify Monitor: Configure Fleet Accounts** and pick your profiles. For labels, fixed regions or filters, edit `amplifyMonitor.fleet.accounts` in settings.json:
+
+```jsonc
+"amplifyMonitor.fleet.accounts": [
+  { "profile": "acme-prod", "label": "Acme", "regions": ["us-east-1"] },
+  { "profile": "globex", "label": "Globex", "apps": ["globex-web"], "branches": ["main", "release/*"] },
+  "my-sandbox"
+]
+```
+
+### 🤖 Let AI agents use it, without calling AWS
+
+The extension writes the fleet status to `~/.amplify-monitor/fleet/status.md` and `status.json`, and ships a small dependency-free **MCP server** that reads that snapshot. Agents get current status from the extension instead of running `aws` commands (or holding AWS credentials) themselves.
+
+Run **Amplify Monitor: Connect AI Agents** and choose your tools:
+
+| Agent | What gets configured |
+|---|---|
+| **GitHub Copilot** | Built in: `#amplifyFleet`, `#amplifyAttention`, `#amplifyHistory`, `#amplifyWorkspace`, `#amplifyLogs` tools in agent mode, plus `@amplify /fleet` in chat |
+| **Claude Code** | `claude mcp add --scope user amplify-fleet …` |
+| **OpenAI Codex** | `[mcp_servers.amplify-fleet]` in `~/.codex/config.toml` |
+| **Google Antigravity** | `~/.gemini/antigravity/mcp_config.json` |
+| **Cursor** | `~/.cursor/mcp.json` |
+| **Any agent** | Optional instructions block in `AGENTS.md` / `CLAUDE.md` pointing agents at the snapshot |
+
+MCP tools: `amplify_fleet_status`, `amplify_fleet_attention`, `amplify_branch_history`, `amplify_workspace_deployments`, `amplify_fleet_events`, `amplify_get_build_logs`, and `amplify_wait_for_build`. With these, an agent can push, wait for the deploy, and read the failing build output while the extension does the AWS work. When logs aren't cached yet, the MCP server asks the running extension to fetch them. It only accepts profiles you configured.
+
+**IAM:** the fleet only needs read access: `sts:GetCallerIdentity`, `amplify:ListApps`, `amplify:ListBranches`, `amplify:ListJobs`, and `amplify:GetJob` for logs.
 
 ---
 
@@ -282,6 +324,16 @@ Access settings via **Amplify Monitor: Open Settings** or `Ctrl+,` → search "a
 | `amplifyMonitor.defaultBranch` | `main` | Default branch to monitor |
 | `amplifyMonitor.autoRefresh` | `false` | Enable auto-refresh |
 | `amplifyMonitor.autoRefreshInterval` | `60` | Refresh interval (seconds) |
+| `amplifyMonitor.fleet.enabled` | `true` | Monitor all accounts in `fleet.accounts` |
+| `amplifyMonitor.fleet.accounts` | `[]` | AWS profiles to monitor (string or `{ profile, label, regions, apps, branches }`) |
+| `amplifyMonitor.fleet.pollIntervalSeconds` | `60` | Poll interval when idle |
+| `amplifyMonitor.fleet.activePollIntervalSeconds` | `20` | Poll interval while building / after a push |
+| `amplifyMonitor.fleet.maxBranchesPerApp` | `5` | Most recently updated branches tracked per app |
+| `amplifyMonitor.fleet.jobsPerBranch` | `5` | Recent jobs (commits) kept per branch |
+| `amplifyMonitor.fleet.awsCliPath` | `aws` | AWS CLI v2 executable |
+| `amplifyMonitor.fleet.snapshotDirectory` | `~/.amplify-monitor/fleet` | Where the snapshot and MCP server live |
+| `amplifyMonitor.fleet.notifyOnWorkspaceDeploy` | `true` | Notify when your local commit finishes deploying |
+| `amplifyMonitor.fleet.autoFetchFailedLogs` | `true` | Pre-download logs of failed builds from the last 7 days |
 
 ---
 

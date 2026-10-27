@@ -121,6 +121,10 @@ jobs:
         run: npm run compile
         working-directory: vscode-extension
 
+      - name: Test fleet monitor
+        run: node --test test-fleet/
+        working-directory: vscode-extension
+
       - name: Install MCP Server dependencies
         run: npm ci
         working-directory: mcp-server

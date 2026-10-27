@@ -22,6 +22,7 @@ A Rust CLI tool for monitoring AWS Amplify builds and diagnosing failures. Inclu
 | **CLI** | Core Rust binary for terminal usage |
 | **[VS Code Extension](https://marketplace.visualstudio.com/items?itemName=SagaraHarasgama.amplify-monitor)** | Visual interface with tree views |
 | **[MCP Server](./mcp-server/)** | Let Claude/AI assistants diagnose your builds |
+| **Fleet MCP server** (bundled with the VS Code extension) | Read-only, cached multi-account build status for Copilot, Claude Code, Codex, Antigravity and Cursor; no AWS calls from the agent |
 
 ## Installation
 
