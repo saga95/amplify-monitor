@@ -101,6 +101,11 @@ jobs:
           node-version: 20
           registry-url: https://registry.npmjs.org
 
+      # npm >= 11.5.1 publishes via trusted publishing (OIDC) when it is
+      # configured on npmjs.com, and falls back to NPM_TOKEN otherwise
+      - name: Update npm
+        run: npm install -g npm@^11.5.1
+
       - name: Install
         run: npm ci
 
