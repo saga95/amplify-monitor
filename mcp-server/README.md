@@ -26,23 +26,24 @@ Model Context Protocol (MCP) server for AWS Amplify build monitoring and diagnos
 
 ## Installation
 
+No install step: MCP clients start the server with `npx`, which downloads [`@amplify-monitor/mcp-server`](https://www.npmjs.com/package/@amplify-monitor/mcp-server) on first run.
+
+### Claude Code
+
 ```bash
-cd mcp-server
-npm install
-npm run build
+claude mcp add amplify-monitor -e AWS_REGION=us-east-1 -- npx -y @amplify-monitor/mcp-server
 ```
 
-## Usage with Claude Desktop
+### Claude Desktop, Cursor and other MCP clients
 
-Add to your Claude Desktop configuration (`claude_desktop_config.json`):
+Add to the client's MCP config (for Claude Desktop, `claude_desktop_config.json`):
 
-### macOS
 ```json
 {
   "mcpServers": {
     "amplify-monitor": {
-      "command": "node",
-      "args": ["/path/to/amplify-monitor/mcp-server/dist/index.js"],
+      "command": "npx",
+      "args": ["-y", "@amplify-monitor/mcp-server"],
       "env": {
         "AWS_REGION": "us-east-1"
       }
@@ -51,20 +52,7 @@ Add to your Claude Desktop configuration (`claude_desktop_config.json`):
 }
 ```
 
-### Windows
-```json
-{
-  "mcpServers": {
-    "amplify-monitor": {
-      "command": "node",
-      "args": ["C:\\path\\to\\amplify-monitor\\mcp-server\\dist\\index.js"],
-      "env": {
-        "AWS_REGION": "us-east-1"
-      }
-    }
-  }
-}
-```
+If the CLI is not on the PATH the client sees (common for GUI apps on macOS), add `"AMPLIFY_MONITOR_CLI_PATH": "/full/path/to/amplify-monitor"` to `env`.
 
 ## Available Tools
 

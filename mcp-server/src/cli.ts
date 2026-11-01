@@ -114,7 +114,9 @@ export class AmplifyMonitorCli {
                 if (execError.code === 'ENOENT') {
                     throw new Error(
                         `amplify-monitor CLI not found at "${this.cliPath}". ` +
-                        'Please install it first.'
+                        'Download it from https://github.com/saga95/amplify-monitor/releases ' +
+                        'or run `cargo install --git https://github.com/saga95/amplify-monitor`, ' +
+                        'then put it on PATH or set AMPLIFY_MONITOR_CLI_PATH to the binary.'
                     );
                 }
                 if (execError.stderr) {

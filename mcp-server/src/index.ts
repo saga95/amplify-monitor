@@ -455,11 +455,13 @@ const tools: Tool[] = [
     }
 ];
 
+const { version } = require('../package.json') as { version: string };
+
 // Create the MCP server
 const server = new Server(
     {
         name: 'amplify-monitor',
-        version: '0.1.0',
+        version,
     },
     {
         capabilities: {
