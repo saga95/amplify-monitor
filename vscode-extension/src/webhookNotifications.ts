@@ -24,7 +24,7 @@ interface SlackBlock {
     type: string;
     text?: { type: string; text: string; emoji?: boolean };
     fields?: { type: string; text: string }[];
-    elements?: any[];
+    elements?: Record<string, unknown>[];
 }
 
 interface SlackAttachment {

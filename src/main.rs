@@ -352,8 +352,16 @@ async fn main() -> Result<()> {
                 }
 
                 (
-                    if !log_content.build_log.is_empty() { Some(build_path.to_string_lossy().to_string()) } else { None },
-                    if !log_content.deploy_log.is_empty() { Some(deploy_path.to_string_lossy().to_string()) } else { None },
+                    if !log_content.build_log.is_empty() {
+                        Some(build_path.to_string_lossy().to_string())
+                    } else {
+                        None
+                    },
+                    if !log_content.deploy_log.is_empty() {
+                        Some(deploy_path.to_string_lossy().to_string())
+                    } else {
+                        None
+                    },
                 )
             } else {
                 (None, None)
@@ -366,9 +374,21 @@ async fn main() -> Result<()> {
                 job_id: job.job_id,
                 status: job.status,
                 issues,
-                raw_logs: if include_logs { Some(log_content.raw_content.clone()) } else { None },
-                build_log: if include_logs { Some(log_content.build_log.clone()) } else { None },
-                deploy_log: if include_logs { Some(log_content.deploy_log.clone()) } else { None },
+                raw_logs: if include_logs {
+                    Some(log_content.raw_content.clone())
+                } else {
+                    None
+                },
+                build_log: if include_logs {
+                    Some(log_content.build_log.clone())
+                } else {
+                    None
+                },
+                deploy_log: if include_logs {
+                    Some(log_content.deploy_log.clone())
+                } else {
+                    None
+                },
                 build_log_path,
                 deploy_log_path,
             };
@@ -417,10 +437,8 @@ async fn main() -> Result<()> {
 
             // Get existing env vars and add/update the new one
             let existing = amplify::get_env_variables(&client, &app_id, &branch).await?;
-            let mut env_map: std::collections::HashMap<String, String> = existing
-                .into_iter()
-                .map(|e| (e.name, e.value))
-                .collect();
+            let mut env_map: std::collections::HashMap<String, String> =
+                existing.into_iter().map(|e| (e.name, e.value)).collect();
             env_map.insert(name.clone(), value);
 
             amplify::update_env_variables(&client, &app_id, &branch, env_map).await?;
@@ -505,14 +523,9 @@ async fn main() -> Result<()> {
             let output_path = std::path::Path::new(&output_file);
 
             // Download and save the outputs file
-            let result = logs::download_outputs_file(
-                &client,
-                &app_id,
-                &branch,
-                &job.job_id,
-                output_path,
-            )
-            .await?;
+            let result =
+                logs::download_outputs_file(&client, &app_id, &branch, &job.job_id, output_path)
+                    .await?;
 
             let download_result = DownloadOutputsResult {
                 app_id,
@@ -550,16 +563,6 @@ fn resolve_branch(cli_arg: Option<String>, config: &Config) -> Result<String> {
             "No branch specified. Use --branch or set default_branch in ~/.amplify-monitor.toml"
         )
         })
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct DiagnosisResult {
-    app_id: String,
-    branch: String,
-    job_id: String,
-    status: String,
-    issues: Vec<parser::Issue>,
 }
 
 #[derive(Serialize)]
@@ -720,37 +723,6 @@ impl TextOutput for amplify::JobSummary {
     }
 }
 
-impl TextOutput for DiagnosisResult {
-    fn to_text(&self) -> String {
-        let mut out = String::from("DIAGNOSIS REPORT\n");
-        out.push_str(&"═".repeat(60));
-        out.push('\n');
-        out.push_str(&format!("App: {}\n", self.app_id));
-        out.push_str(&format!("Branch: {}\n", self.branch));
-        out.push_str(&format!("Job: {}\n", self.job_id));
-        out.push_str(&format!("Status: {}\n", self.status));
-        out.push('\n');
-
-        if self.issues.is_empty() {
-            out.push_str("No known failure patterns detected.\n");
-        } else {
-            out.push_str(&format!("ISSUES FOUND: {}\n", self.issues.len()));
-            out.push_str(&"─".repeat(60));
-            out.push('\n');
-
-            for (i, issue) in self.issues.iter().enumerate() {
-                out.push_str(&format!("\n{}. [{}]\n", i + 1, issue.pattern));
-                out.push_str(&format!("   Cause: {}\n", issue.root_cause));
-                out.push_str("   Fixes:\n");
-                for fix in &issue.suggested_fixes {
-                    out.push_str(&format!("   → {}\n", fix));
-                }
-            }
-        }
-        out
-    }
-}
-
 impl TextOutput for DiagnosisResultWithLogs {
     fn to_text(&self) -> String {
         let mut out = String::from("DIAGNOSIS REPORT\n");
@@ -780,7 +752,7 @@ impl TextOutput for DiagnosisResultWithLogs {
         }
 
         if let Some(logs) = &self.raw_logs {
-            out.push_str("\n");
+            out.push('\n');
             out.push_str(&"─".repeat(60));
             out.push_str("\nRAW LOGS:\n");
             out.push_str(&"─".repeat(60));
@@ -819,10 +791,7 @@ impl TextOutput for Vec<amplify::EnvVariable> {
 
 impl TextOutput for SetEnvResult {
     fn to_text(&self) -> String {
-        format!(
-            "✓ Set {} on {}/{}\n",
-            self.name, self.app_id, self.branch
-        )
+        format!("✓ Set {} on {}/{}\n", self.name, self.app_id, self.branch)
     }
 }
 

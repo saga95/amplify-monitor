@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { MigrationAnalysis, MigrationFeature, MigrationCompatibility } from '../cli';
+import { MigrationAnalysis, MigrationFeature, MigrationCompatibility, isFullySupported } from '../cli';
 
 export class MigrationTreeProvider implements vscode.TreeDataProvider<MigrationTreeItem> {
     private _onDidChangeTreeData: vscode.EventEmitter<MigrationTreeItem | undefined | null | void> = new vscode.EventEmitter<MigrationTreeItem | undefined | null | void>();
@@ -76,10 +76,7 @@ export class MigrationTreeProvider implements vscode.TreeDataProvider<MigrationT
             // Add categories
             for (const category of this.analysis.categoriesDetected) {
                 const categoryFeatures = this.analysis.features.filter(f => f.category === category);
-                const supportedCount = categoryFeatures.filter(f => {
-                    const compat = f.compatibility as any;
-                    return compat?.type === 'Supported' || compat === 'Supported' || (compat && 'Supported' in compat);
-                }).length;
+                const supportedCount = categoryFeatures.filter(f => isFullySupported(f.compatibility)).length;
                 
                 const item = new MigrationTreeItem(
                     `${this.getCategoryIcon(category)} ${category.toUpperCase()} (${supportedCount}/${categoryFeatures.length})`,
@@ -143,7 +140,7 @@ export class MigrationTreeProvider implements vscode.TreeDataProvider<MigrationT
 
     private getCompatibilityInfo(compatibility: MigrationCompatibility | string): { icon: string; status: string } {
         // Handle both object and string formats from JSON
-        const compat = typeof compatibility === 'string' ? compatibility : (compatibility as any).type || compatibility;
+        const compat = typeof compatibility === 'string' ? compatibility : compatibility.type || compatibility;
         
         if (compat === 'Supported' || (typeof compat === 'object' && 'Supported' in compat)) {
             return { icon: '$(check)', status: 'Fully Supported' };

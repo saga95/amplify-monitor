@@ -26,7 +26,6 @@ export class AppsTreeProvider implements vscode.TreeDataProvider<AppTreeItem> {
                 // Multi-account mode: fetch apps from all configured profiles
                 // Also include default profile if not already in the list
                 const profilesToFetch = [...new Set([...configuredProfiles, defaultProfile])];
-                const allApps: AppWithProfile[] = [];
                 const profilePromises = profilesToFetch.map(async (profile) => {
                     try {
                         const apps = await this.cli.listAppsForProfile(profile, true);

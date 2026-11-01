@@ -235,7 +235,7 @@ export class MonorepoDetector {
 
         let installCmd = 'npm ci';
         let buildCmd = 'npm run build';
-        let preBuildCmds: string[] = [];
+        const preBuildCmds: string[] = [];
 
         switch (packageManager) {
             case 'pnpm':

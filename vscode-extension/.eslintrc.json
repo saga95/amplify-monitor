@@ -18,6 +18,7 @@
         "format": ["camelCase", "PascalCase"]
       }
     ],
+    "@typescript-eslint/no-unused-vars": ["error", { "argsIgnorePattern": "^_" }],
     "semi": "warn",
     "curly": "warn",
     "eqeqeq": "warn"

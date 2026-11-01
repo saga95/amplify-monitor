@@ -19,26 +19,19 @@ pub struct Issue {
     pub matched_lines: Vec<String>,
 }
 
-/// Helper to check if any pattern matches (case-sensitive)
-fn matches_any(content: &str, patterns: &[&str]) -> bool {
-    patterns.iter().any(|p| content.contains(p))
-}
-
 /// Helper to check if any pattern matches (case-insensitive)
 fn matches_any_ci(content: &str, patterns: &[&str]) -> bool {
     let lower = content.to_lowercase();
-    patterns
-        .iter()
-        .any(|p| lower.contains(&p.to_lowercase()))
+    patterns.iter().any(|p| lower.contains(&p.to_lowercase()))
 }
 
 /// Helper to check if any pattern matches along with any error indicator
 fn matches_with_indicator(content: &str, patterns: &[&str], indicators: &[&str]) -> bool {
     let lower = content.to_lowercase();
-    patterns.iter().any(|p| content.contains(p) || lower.contains(&p.to_lowercase()))
-        && indicators
-            .iter()
-            .any(|i| lower.contains(&i.to_lowercase()))
+    patterns
+        .iter()
+        .any(|p| content.contains(p) || lower.contains(&p.to_lowercase()))
+        && indicators.iter().any(|i| lower.contains(&i.to_lowercase()))
 }
 
 /// Extract lines from content that match any of the given patterns (case-insensitive),
@@ -469,7 +462,12 @@ fn check_lockfile_mismatch(content: &str) -> Option<Issue> {
     let has_yarn_lock = content.contains("yarn.lock");
 
     if has_npm_lock_error && (has_pnpm_lock || has_yarn_lock) {
-        let lock_patterns: &[&str] = &["package-lock.json", "pnpm-lock.yaml", "yarn.lock", "npm WARN"];
+        let lock_patterns: &[&str] = &[
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "yarn.lock",
+            "npm WARN",
+        ];
         let matched = extract_matched_lines(content, lock_patterns, 15);
         return Some(Issue {
             pattern: "lockfile_mismatch".to_string(),
@@ -533,7 +531,11 @@ fn check_missing_env_vars(content: &str) -> Option<Issue> {
         if content.contains(pattern) {
             for indicator in error_indicators {
                 if content.to_lowercase().contains(indicator) {
-                    let env_patterns: Vec<&str> = patterns.iter().chain(error_indicators.iter()).copied().collect();
+                    let env_patterns: Vec<&str> = patterns
+                        .iter()
+                        .chain(error_indicators.iter())
+                        .copied()
+                        .collect();
                     let matched = extract_matched_lines(content, &env_patterns, 15);
                     return Some(Issue {
                         pattern: "missing_env_vars".to_string(),
@@ -570,7 +572,11 @@ fn check_artifact_path_error(content: &str) -> Option<Issue> {
         if content.contains(pattern) {
             for ctx in error_context {
                 if content.contains(ctx) {
-                    let all_patterns: Vec<&str> = patterns.iter().chain(error_context.iter()).copied().collect();
+                    let all_patterns: Vec<&str> = patterns
+                        .iter()
+                        .chain(error_context.iter())
+                        .copied()
+                        .collect();
                     let matched = extract_matched_lines(content, &all_patterns, 15);
                     return Some(Issue {
                         pattern: "artifact_path_error".to_string(),

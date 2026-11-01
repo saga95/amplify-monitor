@@ -7,7 +7,7 @@ interface ValidationCheck {
     id: string;
     name: string;
     category: 'build' | 'dependencies' | 'config' | 'env' | 'git';
-    status: 'pass' | 'warn' | 'fail' | 'skip';
+    status: 'pass' | 'warn' | 'fail' | 'skip' | 'info';
     message: string;
     details?: string[];
     autoFixAvailable: boolean;
@@ -69,15 +69,17 @@ export class PreDeployValidationPanel {
                     case 'refresh':
                         await this.runValidation();
                         break;
-                    case 'openFile':
+                    case 'openFile': {
                         const uri = vscode.Uri.file(message.path);
                         vscode.window.showTextDocument(uri);
                         break;
-                    case 'runCommand':
+                    }
+                    case 'runCommand': {
                         const terminal = vscode.window.createTerminal('Amplify Monitor');
                         terminal.show();
                         terminal.sendText(message.cmd);
                         break;
+                    }
                     case 'deploy':
                         vscode.commands.executeCommand('amplify-monitor.startBuild');
                         break;
@@ -156,13 +158,6 @@ export class PreDeployValidationPanel {
 
         // Check 2: Unpushed commits
         try {
-            const unpushed = cp.execSync('git log @{u}..HEAD --oneline 2>/dev/null || echo ""', {
-                cwd: this._workspaceRoot,
-                encoding: 'utf-8',
-                shell: 'cmd'
-            }).trim();
-
-            // On Windows, try different approach
             const branchName = cp.execSync('git rev-parse --abbrev-ref HEAD', {
                 cwd: this._workspaceRoot,
                 encoding: 'utf-8'
@@ -434,8 +429,9 @@ export class PreDeployValidationPanel {
                     autoFixAvailable: false,
                     blocking: false
                 });
-            } catch (e: any) {
-                const errorOutput = e.stdout || e.stderr || '';
+            } catch (e) {
+                const { stdout, stderr } = e as { stdout?: string; stderr?: string };
+                const errorOutput = stdout || stderr || '';
                 const errorLines = errorOutput.split('\n').filter((l: string) => l.includes('error TS'));
                 
                 if (errorLines.length > 0) {
@@ -463,7 +459,7 @@ export class PreDeployValidationPanel {
                 id: 'build-eslint',
                 name: 'ESLint Configured',
                 category: 'build',
-                status: 'info' as any,
+                status: 'info',
                 message: 'ESLint is configured. Run "npm run lint" to check for issues.',
                 autoFixAvailable: true,
                 autoFix: async () => {
@@ -532,7 +528,7 @@ export class PreDeployValidationPanel {
                     id: 'env-required',
                     name: 'Required Env Variables',
                     category: 'env',
-                    status: 'info' as any,
+                    status: 'info',
                     message: `${requiredVars.length} env var(s) defined in .env.example. Ensure they're set in Amplify Console.`,
                     details: requiredVars.slice(0, 10),
                     autoFixAvailable: false,
@@ -824,7 +820,6 @@ export class PreDeployValidationPanel {
             groupedChecks[check.category].push(check);
         }
 
-        const fixableCount = result.checks.filter(c => c.autoFixAvailable && c.status !== 'pass').length;
         const blockingCount = result.checks.filter(c => c.blocking && c.status === 'fail').length;
 
         return `<!DOCTYPE html>

@@ -100,7 +100,7 @@ export class PreviewEnvironmentsPanel {
         }
     }
 
-    private async _deleteBranch(appId: string, branch: string, region?: string): Promise<void> {
+    private async _deleteBranch(appId: string, branch: string, _region?: string): Promise<void> {
         const confirm = await vscode.window.showWarningMessage(
             `Are you sure you want to delete the preview environment for "${branch}"? This action cannot be undone.`,
             { modal: true },

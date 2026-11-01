@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AmplifyMonitorCli, AmplifyApp, AmplifyJob } from '../cli';
+import { AmplifyMonitorCli, AmplifyJob } from '../cli';
 
 interface QueuedBuild {
     app: {

@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
+import * as os from 'os';
 import { AmplifyMonitorCli } from './cli';
 import { AppsTreeProvider } from './views/appsTree';
 import { JobsTreeProvider } from './views/jobsTree';
@@ -15,7 +16,7 @@ import { MonorepoPanel } from './views/monorepoDetector';
 import { BuildOptimizationWizard } from './views/buildOptimizationWizard';
 import { PreDeployValidationPanel } from './views/preDeployValidation';
 import { SecretsManagerPanel } from './views/secretsManagerPanel';
-import { NotificationsPanel, NotificationsService } from './views/notificationsPanel';
+import { NotificationsPanel } from './views/notificationsPanel';
 import { NodeVersionDetectorPanel } from './views/nodeVersionDetector';
 import { EnvVarsTroubleshooterPanel } from './views/envVarsTroubleshooter';
 import { CustomDomainValidatorPanel } from './views/customDomainValidator';
@@ -1294,7 +1295,6 @@ export function deactivate() {
 
 // Helper function to get AWS profiles from credentials and config files
 async function getAwsProfiles(): Promise<string[]> {
-    const os = require('os');
     const profiles = new Set<string>();
     
     const configPath = process.env.AWS_CONFIG_FILE || path.join(os.homedir(), '.aws', 'config');

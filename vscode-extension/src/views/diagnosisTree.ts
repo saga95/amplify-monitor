@@ -1,7 +1,6 @@
 import * as vscode from 'vscode';
 import { AmplifyMonitorCli, DiagnosisResult, DiagnosisIssue } from '../cli';
 import { QUICK_FIXES } from '../quickFixes';
-import { DiagnosisShareService } from '../diagnosisShare';
 
 export class DiagnosisTreeProvider implements vscode.TreeDataProvider<DiagnosisTreeItem> {
     private _onDidChangeTreeData = new vscode.EventEmitter<DiagnosisTreeItem | undefined | null | void>();

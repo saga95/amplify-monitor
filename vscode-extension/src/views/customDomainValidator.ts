@@ -1,6 +1,7 @@
 import * as vscode from 'vscode';
 import * as dns from 'dns';
 import * as https from 'https';
+import * as tls from 'tls';
 import { promisify } from 'util';
 
 const dnsResolve = promisify(dns.resolve);
@@ -35,7 +36,7 @@ interface DomainCheck {
     fix?: {
         action: string;
         description: string;
-        data?: any;
+        data?: unknown;
     };
 }
 
@@ -256,8 +257,9 @@ export class CustomDomainValidatorPanel {
                     }
                 });
             }
-        } catch (e: any) {
-            if (e.code === 'ENODATA' || e.code === 'ENOTFOUND') {
+        } catch (e) {
+            const code = (e as NodeJS.ErrnoException).code;
+            if (code === 'ENODATA' || code === 'ENOTFOUND') {
                 if (!isApex) {
                     checks.push({
                         name: 'CNAME Record',
@@ -289,8 +291,9 @@ export class CustomDomainValidatorPanel {
                     details: 'Apex domains require ALIAS/ANAME record or Route 53 alias'
                 });
             }
-        } catch (e: any) {
-            if (isApex && (e.code === 'ENODATA' || e.code === 'ENOTFOUND')) {
+        } catch (e) {
+            const code = (e as NodeJS.ErrnoException).code;
+            if (isApex && (code === 'ENODATA' || code === 'ENOTFOUND')) {
                 checks.push({
                     name: 'A Record (Apex)',
                     status: 'error',
@@ -349,7 +352,7 @@ export class CustomDomainValidatorPanel {
             };
 
             const req = https.request(options, (res) => {
-                const socket = res.socket as any;
+                const socket = res.socket as tls.TLSSocket;
                 const cert = socket.getPeerCertificate?.();
 
                 if (cert && Object.keys(cert).length > 0) {
@@ -392,7 +395,7 @@ export class CustomDomainValidatorPanel {
         });
     }
 
-    private _addSslChecks(ssl: SslInfo, checks: DomainCheck[], domain: string) {
+    private _addSslChecks(ssl: SslInfo, checks: DomainCheck[], _domain: string) {
         if (ssl.error) {
             if (ssl.error.includes('ENOTFOUND') || ssl.error.includes('getaddrinfo')) {
                 checks.push({
@@ -604,7 +607,7 @@ export class CustomDomainValidatorPanel {
 
     private async _checkCaaRecords(domain: string, checks: DomainCheck[]) {
         try {
-            const caaRecords = await dnsResolve(domain, 'CAA') as any[];
+            const caaRecords = await dnsResolve(domain, 'CAA') as dns.CaaRecord[];
             
             if (caaRecords && caaRecords.length > 0) {
                 const allowsAmazon = caaRecords.some(r => 
@@ -638,7 +641,7 @@ export class CustomDomainValidatorPanel {
         }
     }
 
-    private _generateAmplifyConfig(domain: string, isApex: boolean): DomainValidationResult['amplifyConfig'] {
+    private _generateAmplifyConfig(domain: string, _isApex: boolean): DomainValidationResult['amplifyConfig'] {
         const config: DomainValidationResult['amplifyConfig'] = {};
 
         if (this._appId) {
