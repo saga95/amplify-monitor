@@ -336,6 +336,20 @@ I found 2 issues:
 
 See [mcp-server/README.md](./mcp-server/README.md) for full documentation.
 
+### Agent Skill
+
+[`skills/amplify-monitor/SKILL.md`](./skills/amplify-monitor/SKILL.md) tells AI agents when and how to use the MCP tools: diagnose first, check deploys after a push, and confirm before changing env vars or builds.
+
+```bash
+# Claude Code (all projects)
+cp -r skills/amplify-monitor ~/.claude/skills/
+
+# or a single project
+cp -r skills/amplify-monitor .claude/skills/
+```
+
+Other agents that support `SKILL.md` skills (Cursor, Copilot, Codex, ...) can load the same folder from their skills directory.
+
 ## Roadmap
 
 - [x] Config file support (`~/.amplify-monitor.toml`)
