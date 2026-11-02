@@ -340,15 +340,31 @@ See [mcp-server/README.md](./mcp-server/README.md) for full documentation.
 
 [`skills/amplify-monitor/SKILL.md`](./skills/amplify-monitor/SKILL.md) tells AI agents when and how to use the MCP tools: diagnose first, check deploys after a push, and confirm before changing env vars or builds.
 
-```bash
-# Claude Code (all projects)
-cp -r skills/amplify-monitor ~/.claude/skills/
+#### Claude Code plugin
 
-# or a single project
-cp -r skills/amplify-monitor .claude/skills/
+The plugin installs the skill and the MCP server together. You still need the `amplify-monitor` CLI on your PATH (see [Installation](#installation)).
+
+```
+/plugin marketplace add saga95/amplify-monitor
+/plugin install amplify-monitor@amplify-monitor
 ```
 
-Other agents that support `SKILL.md` skills (Cursor, Copilot, Codex, ...) can load the same folder from their skills directory.
+#### Cursor, GitHub Copilot and Codex
+
+All three load skills from `.agents/skills`. Copy the skill, then add the MCP server using the [config for your client](./mcp-server/README.md#claude-desktop-cursor-and-other-mcp-clients).
+
+```bash
+git clone https://github.com/saga95/amplify-monitor.git
+cd amplify-monitor
+
+# all projects
+mkdir -p ~/.agents/skills
+cp -r skills/amplify-monitor ~/.agents/skills/
+
+# or a single project: run from the project root, using the path to your clone
+mkdir -p .agents/skills
+cp -r /path/to/amplify-monitor/skills/amplify-monitor .agents/skills/
+```
 
 ## Roadmap
 

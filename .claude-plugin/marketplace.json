@@ -1,0 +1,15 @@
+{
+  "name": "amplify-monitor",
+  "description": "AWS Amplify build monitoring and diagnosis for Claude Code",
+  "owner": {
+    "name": "saga95",
+    "url": "https://github.com/saga95"
+  },
+  "plugins": [
+    {
+      "name": "amplify-monitor",
+      "source": "./",
+      "description": "Check, diagnose and fix AWS Amplify builds: the amplify-monitor skill plus its MCP server"
+    }
+  ]
+}
