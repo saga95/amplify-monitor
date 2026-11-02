@@ -98,10 +98,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           registry-url: https://registry.npmjs.org
 
-      # npm >= 11.5.1 publishes via trusted publishing (OIDC) when it is
+      # Trusted publishing needs Node >= 22.14 and npm >= 11.5.1. npm publishes
+      # via OIDC when it is
       # configured on npmjs.com, and falls back to NPM_TOKEN otherwise
       - name: Update npm
         run: npm install -g npm@^11.5.1
