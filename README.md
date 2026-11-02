@@ -294,22 +294,22 @@ Let Claude and other AI assistants diagnose your Amplify builds directly!
 
 ### Quick Setup
 
+Requires the `amplify-monitor` CLI on your PATH (see [Installation](#installation)). The MCP server runs with `npx`, so there is nothing else to install.
+
+**Claude Code:**
+
 ```bash
-cd mcp-server
-npm install
-npm run build
+claude mcp add amplify-monitor -- npx -y @amplify-monitor/mcp-server
 ```
 
-### Claude Desktop Config
-
-Add to your `claude_desktop_config.json`:
+**Claude Desktop, Cursor and other MCP clients:**
 
 ```json
 {
   "mcpServers": {
     "amplify-monitor": {
-      "command": "node",
-      "args": ["C:\\path\\to\\amplify-monitor\\mcp-server\\dist\\index.js"]
+      "command": "npx",
+      "args": ["-y", "@amplify-monitor/mcp-server"]
     }
   }
 }
