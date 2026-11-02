@@ -10,7 +10,7 @@ use config::Config;
 use serde::Serialize;
 
 #[derive(Parser)]
-#[command(name = "amplify-monitor")]
+#[command(name = "amplify-monitor", version)]
 #[command(about = "Monitor AWS Amplify builds and diagnose failures", long_about = None)]
 struct Cli {
     /// Output format
