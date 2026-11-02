@@ -136,7 +136,6 @@ fn extract_from_gzip(gzip_bytes: &[u8]) -> Result<String> {
 #[derive(Debug)]
 pub struct DownloadOutputsResult {
     pub file_path: String,
-    pub content: String,
 }
 
 /// Download amplify_outputs.json from job artifacts and save to specified path
@@ -166,7 +165,6 @@ pub async fn download_outputs_file(
 
                 return Ok(DownloadOutputsResult {
                     file_path: output_path.display().to_string(),
-                    content,
                 });
             }
             Ok(None) => {
@@ -175,7 +173,10 @@ pub async fn download_outputs_file(
             }
             Err(e) => {
                 // Log warning but continue trying other artifacts
-                eprintln!("Warning: Failed to process artifact from {}: {}", step_name, e);
+                eprintln!(
+                    "Warning: Failed to process artifact from {}: {}",
+                    step_name, e
+                );
                 continue;
             }
         }
@@ -212,7 +213,9 @@ async fn download_and_find_outputs(url: &str) -> Result<Option<String>> {
 
     // Check if it's the JSON file directly
     if let Ok(content) = String::from_utf8(bytes.clone()) {
-        if content.contains("\"version\"") && content.contains("\"auth\"") || content.contains("\"data\"") {
+        if content.contains("\"version\"") && content.contains("\"auth\"")
+            || content.contains("\"data\"")
+        {
             // Looks like amplify_outputs.json content
             return Ok(Some(content));
         }
@@ -233,7 +236,8 @@ fn extract_outputs_from_zip(zip_bytes: &[u8]) -> Result<Option<String>> {
             .with_context(|| format!("Failed to read file at index {}", i))?;
 
         let file_name = file.name().to_lowercase();
-        if file_name.contains("amplify_outputs.json") || file_name.ends_with("amplify_outputs.json") {
+        if file_name.contains("amplify_outputs.json") || file_name.ends_with("amplify_outputs.json")
+        {
             let mut content = String::new();
             file.read_to_string(&mut content)
                 .with_context(|| format!("Failed to read content of {}", file.name()))?;

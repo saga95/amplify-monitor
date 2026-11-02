@@ -1,5 +1,6 @@
 import * as vscode from 'vscode';
 import { DiagnosisResult, DiagnosisIssue } from './cli';
+import * as fs from 'fs';
 
 export interface DiagnosisReference {
     appId: string;
@@ -274,7 +275,6 @@ export class DiagnosisShareService {
         });
 
         if (uri) {
-            const fs = require('fs');
             const content = uri.fsPath.endsWith('.md') 
                 ? await this.generateMarkdownContent(result)
                 : JSON.stringify(reference, null, 2);

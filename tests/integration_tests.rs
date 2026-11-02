@@ -289,7 +289,7 @@ mod mock_api_tests {
 
     #[test]
     fn test_mock_job_list_with_failed() {
-        let jobs = vec![
+        let jobs = [
             MockJobSummary {
                 job_id: "1".to_string(),
                 status: "SUCCEED".to_string(),

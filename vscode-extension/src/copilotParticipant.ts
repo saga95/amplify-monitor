@@ -38,7 +38,7 @@ export class AmplifyCopilotParticipant {
         this.cli = cli;
     }
 
-    register(context: vscode.ExtensionContext): vscode.Disposable[] {
+    register(_context: vscode.ExtensionContext): vscode.Disposable[] {
         const disposables: vscode.Disposable[] = [];
 
         // Register the chat participant
@@ -105,7 +105,7 @@ export class AmplifyCopilotParticipant {
     private async handleDiagnoseRequest(
         request: vscode.ChatRequest,
         stream: vscode.ChatResponseStream,
-        token: vscode.CancellationToken
+        _token: vscode.CancellationToken
     ): Promise<vscode.ChatResult> {
         stream.progress('Fetching latest failed build...');
 
@@ -210,7 +210,7 @@ export class AmplifyCopilotParticipant {
     private async handleLogsRequest(
         request: vscode.ChatRequest,
         stream: vscode.ChatResponseStream,
-        token: vscode.CancellationToken
+        _token: vscode.CancellationToken
     ): Promise<vscode.ChatResult> {
         // Reuse existing context from a previous diagnose call if available
         let buildContext = this.lastBuildContext;
@@ -289,7 +289,7 @@ export class AmplifyCopilotParticipant {
     private async handleFixRequest(
         request: vscode.ChatRequest,
         stream: vscode.ChatResponseStream,
-        token: vscode.CancellationToken
+        _token: vscode.CancellationToken
     ): Promise<vscode.ChatResult> {
         // Use existing context or fetch new
         if (!this.lastBuildContext) {
@@ -536,7 +536,7 @@ export class AmplifyCopilotParticipant {
         stream.progress('Detecting lock file conflict...');
 
         // Prefer npm if package-lock.json exists, otherwise keep the first one found
-        let toDelete: string[] = [];
+        const toDelete: string[] = [];
         let keeping = '';
 
         if (hasNpm) {
@@ -811,7 +811,7 @@ export class AmplifyCopilotParticipant {
     private async handleGeneralRequest(
         request: vscode.ChatRequest,
         stream: vscode.ChatResponseStream,
-        token: vscode.CancellationToken
+        _token: vscode.CancellationToken
     ): Promise<vscode.ChatResult> {
         stream.markdown(`## 🚀 Amplify Monitor Assistant\n\n`);
         stream.markdown(`I can help you with AWS Amplify builds. Try:\n\n`);
@@ -1000,7 +1000,7 @@ export class AmplifyCopilotParticipant {
         
         let relevantLines: string[] = [];
         let foundError = false;
-        let contextBefore: string[] = [];
+        const contextBefore: string[] = [];
 
         for (const line of lines) {
             // Keep a rolling buffer of context (increased from 10 to 20)
@@ -1067,8 +1067,8 @@ export class AmplifyCopilotParticipant {
 
     private provideFollowups(
         result: vscode.ChatResult,
-        context: vscode.ChatContext,
-        token: vscode.CancellationToken
+        _context: vscode.ChatContext,
+        _token: vscode.CancellationToken
     ): vscode.ProviderResult<vscode.ChatFollowup[]> {
         const followups: vscode.ChatFollowup[] = [];
 

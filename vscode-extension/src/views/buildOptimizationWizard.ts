@@ -74,10 +74,11 @@ export class BuildOptimizationWizard {
                             vscode.env.openExternal(vscode.Uri.parse(message.url));
                         }
                         break;
-                    case 'openFile':
+                    case 'openFile': {
                         const uri = vscode.Uri.file(message.path);
                         vscode.window.showTextDocument(uri);
                         break;
+                    }
                 }
             },
             null,
@@ -187,7 +188,6 @@ export class BuildOptimizationWizard {
         if (!fs.existsSync(packageJsonPath)) return;
 
         const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
-        const allDeps = { ...packageJson.dependencies, ...packageJson.devDependencies };
 
         // Check 1: Lock file presence
         const hasPackageLock = fs.existsSync(path.join(this._workspaceRoot, 'package-lock.json'));
@@ -265,7 +265,7 @@ export class BuildOptimizationWizard {
         if (hasPackageLock) {
             try {
                 const lockContent = fs.readFileSync(path.join(this._workspaceRoot, 'package-lock.json'), 'utf-8');
-                const lockJson = JSON.parse(lockContent);
+                JSON.parse(lockContent); // skip the check for a corrupt lock file
                 
                 // Simple heuristic: check lock file size
                 const lockSizeMB = Buffer.byteLength(lockContent, 'utf-8') / (1024 * 1024);
@@ -294,8 +294,6 @@ export class BuildOptimizationWizard {
     private async checkBuildConfig() {
         const packageJsonPath = path.join(this._workspaceRoot, 'package.json');
         if (!fs.existsSync(packageJsonPath)) return;
-
-        const packageJson = JSON.parse(fs.readFileSync(packageJsonPath, 'utf-8'));
 
         // Check 1: Source maps in production
         const nextConfigPath = path.join(this._workspaceRoot, 'next.config.js');
@@ -703,7 +701,7 @@ cache:
         
         // Detect project type
         const packageJsonPath = path.join(this._workspaceRoot, 'package.json');
-        let buildCommand = 'npm run build';
+        const buildCommand = 'npm run build';
         let baseDirectory = 'build';
         
         if (fs.existsSync(packageJsonPath)) {

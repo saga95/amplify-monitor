@@ -2,6 +2,25 @@ import * as vscode from 'vscode';
 import * as cp from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import { errorMessage } from '../cli';
+
+/** Fields read from `aws ssm get-parameters-by-path` output */
+interface SsmParameter {
+    Name: string;
+    Value: string;
+    Type: SSMParameter['type'];
+    LastModifiedDate?: string;
+    Description?: string;
+}
+
+/** Fields read from `aws secretsmanager list-secrets` output */
+interface SecretListEntry {
+    Name: string;
+    ARN: string;
+    Description?: string;
+    LastChangedDate?: string;
+    Tags?: { Key: string; Value: string }[];
+}
 
 interface SSMParameter {
     name: string;
@@ -136,15 +155,15 @@ export class SecretsManagerPanel {
             });
 
             const data = JSON.parse(result);
-            this._ssmParameters = (data.Parameters || []).map((p: any) => ({
+            this._ssmParameters = ((data.Parameters || []) as SsmParameter[]).map((p) => ({
                 name: p.Name,
                 value: p.Value,
                 type: p.Type,
                 lastModified: p.LastModifiedDate,
                 description: p.Description
             }));
-        } catch (e: any) {
-            console.error('Failed to fetch SSM parameters:', e.message);
+        } catch (e) {
+            console.error('Failed to fetch SSM parameters:', errorMessage(e));
             this._ssmParameters = [];
         }
     }
@@ -162,15 +181,15 @@ export class SecretsManagerPanel {
             });
 
             const data = JSON.parse(result);
-            this._secrets = (data.SecretList || []).map((s: any) => ({
+            this._secrets = ((data.SecretList || []) as SecretListEntry[]).map((s) => ({
                 name: s.Name,
                 arn: s.ARN,
                 description: s.Description,
                 lastChanged: s.LastChangedDate,
-                tags: s.Tags?.reduce((acc: any, t: any) => ({ ...acc, [t.Key]: t.Value }), {})
+                tags: s.Tags?.reduce<Record<string, string>>((acc, t) => ({ ...acc, [t.Key]: t.Value }), {})
             }));
-        } catch (e: any) {
-            console.error('Failed to fetch secrets:', e.message);
+        } catch (e) {
+            console.error('Failed to fetch secrets:', errorMessage(e));
             this._secrets = [];
         }
     }
@@ -193,8 +212,8 @@ export class SecretsManagerPanel {
 
             const data = JSON.parse(result);
             this._amplifyEnvVars = new Map(Object.entries(data.branch?.environmentVariables || {}));
-        } catch (e: any) {
-            console.error('Failed to fetch Amplify env vars:', e.message);
+        } catch (e) {
+            console.error('Failed to fetch Amplify env vars:', errorMessage(e));
             this._amplifyEnvVars = new Map();
         }
     }
@@ -221,8 +240,8 @@ export class SecretsManagerPanel {
                 await vscode.env.clipboard.writeText(value);
                 vscode.window.showInformationMessage('Value copied to clipboard');
             }
-        } catch (e: any) {
-            vscode.window.showErrorMessage(`Failed to get parameter value: ${e.message}`);
+        } catch (e) {
+            vscode.window.showErrorMessage(`Failed to get parameter value: ${errorMessage(e)}`);
         }
     }
 
@@ -270,8 +289,8 @@ export class SecretsManagerPanel {
                         envVars[envName] = secretData.SecretString;
                         result.synced.push(envName);
                     }
-                } catch (e: any) {
-                    result.errors.push(`${itemName}: ${e.message}`);
+                } catch (e) {
+                    result.errors.push(`${itemName}: ${errorMessage(e)}`);
                 }
             }
         }
@@ -290,9 +309,9 @@ export class SecretsManagerPanel {
                 cp.execSync(cmd, { encoding: 'utf-8', timeout: 30000 });
                 
                 vscode.window.showInformationMessage(`Synced ${result.synced.length} variable(s) to Amplify`);
-            } catch (e: any) {
-                vscode.window.showErrorMessage(`Failed to update Amplify: ${e.message}`);
-                result.errors.push(e.message);
+            } catch (e) {
+                vscode.window.showErrorMessage(`Failed to update Amplify: ${errorMessage(e)}`);
+                result.errors.push(errorMessage(e));
             }
         }
 
@@ -323,8 +342,8 @@ export class SecretsManagerPanel {
                 
                 cp.execSync(cmd, { encoding: 'utf-8', timeout: 10000 });
                 result.synced.push(name);
-            } catch (e: any) {
-                result.errors.push(`${name}: ${e.message}`);
+            } catch (e) {
+                result.errors.push(`${name}: ${errorMessage(e)}`);
             }
         }
 

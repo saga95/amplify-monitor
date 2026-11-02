@@ -2,6 +2,9 @@ import * as vscode from 'vscode';
 import * as https from 'https';
 import * as http from 'http';
 
+/** JSON body posted to a webhook */
+type WebhookPayload = Record<string, unknown>;
+
 interface WebhookConfig {
     name: string;
     url: string;
@@ -104,7 +107,7 @@ export class NotificationsService {
     }
 
     private async sendToWebhook(webhook: WebhookConfig, notification: BuildNotification): Promise<void> {
-        let payload: any;
+        let payload: WebhookPayload;
 
         switch (webhook.type) {
             case 'slack':
@@ -123,7 +126,7 @@ export class NotificationsService {
         await this.postToWebhook(webhook.url, payload);
     }
 
-    private formatSlackMessage(notification: BuildNotification): any {
+    private formatSlackMessage(notification: BuildNotification): WebhookPayload {
         const statusEmoji = this.getStatusEmoji(notification.status);
         const statusColor = this.getStatusColor(notification.status);
         const consoleUrl = `https://${notification.region}.console.aws.amazon.com/amplify/home?region=${notification.region}#/${notification.appId}/${notification.branch}/${notification.jobId}`;
@@ -206,7 +209,7 @@ export class NotificationsService {
         };
     }
 
-    private formatTeamsMessage(notification: BuildNotification): any {
+    private formatTeamsMessage(notification: BuildNotification): WebhookPayload {
         const statusEmoji = this.getStatusEmoji(notification.status);
         const statusColor = this.getStatusColor(notification.status);
         const consoleUrl = `https://${notification.region}.console.aws.amazon.com/amplify/home?region=${notification.region}#/${notification.appId}/${notification.branch}/${notification.jobId}`;
@@ -238,7 +241,7 @@ export class NotificationsService {
         };
     }
 
-    private formatDiscordMessage(notification: BuildNotification): any {
+    private formatDiscordMessage(notification: BuildNotification): WebhookPayload {
         const statusEmoji = this.getStatusEmoji(notification.status);
         const statusColor = parseInt(this.getStatusColor(notification.status).replace('#', ''), 16);
         const consoleUrl = `https://${notification.region}.console.aws.amazon.com/amplify/home?region=${notification.region}#/${notification.appId}/${notification.branch}/${notification.jobId}`;
@@ -263,7 +266,7 @@ export class NotificationsService {
         };
     }
 
-    private formatGenericMessage(notification: BuildNotification): any {
+    private formatGenericMessage(notification: BuildNotification): WebhookPayload {
         return {
             event: this.getEventType(notification.status),
             app: {
@@ -317,7 +320,7 @@ export class NotificationsService {
         return `${secs}s`;
     }
 
-    private postToWebhook(url: string, payload: any): Promise<void> {
+    private postToWebhook(url: string, payload: WebhookPayload): Promise<void> {
         return new Promise((resolve, reject) => {
             const data = JSON.stringify(payload);
             const parsedUrl = new URL(url);
@@ -420,7 +423,7 @@ export class NotificationsPanel {
                         this.refresh();
                         vscode.window.showInformationMessage('Webhook removed');
                         break;
-                    case 'testWebhook':
+                    case 'testWebhook': {
                         const success = await this._service.testWebhook(message.config);
                         if (success) {
                             vscode.window.showInformationMessage('Test notification sent successfully!');
@@ -428,6 +431,7 @@ export class NotificationsPanel {
                             vscode.window.showErrorMessage('Failed to send test notification. Check webhook URL.');
                         }
                         break;
+                    }
                     case 'refresh':
                         this.refresh();
                         break;

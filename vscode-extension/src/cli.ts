@@ -75,6 +75,23 @@ export type MigrationCompatibility =
     | { type: 'NotSupported'; alternative: string }
     | { type: 'ManualMigration'; reason: string };
 
+/** Message of a caught error, whatever was thrown. */
+export function errorMessage(error: unknown): string {
+    return error instanceof Error ? error.message : String(error);
+}
+
+/**
+ * True when a feature is fully supported in Gen2. The CLI serializes unit
+ * variants as plain strings ("Supported") and data variants as
+ * { "NotSupported": {...} }, so accept those shapes as well as { type }.
+ */
+export function isFullySupported(compatibility: MigrationCompatibility | string | Record<string, unknown>): boolean {
+    if (typeof compatibility === 'string') {
+        return compatibility === 'Supported';
+    }
+    return compatibility?.type === 'Supported' || 'Supported' in (compatibility ?? {});
+}
+
 export interface MigrationSummary {
     totalFeatures: number;
     fullySupported: number;

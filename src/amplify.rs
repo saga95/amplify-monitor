@@ -297,11 +297,7 @@ pub async fn update_env_variables(
 }
 
 /// Start a new build job for a branch
-pub async fn start_job(
-    client: &Client,
-    app_id: &str,
-    branch_name: &str,
-) -> Result<StartJobResult> {
+pub async fn start_job(client: &Client, app_id: &str, branch_name: &str) -> Result<StartJobResult> {
     use aws_sdk_amplify::types::JobType;
 
     let response = client
@@ -337,7 +333,12 @@ pub async fn stop_job(
         .job_id(job_id)
         .send()
         .await
-        .with_context(|| format!("Failed to stop job {} for {}/{}", job_id, app_id, branch_name))?;
+        .with_context(|| {
+            format!(
+                "Failed to stop job {} for {}/{}",
+                job_id, app_id, branch_name
+            )
+        })?;
 
     let summary = response
         .job_summary

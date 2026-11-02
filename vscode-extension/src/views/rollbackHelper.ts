@@ -356,7 +356,7 @@ export class RollbackHelperPanel {
                     <p>No deployments found. Make sure you have Amplify apps with active branches.</p>
                 </div>
             ` : `
-                ${Array.from(appGroups.entries()).map(([appId, deployments]) => `
+                ${Array.from(appGroups.entries()).map(([, deployments]) => `
                     <div class="app-section">
                         <h2>📱 ${deployments[0].app.name}</h2>
                         <div class="branch-grid">

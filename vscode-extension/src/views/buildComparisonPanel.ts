@@ -1,5 +1,5 @@
 import * as vscode from 'vscode';
-import { AmplifyMonitorCli } from '../cli';
+import { AmplifyMonitorCli, DiagnosisResult } from '../cli';
 
 interface BuildInfo {
     jobId: string;
@@ -127,7 +127,7 @@ export class BuildComparisonPanel {
             const apps = await this._cli.listApps(true);
             this._panel.webview.postMessage({
                 command: 'appsLoaded',
-                apps: apps.map((a: any) => ({ id: a.appId, name: a.name })),
+                apps: apps.map((a) => ({ id: a.appId, name: a.name })),
                 currentAppId: this._currentAppId
             });
         } catch (error) {
@@ -143,7 +143,7 @@ export class BuildComparisonPanel {
             const branches = await this._cli.listBranches(appId);
             this._panel.webview.postMessage({
                 command: 'branchesLoaded',
-                branches: branches.map((b: any) => b.branchName),
+                branches: branches.map((b) => b.branchName),
                 currentBranch: this._currentBranch
             });
         } catch (error) {
@@ -162,17 +162,16 @@ export class BuildComparisonPanel {
         try {
             const jobs = await this._cli.listJobs(this._currentAppId, this._currentBranch);
             
-            const builds: BuildInfo[] = jobs.slice(0, 20).map((j: any) => ({
+            // The CLI's job list has no commit info yet, so commitId/commitMessage stay unset
+            const builds: BuildInfo[] = jobs.slice(0, 20).map((j) => ({
                 jobId: j.jobId,
-                branchName: j.branchName,
+                branchName: this._currentBranch,
                 status: j.status,
                 startTime: j.startTime,
                 endTime: j.endTime,
-                duration: j.endTime ? 
-                    Math.round((new Date(j.endTime).getTime() - new Date(j.startTime).getTime()) / 1000) : 
-                    undefined,
-                commitId: j.commitId?.substring(0, 7),
-                commitMessage: j.commitMessage?.substring(0, 50)
+                duration: j.startTime && j.endTime ?
+                    Math.round((new Date(j.endTime).getTime() - new Date(j.startTime).getTime()) / 1000) :
+                    undefined
             }));
 
             this._panel.webview.postMessage({
@@ -193,16 +192,16 @@ export class BuildComparisonPanel {
         try {
             // Get job details from the builds list
             const jobs = await this._cli.listJobs(this._currentAppId, this._currentBranch);
-            const job1 = jobs.find((j: any) => j.jobId === jobId1);
-            const job2 = jobs.find((j: any) => j.jobId === jobId2);
+            const job1 = jobs.find((j) => j.jobId === jobId1);
+            const job2 = jobs.find((j) => j.jobId === jobId2);
 
             if (!job1 || !job2) {
                 throw new Error('Could not find job details');
             }
 
             // Try to get diagnosis for both builds (which includes log analysis)
-            let diagnosis1: any = null;
-            let diagnosis2: any = null;
+            let diagnosis1: DiagnosisResult | null = null;
+            let diagnosis2: DiagnosisResult | null = null;
             
             try {
                 diagnosis1 = await this._cli.diagnose(this._currentAppId, this._currentBranch, jobId1);
@@ -288,8 +287,8 @@ export class BuildComparisonPanel {
                 const issues1 = diagnosis1?.issues || [];
                 const issues2 = diagnosis2?.issues || [];
                 
-                const patterns1 = new Set(issues1.map((i: any) => i.pattern));
-                const patterns2 = new Set(issues2.map((i: any) => i.pattern));
+                const patterns1 = new Set(issues1.map((i) => i.pattern));
+                const patterns2 = new Set(issues2.map((i) => i.pattern));
 
                 // Find new issues in build 2
                 for (const issue of issues2) {

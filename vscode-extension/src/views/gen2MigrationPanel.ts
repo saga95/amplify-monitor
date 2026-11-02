@@ -1,17 +1,7 @@
 import * as vscode from 'vscode';
 import * as path from 'path';
 import * as fs from 'fs';
-import { AmplifyMonitorCli, MigrationAnalysis, MigrationFeature, MigrationCompatibility } from '../cli';
-
-interface MigrationStep {
-    id: string;
-    title: string;
-    description: string;
-    status: 'pending' | 'in-progress' | 'completed' | 'skipped' | 'blocked';
-    actions?: { label: string; command: string; args?: any[] }[];
-    codeSnippet?: string;
-    documentation?: string;
-}
+import { AmplifyMonitorCli, MigrationAnalysis, MigrationFeature, MigrationCompatibility, errorMessage, isFullySupported } from '../cli';
 
 export class Gen2MigrationPanel {
     public static currentPanel: Gen2MigrationPanel | undefined;
@@ -136,8 +126,8 @@ export class Gen2MigrationPanel {
             this._panel.webview.postMessage({ command: 'analyzing', status: true });
             this._analysis = await this._cli.analyzeMigration(this._projectPath);
             this._update();
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Analysis failed: ${error.message}`);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Analysis failed: ${errorMessage(error)}`);
             this._panel.webview.postMessage({ command: 'analyzing', status: false });
         }
     }
@@ -380,11 +370,11 @@ Function Migration Steps:
         return 'Unknown';
     }
 
-    private async _runCommand(cmd: string, args?: any[]) {
+    private async _runCommand(cmd: string, args?: unknown[]) {
         try {
             await vscode.commands.executeCommand(cmd, ...(args || []));
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Command failed: ${error.message}`);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Command failed: ${errorMessage(error)}`);
         }
     }
 
@@ -405,8 +395,8 @@ Function Migration Steps:
             await vscode.window.showTextDocument(doc);
             
             vscode.window.showInformationMessage(`Created: ${filePath}`);
-        } catch (error: any) {
-            vscode.window.showErrorMessage(`Failed to create file: ${error.message}`);
+        } catch (error) {
+            vscode.window.showErrorMessage(`Failed to create file: ${errorMessage(error)}`);
         }
     }
 
@@ -1112,10 +1102,7 @@ export const ${feature.feature.replace(/[^a-zA-Z]/g, '')} = defineFunction({
         if (!this._analysis) return '';
 
         const features = this._analysis.features.filter(f => f.category === category);
-        const supportedCount = features.filter(f => {
-            const compat = f.compatibility as any;
-            return compat?.type === 'Supported' || compat === 'Supported' || (compat && 'Supported' in compat);
-        }).length;
+        const supportedCount = features.filter(f => isFullySupported(f.compatibility)).length;
 
         const icon = this._getCategoryIcon(category);
 
@@ -1207,10 +1194,7 @@ export const ${feature.feature.replace(/[^a-zA-Z]/g, '')} = defineFunction({
         <ul class="checklist">
             ${this._analysis.categoriesDetected.map(cat => {
                 const features = this._analysis!.features.filter(f => f.category === cat);
-                const allSupported = features.every(f => {
-                    const c = f.compatibility as any;
-                    return c === 'Supported' || c?.type === 'Supported' || 'Supported' in c;
-                });
+                const allSupported = features.every(f => isFullySupported(f.compatibility));
                 return `
                 <li>
                     <span class="check-icon ${allSupported ? 'done' : 'pending'}">${allSupported ? '✓' : ''}</span>

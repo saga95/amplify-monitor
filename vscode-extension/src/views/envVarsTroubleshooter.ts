@@ -4,21 +4,15 @@ import * as path from 'path';
 import { AmplifyMonitorCli } from '../cli';
 
 // Common env var patterns and their requirements
-const ENV_VAR_PATTERNS = {
-    // Next.js
-    nextPublic: /NEXT_PUBLIC_[A-Z0-9_]+/g,
-    nextPrivate: /(?<!NEXT_PUBLIC_)[A-Z][A-Z0-9_]*(?:_KEY|_SECRET|_TOKEN|_URL|_API|_ID|_PASSWORD|_CREDENTIAL)/g,
-    
-    // React (Create React App)
-    reactApp: /REACT_APP_[A-Z0-9_]+/g,
-    
-    // Vite
-    vite: /VITE_[A-Z0-9_]+/g,
-    
-    // Generic
-    generic: /process\.env\.([A-Z][A-Z0-9_]*)/g,
-    importMeta: /import\.meta\.env\.([A-Z][A-Z0-9_]*)/g
-};
+
+interface FixData {
+    variable?: string;
+    variables?: string[];
+    oldName?: string;
+    newName?: string;
+    secretType?: string;
+}
+
 
 // Known sensitive env var patterns that should never be in code
 const SENSITIVE_PATTERNS = [
@@ -80,7 +74,7 @@ interface EnvVarIssue {
     fix?: {
         action: string;
         description: string;
-        data?: any;
+        data?: FixData;
     };
 }
 
@@ -250,10 +244,10 @@ export class EnvVarsTroubleshooterPanel {
             if (appId && branch) {
                 const envVarsResult = await this._cli.getEnvVariables(appId, branch);
                 if (envVarsResult) {
-                    amplifyVars = envVarsResult.map((v: any) => v.name);
+                    amplifyVars = envVarsResult.map((v) => v.name);
                     sources.push({
                         name: 'Amplify Environment Variables',
-                        variables: new Map(envVarsResult.map((v: any) => [v.name, '***']))
+                        variables: new Map(envVarsResult.map((v) => [v.name, '***']))
                     });
                 }
             }
@@ -642,7 +636,7 @@ export class EnvVarsTroubleshooterPanel {
         }
     }
 
-    private async _applyFix(fix: { action: string; description: string; data?: any }, variable: string) {
+    private async _applyFix(fix: { action: string; description: string; data?: FixData }, variable: string) {
         const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
         if (!workspaceFolder) {
             return;
@@ -735,7 +729,7 @@ npm-debug.log*
 
                 case 'rename_var': {
                     vscode.window.showInformationMessage(
-                        `Please rename ${fix.data.oldName} to ${fix.data.newName} in your code and .env files`
+                        `Please rename ${fix.data?.oldName} to ${fix.data?.newName} in your code and .env files`
                     );
                     break;
                 }
@@ -782,7 +776,7 @@ npm-debug.log*
         await this._analyze();
     }
 
-    private async _addToAmplify(variable: string, value: string) {
+    private async _addToAmplify(variable: string, _value: string) {
         try {
             const appId = this._cli.getSelectedApp();
             const branch = this._cli.getSelectedBranch();
