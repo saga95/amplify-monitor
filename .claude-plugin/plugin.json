@@ -1,0 +1,19 @@
+{
+  "name": "amplify-monitor",
+  "displayName": "Amplify Monitor",
+  "description": "Check, diagnose and fix AWS Amplify builds: the amplify-monitor skill plus its MCP server",
+  "author": {
+    "name": "saga95",
+    "url": "https://github.com/saga95"
+  },
+  "homepage": "https://github.com/saga95/amplify-monitor",
+  "repository": "https://github.com/saga95/amplify-monitor",
+  "license": "MIT",
+  "keywords": ["aws", "amplify", "mcp", "devtools"],
+  "mcpServers": {
+    "amplify-monitor": {
+      "command": "npx",
+      "args": ["-y", "@amplify-monitor/mcp-server"]
+    }
+  }
+}
