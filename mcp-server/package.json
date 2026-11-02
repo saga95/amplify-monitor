@@ -4,7 +4,7 @@
   "description": "MCP server for AWS Amplify build monitoring and diagnosis",
   "main": "dist/index.js",
   "bin": {
-    "amplify-monitor-mcp": "./dist/index.js"
+    "amplify-monitor-mcp": "dist/index.js"
   },
   "files": [
     "dist/**/*.js",
@@ -33,7 +33,7 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/saga95/amplify-monitor.git",
+    "url": "git+https://github.com/saga95/amplify-monitor.git",
     "directory": "mcp-server"
   },
   "homepage": "https://github.com/saga95/amplify-monitor/tree/main/mcp-server#readme",
